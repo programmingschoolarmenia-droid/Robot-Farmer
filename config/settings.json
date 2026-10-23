@@ -1,0 +1,196 @@
+{
+  "_readme": "Բրիջիի ֆերմայի խաղի կանոնները և թվերը։ Յուրաքանչյուր դաշտի բացատրությունը կա config/README.md ֆայլում։",
+  "version": 1,
+
+  "game": {
+    "title": "Բրիջիի ֆերման",
+    "startItems": {},
+    "maxCallDepth": 400,
+    "autosaveSeconds": 10,
+    "speedOptions": [0.25, 0.5, 1],
+    "defaultSpeed": 1,
+    "frameBudgetMs": 12,
+    "maxFrameSeconds": 0.1
+  },
+
+  "time": {
+    "ticksPerSecond": 400,
+    "speedResearch": "Speed",
+    "speedPerTier": 1.5,
+    "doAFlipSeconds": 1
+  },
+
+  "costs": {
+    "actionSuccess": 200,
+    "actionFail": 1,
+    "getter": 1,
+    "language": {
+      "loop": 1,
+      "if": 1,
+      "binary": 1,
+      "index": 1,
+      "define": 1,
+      "callValue": 1,
+      "collection": 1,
+      "template": 1,
+      "method": 1
+    }
+  },
+
+  "world": {
+    "sizeResearch": "Expand",
+    "sizes": [[1, 1], [3, 1], [3, 3], [4, 4], [6, 6], [8, 8], [12, 12], [16, 16], [22, 22], [32, 32]]
+  },
+
+  "entities": {
+    "Grass": {
+      "grounds": ["Grassland", "Soil"],
+      "growTime": [0.5, 0.5],
+      "yield": { "Hay": 1 },
+      "yieldResearch": "Grass",
+      "yieldBaseLevel": 0
+    },
+    "Bush": {
+      "grounds": ["Grassland", "Soil"],
+      "growTime": [3.2, 4.8],
+      "yield": { "Wood": 1 },
+      "yieldResearch": "Trees",
+      "yieldBaseLevel": 0
+    },
+    "Tree": {
+      "grounds": ["Grassland", "Soil"],
+      "growTime": [5.6, 8.4],
+      "yield": { "Wood": 5 },
+      "yieldResearch": "Trees",
+      "yieldBaseLevel": 1,
+      "neighborSlowdown": 2
+    },
+    "Carrot": {
+      "grounds": ["Soil"],
+      "growTime": [4.8, 7.2],
+      "yield": { "Carrot": 1 },
+      "yieldResearch": "Carrots",
+      "yieldBaseLevel": 1,
+      "plantCost": { "Hay": 1, "Wood": 1 },
+      "plantCostScales": true
+    },
+    "Pumpkin": {
+      "grounds": ["Soil"],
+      "growTime": [0.2, 3.8],
+      "yield": { "Pumpkin": 1 },
+      "yieldResearch": "Pumpkins",
+      "yieldBaseLevel": 1,
+      "plantCost": { "Carrot": 1 },
+      "plantCostScales": true,
+      "deathChance": 0.2,
+      "giant": { "cubeUntil": 5, "bigMultiplier": 6 }
+    },
+    "Sunflower": {
+      "grounds": ["Soil"],
+      "growTime": [5.6, 8.4],
+      "yield": { "Power": 1 },
+      "plantCost": { "Carrot": 1 },
+      "petals": [7, 15],
+      "minForBonus": 10,
+      "bonusMultiplier": 8
+    },
+    "Cactus": {
+      "grounds": ["Soil"],
+      "growTime": [1, 1],
+      "yield": { "Cactus": 1 },
+      "yieldResearch": "Cactus",
+      "yieldBaseLevel": 1,
+      "plantCost": { "Pumpkin": 2 },
+      "plantCostScales": true,
+      "sizes": [0, 9]
+    },
+    "Dead_Pumpkin": { "plantable": false },
+    "Hedge": { "plantable": false },
+    "Treasure": { "plantable": false },
+    "Apple": { "plantable": false },
+    "Dinosaur": { "plantable": false }
+  },
+
+  "items": {
+    "order": ["Hay", "Wood", "Carrot", "Pumpkin", "Power", "Water", "Fertilizer", "Weird_Substance", "Cactus", "Bone", "Gold"]
+  },
+
+  "water": {
+    "research": "Watering",
+    "secondsPerItem": 10,
+    "tankAmount": 0.25,
+    "evaporationPerSecond": 0.01,
+    "maxGrowthMultiplier": 5
+  },
+
+  "fertilizer": {
+    "research": "Fertilizer",
+    "secondsPerItem": 10,
+    "secondsSaved": 2,
+    "infectedYieldToWeird": 0.5
+  },
+
+  "power": {
+    "speedMultiplier": 2,
+    "actionsPerPower": 30
+  },
+
+  "megafarm": {
+    "research": "Megafarm",
+    "dronesPerLevel": [1, 2, 4, 8, 16, 32]
+  },
+
+  "maze": {
+    "research": "Mazes",
+    "maxReuses": 300
+  },
+
+  "dinosaur": {
+    "research": "Dinosaurs",
+    "appleCost": { "Cactus": 2 },
+    "moveTicks": 400,
+    "speedupPerApple": 0.03
+  },
+
+  "polyculture": {
+    "research": "Polyculture",
+    "entities": ["Grass", "Bush", "Tree", "Carrot"],
+    "distance": 3,
+    "baseMultiplier": 5
+  },
+
+  "hats": {
+    "Straw_Hat": { "color": "#f2c04d", "band": "#2b6fd6" },
+    "Blue_Hat": { "color": "#3b82f6", "band": "#1e3a8a" },
+    "Green_Hat": { "color": "#22c55e", "band": "#14532d" },
+    "Red_Hat": { "color": "#ef4444", "band": "#7f1d1d" },
+    "Purple_Hat": { "color": "#a855f7", "band": "#4c1d95" },
+    "Gold_Hat": { "color": "#facc15", "band": "#a16207" },
+    "Dinosaur_Hat": { "color": "#65a30d", "band": "#365314" },
+    "Secret_Hat": { "color": "#111827", "band": "#f59e0b" }
+  },
+
+  "online": {
+    "_readme": "Հաշիվներ և լավագույնների ցուցակ Firebase-ով (տես config/README.md)։ Եթե apiKey-ն ու projectId-ն դատարկ են, հաշիվները պահվում են միայն այս զննարկչում։",
+    "apiKey": "",
+    "projectId": "",
+    "emailDomain": "bridgys-farm.app",
+    "cloudSaveSeconds": 60,
+    "leaderboardSize": 50
+  },
+
+  "display": {
+    "animations": true,
+    "lowGraphics": false,
+    "fontSize": 15,
+    "sfxVolume": 0.5,
+    "musicVolume": 0,
+    "blips": true,
+    "showGrid": true
+  },
+
+  "dev": {
+    "unlockAll": false,
+    "extraItems": {}
+  }
+}

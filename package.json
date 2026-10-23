@@ -1,0 +1,10 @@
+{
+  "name": "bridgys-farm",
+  "private": true,
+  "type": "module",
+  "description": "Բրիջիի ֆերման — learn JavaScript by programming a farm drone",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "test": "node --test tests/*.test.mjs"
+  }
+}

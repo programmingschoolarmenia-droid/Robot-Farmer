@@ -1,0 +1,398 @@
+{
+  "_readme": "Հետազոտությունների ծառը։ parents՝ ծնող հանգույցները, tiers՝ յուրաքանչյուր մակարդակի գինը, grants՝ ինչ է բացում։ available: false նշանակում է «շուտով»։",
+  "nodes": [
+    {
+      "id": "Loops",
+      "label": "while",
+      "name": "Կրկնություն",
+      "description": "while ցիկլը կրկնում է կոդը նորից ու նորից։ Այլևս պետք չի լինի ամեն անգամ ▶ սեղմել։",
+      "parents": [],
+      "tiers": [{ "Hay": 5 }],
+      "grants": { "syntax": ["loops"] }
+    },
+    {
+      "id": "Hats",
+      "icon": "hat",
+      "name": "Գլխարկներ",
+      "description": "Գունավոր գլխարկներ դրոնի համար և poxelGlxark() հրամանը։",
+      "parents": ["Loops"],
+      "tiers": [{ "Hay": 50 }],
+      "grants": { "functions": ["changeHat"], "hats": ["Blue_Hat", "Green_Hat", "Red_Hat", "Purple_Hat"] }
+    },
+    {
+      "id": "Speed",
+      "icon": "speed",
+      "name": "Արագություն",
+      "description": "Դրոնը և կոդը աշխատում են 1,5 անգամ ավելի արագ։",
+      "parents": ["Loops"],
+      "tiers": [{ "Hay": 20 }, { "Wood": 20 }, { "Wood": 50, "Carrot": 50 }, { "Carrot": 500 }, { "Carrot": 1000 }],
+      "grants": {}
+    },
+    {
+      "id": "Grass",
+      "icon": "grass",
+      "name": "Խոտ",
+      "description": "Ամեն մակարդակ խոտի բերքը դարձնում է 2 անգամ ավելի շատ։",
+      "parents": ["Loops"],
+      "tiers": [
+        { "Hay": 100 },
+        { "Hay": 300 },
+        { "Wood": 500 },
+        { "Wood": 2500 },
+        { "Wood": 12500 },
+        { "Wood": 62500 },
+        { "Wood": 312000 },
+        { "Wood": 1560000 },
+        { "Wood": 7810000 },
+        { "Wood": 39100000 }
+      ],
+      "grants": {}
+    },
+    {
+      "id": "Expand",
+      "icon": "expand",
+      "name": "Մեծ ֆերմա",
+      "description": "Ֆերման մեծանում է։ Առաջին մակարդակը բացում է gnal() հրամանը։",
+      "parents": ["Speed"],
+      "tiers": [
+        { "Hay": 30 },
+        { "Wood": 20 },
+        { "Wood": 30, "Carrot": 20 },
+        { "Wood": 100, "Carrot": 50 },
+        { "Pumpkin": 1000 },
+        { "Pumpkin": 8000 },
+        { "Pumpkin": 64000 },
+        { "Pumpkin": 512000 },
+        { "Pumpkin": 4100000 }
+      ],
+      "grants": { "functions": ["move", "clear"] }
+    },
+    {
+      "id": "Plant",
+      "label": "tnkel()",
+      "name": "Տնկել",
+      "description": "tnkel() հրամանը, թփերը, if / else պայմանները, hasunE() և inchKa()։",
+      "parents": ["Speed"],
+      "tiers": [{ "Hay": 50 }],
+      "grants": { "functions": ["plant", "canHarvest", "getEntityType"], "syntax": ["if"], "entities": ["Bush"] }
+    },
+    {
+      "id": "Carrots",
+      "icon": "carrot",
+      "name": "Գազար",
+      "description": "herkel() հրամանը և գազարը։ Հաջորդ մակարդակները կրկնապատկում են գազարի բերքը (և տնկելու գինը)։",
+      "parents": ["Plant"],
+      "tiers": [
+        { "Wood": 50 },
+        { "Wood": 250 },
+        { "Wood": 1250 },
+        { "Wood": 6250 },
+        { "Wood": 31200 },
+        { "Wood": 156000 },
+        { "Wood": 781000 },
+        { "Wood": 3910000 },
+        { "Wood": 19500000 },
+        { "Wood": 97700000 }
+      ],
+      "grants": { "functions": ["till", "getGroundType"], "entities": ["Carrot"] }
+    },
+    {
+      "id": "Debug",
+      "label": "tpel()",
+      "name": "Տպել",
+      "description": "tpel() հրամանը՝ կոնսոլում տեքստ և թվեր գրելու համար։",
+      "parents": ["Plant"],
+      "tiers": [{ "Hay": 50, "Wood": 50 }],
+      "grants": { "functions": ["print"] }
+    },
+    {
+      "id": "Operators",
+      "label": "1 + 1",
+      "name": "Գործողություններ",
+      "description": "Մաթեմատիկա և համեմատություններ՝ + - * / % == != < > && || !",
+      "parents": ["Plant"],
+      "tiers": [{ "Hay": 150, "Wood": 10 }],
+      "grants": { "syntax": ["operators"] }
+    },
+    {
+      "id": "Watering",
+      "icon": "water",
+      "name": "Ջրում",
+      "description": "Ջուր և ogtagorcel()։ Թաց հողում բույսերը մինչև 5 անգամ ավելի արագ են աճում։",
+      "parents": ["Carrots"],
+      "tiers": [
+        { "Wood": 50 },
+        { "Wood": 200 },
+        { "Wood": 800 },
+        { "Wood": 3200 },
+        { "Wood": 12800 },
+        { "Wood": 51200 },
+        { "Wood": 205000 },
+        { "Wood": 819000 },
+        { "Wood": 3280000 }
+      ],
+      "grants": { "functions": ["useItem", "getWater"] }
+    },
+    {
+      "id": "Trees",
+      "icon": "tree",
+      "name": "Ծառեր",
+      "description": "Ծառեր՝ ավելի շատ փայտ։ Կողք կողքի ծառերը դանդաղ են աճում։ Մակարդակները կրկնապատկում են փայտի բերքը։",
+      "parents": ["Carrots"],
+      "tiers": [
+        { "Wood": 50, "Carrot": 70 },
+        { "Hay": 300 },
+        { "Hay": 1200 },
+        { "Hay": 4800 },
+        { "Hay": 19200 },
+        { "Hay": 76800 },
+        { "Hay": 307000 },
+        { "Hay": 1230000 },
+        { "Hay": 4920000 },
+        { "Hay": 19700000 }
+      ],
+      "grants": { "entities": ["Tree"] }
+    },
+    {
+      "id": "Fertilizer",
+      "icon": "fertilizer",
+      "name": "Պարարտանյութ",
+      "description": "Պարարտանյութը բույսը միանգամից աճեցնում է, բայց վարակում է տարօրինակ նյութով։",
+      "parents": ["Watering"],
+      "tiers": [{ "Wood": 500 }, { "Wood": 1500 }, { "Wood": 9000 }, { "Wood": 54000 }],
+      "grants": {}
+    },
+    {
+      "id": "Sunflowers",
+      "icon": "sunflower",
+      "name": "Արևածաղիկներ",
+      "description": "Արևածաղիկները տալիս են էներգիա, որն արագացնում է դրոնը։ chapel() հրամանը։",
+      "parents": ["Watering"],
+      "tiers": [{ "Carrot": 500 }],
+      "grants": { "functions": ["measure"], "entities": ["Sunflower"] }
+    },
+    {
+      "id": "Mazes",
+      "icon": "maze",
+      "name": "Լաբիրինթոսներ",
+      "description": "Տարօրինակ նյութը թփից ստեղծում է լաբիրինթոս՝ մեջը գանձով։ karoxEmGnal() հրամանը։",
+      "parents": ["Fertilizer"],
+      "tiers": [
+        { "Weird_Substance": 1000 },
+        { "Cactus": 12000 },
+        { "Cactus": 72000 },
+        { "Cactus": 432000 },
+        { "Cactus": 2590000 },
+        { "Cactus": 15600000 }
+      ],
+      "grants": { "functions": ["canMove"] }
+    },
+    {
+      "id": "Megafarm",
+      "icon": "drones",
+      "name": "Մեգաֆերմա",
+      "description": "Մի քանի դրոն միաժամանակ՝ norDron(), spasel() և այլն։",
+      "parents": ["Mazes"],
+      "tiers": [{ "Gold": 2000 }, { "Gold": 8000 }, { "Gold": 32000 }, { "Gold": 128000 }, { "Gold": 512000 }],
+      "grants": { "functions": ["spawnDrone", "waitFor", "hasFinished", "numDrones", "maxDrones"] }
+    },
+    {
+      "id": "GoldenHat",
+      "icon": "goldhat",
+      "name": "Ոսկե գլխարկ",
+      "description": "Փայլուն ոսկե գլխարկ դրոնի համար։",
+      "parents": ["Mazes"],
+      "tiers": [{ "Gold": 5000 }],
+      "grants": { "hats": ["Gold_Hat"] }
+    },
+    {
+      "id": "Pumpkins",
+      "icon": "pumpkin",
+      "name": "Դդումներ",
+      "description": "Դդումներ։ Կողք կողքի հասած դդումները միանում են մեկ հսկա դդումի։",
+      "parents": ["Trees"],
+      "tiers": [
+        { "Wood": 500, "Carrot": 200 },
+        { "Carrot": 1000 },
+        { "Carrot": 4000 },
+        { "Carrot": 16000 },
+        { "Carrot": 64000 },
+        { "Carrot": 256000 },
+        { "Carrot": 1020000 },
+        { "Carrot": 4100000 },
+        { "Carrot": 16400000 },
+        { "Carrot": 65500000 }
+      ],
+      "grants": { "entities": ["Pumpkin"] }
+    },
+    {
+      "id": "Cactus",
+      "icon": "cactus",
+      "name": "Կակտուսներ",
+      "description": "Կակտուսներ, poxatexel() և chapel()։ Դասավորված կակտուսները շատ ավելի մեծ բերք են տալիս։",
+      "parents": ["Pumpkins"],
+      "tiers": [
+        { "Pumpkin": 5000 },
+        { "Pumpkin": 20000 },
+        { "Pumpkin": 120000 },
+        { "Pumpkin": 720000 },
+        { "Pumpkin": 4320000 },
+        { "Pumpkin": 25900000 }
+      ],
+      "grants": { "functions": ["swap", "measure"], "entities": ["Cactus"] }
+    },
+    {
+      "id": "Polyculture",
+      "icon": "polyculture",
+      "name": "Բույսերի ընկերություն",
+      "description": "ynker()։ Բույսերն ավելի շատ բերք են տալիս, երբ իրենց սիրելի ընկերը մոտ է։",
+      "parents": ["Pumpkins"],
+      "tiers": [{ "Pumpkin": 3000 }, { "Bone": 10000 }, { "Bone": 50000 }, { "Bone": 250000 }, { "Bone": 1250000 }],
+      "grants": { "functions": ["getCompanion"] }
+    },
+    {
+      "id": "Dinosaurs",
+      "icon": "dinosaur",
+      "name": "Դինոզավր",
+      "description": "Դինոզավրի գլխարկը։ Դրոնը դառնում է դինոզավր, որն ուտում է խնձորներ և տալիս ոսկորներ։",
+      "parents": ["Cactus"],
+      "tiers": [
+        { "Cactus": 2000 },
+        { "Cactus": 12000 },
+        { "Cactus": 72000 },
+        { "Cactus": 432000 },
+        { "Cactus": 2590000 },
+        { "Cactus": 15600000 }
+      ],
+      "grants": { "hats": ["Dinosaur_Hat"] }
+    },
+    {
+      "id": "Secret",
+      "icon": "secret",
+      "name": "Գաղտնիք",
+      "description": "Ի՞նչ կա այստեղ… Միայն ամենահամառ ֆերմերները կիմանան։",
+      "parents": ["Dinosaurs"],
+      "tiers": [{ "Bone": 100000 }],
+      "grants": { "hats": ["Secret_Hat"] },
+      "secret": true
+    },
+    {
+      "id": "SetSpeed",
+      "label": "aragutyun()",
+      "name": "Դանդաղեցում",
+      "description": "aragutyun()՝ դրոնը դանդաղեցնելու համար, որ հանգիստ տեսնես, թե ինչ է անում կոդը։",
+      "parents": ["Debug"],
+      "tiers": [{ "Carrot": 100 }],
+      "grants": { "functions": ["setSpeed"] }
+    },
+    {
+      "id": "Timing",
+      "label": "zhamanak()",
+      "name": "Ժամացույց",
+      "description": "zhamanak() և qayleriQanak()՝ չափիր, թե որքան ժամանակ է տևում կոդը։",
+      "parents": ["Debug"],
+      "tiers": [{ "Carrot": 300 }],
+      "grants": { "functions": ["getTime", "getTickCount"] }
+    },
+    {
+      "id": "Debugger",
+      "icon": "debugger",
+      "name": "Փոփոխականների պատուհան",
+      "description": "Կոդի աշխատանքի ժամանակ տես բոլոր փոփոխականների արժեքները։",
+      "parents": ["Timing"],
+      "tiers": [{ "Carrot": 600, "Wood": 300 }],
+      "grants": { "panels": ["debugger"] }
+    },
+    {
+      "id": "Final",
+      "icon": "trophy",
+      "name": "Ոսկե ֆերմա",
+      "description": "Վերջին հետազոտությունը։ Դու դառնում ես իսկական ծրագրավորող-ֆերմեր։",
+      "parents": ["Debugger"],
+      "tiers": [{ "Bone": 2000000, "Gold": 1000000 }],
+      "grants": { "panels": ["credits"] },
+      "final": true
+    },
+    {
+      "id": "Senses",
+      "label": "(x, y)",
+      "name": "Զգայարաններ",
+      "description": "dirqX(), dirqY(), fermayiChap() և qanak()։ Դրոնն իմանում է՝ որտեղ է և ինչ ունի։",
+      "parents": ["Operators"],
+      "tiers": [{ "Hay": 100 }],
+      "grants": { "functions": ["getPosX", "getPosY", "getWorldSize", "numItems"] }
+    },
+    {
+      "id": "Variables",
+      "label": "a = 2",
+      "name": "Փոփոխականներ",
+      "description": "let, const և = ։ Պահիր թվերն ու արժեքները փոփոխականներում։",
+      "parents": ["Operators"],
+      "tiers": [{ "Carrot": 35 }],
+      "grants": { "syntax": ["variables"] }
+    },
+    {
+      "id": "Lists",
+      "label": "[1, 2, 3]",
+      "name": "Ցուցակներ",
+      "description": "Զանգվածներ (ցուցակներ), for…of ցիկլը, push() և length։",
+      "parents": ["Variables"],
+      "tiers": [{ "Carrot": 500 }],
+      "grants": { "syntax": ["lists"], "functions": ["Array"] }
+    },
+    {
+      "id": "Objects",
+      "label": "{a: 1}",
+      "name": "Օբյեկտներ",
+      "description": "Օբյեկտներ, Map և Set՝ արժեքները անուններով պահելու համար։",
+      "parents": ["Lists"],
+      "tiers": [{ "Pumpkin": 2500 }],
+      "grants": { "syntax": ["objects"], "functions": ["Object"] }
+    },
+    {
+      "id": "Costs",
+      "label": "arzheq()",
+      "name": "Գներ",
+      "description": "arzheq() և makardak()՝ կոդով իմանալ հետազոտությունների գինն ու մակարդակը։",
+      "parents": ["Objects"],
+      "tiers": [{ "Pumpkin": 2500 }],
+      "grants": { "functions": ["getCost", "numUnlocked"] }
+    },
+    {
+      "id": "AutoUnlock",
+      "label": "bacel()",
+      "name": "Ավտոմատ բացում",
+      "description": "bacel() հրամանը՝ հետազոտություններ գնել հենց կոդից։",
+      "parents": ["Costs"],
+      "tiers": [{ "Pumpkin": 5000 }],
+      "grants": { "functions": ["unlock"] }
+    },
+    {
+      "id": "Functions",
+      "label": "function f()",
+      "name": "Ֆունկցիաներ",
+      "description": "Գրիր քո սեփական ֆունկցիաները՝ function և return։",
+      "parents": ["Variables"],
+      "tiers": [{ "Carrot": 40 }],
+      "grants": { "syntax": ["functions"] }
+    },
+    {
+      "id": "Import",
+      "label": "import",
+      "name": "Ներմուծում",
+      "description": "import և export՝ մի ֆայլի ֆունկցիաները մյուս ֆայլում օգտագործելու համար։",
+      "parents": ["Functions"],
+      "tiers": [{ "Carrot": 80 }],
+      "grants": { "syntax": ["import"] }
+    },
+    {
+      "id": "Utilities",
+      "label": "patahakan()",
+      "name": "Օգնականներ",
+      "description": "patahakan(), Math.floor(), Math.max() և այլ օգտակար ֆունկցիաներ։",
+      "parents": ["Functions"],
+      "tiers": [{ "Pumpkin": 1000 }],
+      "grants": { "functions": ["random", "Math", "Number", "parseInt", "parseFloat", "String", "isNaN"] }
+    }
+  ]
+}

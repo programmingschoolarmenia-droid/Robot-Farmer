@@ -1,0 +1,115 @@
+/* Colours and base styles. Light theme only, palette taken from Bridgy (blue + straw gold). */
+:root {
+  --ink: #1b2a4a;
+  --ink-soft: #4b5b7c;
+  --ink-faint: #8794ad;
+  --navy: #173a7a;
+  --navy-dark: #0f2856;
+  --blue: #2d6be0;
+  --blue-light: #5b93f2;
+  --blue-soft: #dce8ff;
+  --sky-1: #cfe5ff;
+  --sky-2: #eef6ff;
+  --gold: #f4b63f;
+  --gold-dark: #c98a12;
+  --gold-soft: #fff1cc;
+  --green: #36a852;
+  --green-dark: #23803b;
+  --green-soft: #dcf5df;
+  --red: #e2483d;
+  --red-dark: #b7302a;
+  --red-soft: #ffe1dd;
+  --orange: #f08a24;
+  --orange-soft: #ffe8cf;
+  --purple: #7c3aed;
+  --paper: #fffdf7;
+  --paper-2: #fbf6ea;
+  --line: #d3dcec;
+  --shadow-color: rgba(23, 58, 122, 0.22);
+  --shadow: 0 5px 0 var(--shadow-color);
+  --shadow-sm: 0 3px 0 var(--shadow-color);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --border: 3px solid var(--navy);
+  --font-ui: 'Noto Sans Armenian', 'Mshtakan', 'Sylfaen', 'Arial Unicode MS', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-code: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, 'Noto Sans Armenian', monospace;
+  --base-font: 15px;
+  --code-font: 15px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+html {
+  font-size: var(--base-font);
+}
+
+body {
+  font-family: var(--font-ui);
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 55%, #f6faff 100%);
+  background-color: var(--sky-2);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  touch-action: manipulation; /* no double-tap zoom on phones */
+}
+
+img.pixel,
+canvas.pixel,
+.pixel img {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+::selection {
+  background: #b9d3ff;
+}
+
+code,
+kbd,
+pre {
+  font-family: var(--font-code);
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
+}
+
+/* Font size setting */
+html.font-small {
+  --base-font: 14px;
+  --code-font: 13px;
+}
+html.font-normal {
+  --base-font: 15px;
+  --code-font: 15px;
+}
+html.font-large {
+  --base-font: 17px;
+  --code-font: 18px;
+}
+
+/* Reduced effects for weak computers */
+html.low-gfx *,
+html.low-gfx *::before,
+html.low-gfx *::after {
+  animation: none !important;
+  transition: none !important;
+}

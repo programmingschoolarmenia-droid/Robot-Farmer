@@ -1,0 +1,311 @@
+/* Phones and portrait tablets: one panel at a time (tabs), compact bars, bottom sheets.
+   The media query must match mobileQuery in js/ui/dom.js. */
+@media (max-width: 1023px), (max-height: 599px) {
+  /* ---------- start screen */
+  .screen-login {
+    align-items: flex-start;
+    padding: 14px 12px 104px;
+  }
+  .login-card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  .login-hero img {
+    width: 110px;
+  }
+  .login-main {
+    padding: 16px 14px;
+  }
+  .game-title {
+    font-size: 1.6rem;
+  }
+  .login-tab {
+    padding: 8px 10px;
+  }
+  .input {
+    font-size: 16px; /* iPhone zooms into smaller inputs */
+  }
+
+  /* ---------- game: top bar, one panel, control bar, tab bar */
+  .screen-game {
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    gap: 6px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+  }
+  .topbar {
+    gap: 6px;
+  }
+  .logo,
+  .btn-label,
+  .quest-card .quest-label,
+  .quest-text,
+  .quest-progress .chip:not(:first-child) {
+    display: none;
+  }
+  .quest-card {
+    height: 46px;
+    gap: 6px;
+    padding: 4px 6px 4px 10px;
+  }
+  .help-button {
+    height: 46px;
+    padding: 2px 6px;
+  }
+  .help-button img {
+    width: 40px;
+    height: 34px;
+  }
+  .player-pill {
+    padding: 7px 10px;
+  }
+
+  .game-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .screen-game:not([data-tab='farm']) .farm-panel,
+  .screen-game:not([data-tab='code']) .code-panel,
+  .screen-game:not([data-tab='storage']) .side-panel {
+    display: none;
+  }
+  .side-panel {
+    gap: 8px;
+  }
+
+  .controlbar {
+    gap: 6px;
+    padding: 6px 8px;
+  }
+  .controlbar .btn {
+    padding: 7px 11px;
+  }
+  .ctrl-label,
+  .ctrl-sep,
+  .clock {
+    display: none;
+  }
+  .status-pill {
+    font-size: 0; /* only the coloured dot */
+    gap: 0;
+    padding: 6px;
+  }
+  .speed-group button {
+    padding: 6px 8px;
+  }
+  .mobile-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .mobile-tab {
+    position: relative;
+    padding: 9px 4px;
+  }
+  .mobile-tab.active {
+    background: var(--navy);
+    color: #fff;
+  }
+  .mobile-tab .badge {
+    position: absolute;
+    top: -9px;
+    right: -4px;
+  }
+
+  /* ---------- typing: the keyboard is open, give the editor the room */
+  .typing .screen-game {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .typing .controlbar,
+  .typing .mobile-tabs,
+  .typing .console {
+    display: none;
+  }
+  .editor-wrap .CodeMirror {
+    font-size: max(16px, var(--code-font));
+  }
+  .symbol-bar {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 5px 6px;
+    border-top: 2px solid var(--line);
+    background: var(--paper-2);
+    scrollbar-width: none;
+  }
+  .symbol-bar .sym {
+    flex: none;
+    min-width: 38px;
+    height: 38px;
+    border: 2px solid var(--navy);
+    border-radius: 9px;
+    background: #fff;
+    color: var(--navy);
+    font-family: var(--font-code);
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .console {
+    height: clamp(64px, 16vh, 120px);
+  }
+
+  /* ---------- Bridgy: small portrait + bottom sheet above the bars */
+  .bridgy-dialog {
+    left: 6px;
+    right: 6px;
+    bottom: calc(122px + env(safe-area-inset-bottom));
+  }
+  .bridgy-portrait {
+    width: 84px;
+    margin-right: -16px;
+  }
+  .bridgy-box {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    min-height: 0;
+    max-height: min(58vh, 520px);
+    overflow: auto;
+    padding: 36px 12px 10px 24px;
+  }
+  .bridgy-name {
+    top: 6px; /* inside the scrolling box, so it is not clipped */
+    left: 22px;
+    font-size: 0.85rem;
+  }
+  .bridgy-text {
+    font-size: 1rem;
+  }
+  .bridgy-toasts {
+    top: 58px;
+    left: 8px;
+    right: 8px;
+  }
+  .bridgy-toast,
+  .toast {
+    max-width: 100%;
+  }
+  .toast-stack {
+    left: 8px;
+    right: 8px;
+    bottom: calc(126px + env(safe-area-inset-bottom));
+  }
+
+  /* ---------- windows */
+  .modal {
+    width: calc(100vw - 12px);
+    max-height: calc(var(--app-h, 100dvh) - 12px);
+  }
+  .modal-body {
+    padding: 12px;
+  }
+  .book-modal {
+    width: 100vw;
+    height: var(--app-h, 100dvh);
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .book-modal .modal-body {
+    grid-template-rows: auto auto minmax(0, 1fr);
+    min-height: 0;
+  }
+  .book-list {
+    max-height: none;
+    min-height: 0;
+  }
+  .setting-row input[type='range'] {
+    width: 130px;
+  }
+  .board-row {
+    gap: 6px;
+    padding: 6px 8px;
+  }
+  .error-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* ---------- research tree: compact header, details as a bottom sheet */
+  .research-head {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .research-head > img {
+    display: none;
+  }
+  .research-head h2 {
+    font-size: 1.05rem;
+  }
+  .research-items {
+    order: 3;
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .research-details {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 55%;
+    border-radius: 18px 18px 0 0;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  }
+  .research-zoom {
+    top: 12px;
+    bottom: auto;
+  }
+}
+
+/* Phones held sideways: Bridgy beside the login form, no meadow strip; the control bar and the
+   tabs share one row so the panels keep their height. */
+@media (max-height: 599px) and (min-width: 600px) {
+  .screen-game {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  .topbar,
+  .game-main {
+    grid-column: 1 / -1;
+  }
+  .mobile-tabs {
+    grid-template-columns: repeat(3, auto);
+  }
+  .screen-login {
+    align-items: center;
+    padding: 10px 16px;
+  }
+  .login-card {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+  .login-meadow {
+    display: none;
+  }
+  .game-subtitle {
+    margin-bottom: 8px;
+  }
+  .research-head {
+    flex-wrap: nowrap;
+    padding: 6px 10px;
+  }
+  .research-items {
+    order: 0;
+    width: auto;
+    flex: 1;
+    min-width: 0;
+  }
+  .research-details {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    left: auto;
+    width: min(320px, 45vw);
+    max-height: none;
+    border-radius: var(--radius);
+    padding-bottom: 14px;
+  }
+}
