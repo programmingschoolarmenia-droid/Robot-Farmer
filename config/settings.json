@@ -39,7 +39,18 @@
 
   "world": {
     "sizeResearch": "Expand",
-    "sizes": [[1, 1], [3, 1], [3, 3], [4, 4], [6, 6], [8, 8], [12, 12], [16, 16], [22, 22], [32, 32]]
+    "sizes": [
+      [1, 1],
+      [3, 1],
+      [3, 3],
+      [4, 4],
+      [6, 6],
+      [8, 8],
+      [12, 12],
+      [16, 16],
+      [22, 22],
+      [32, 32]
+    ]
   },
 
   "entities": {
@@ -112,7 +123,19 @@
   },
 
   "items": {
-    "order": ["Hay", "Wood", "Carrot", "Pumpkin", "Power", "Water", "Fertilizer", "Weird_Substance", "Cactus", "Bone", "Gold"]
+    "order": [
+      "Hay",
+      "Wood",
+      "Carrot",
+      "Pumpkin",
+      "Power",
+      "Water",
+      "Fertilizer",
+      "Weird_Substance",
+      "Cactus",
+      "Bone",
+      "Gold"
+    ]
   },
 
   "water": {
@@ -172,11 +195,27 @@
 
   "online": {
     "_readme": "Հաշիվներ և լավագույնների ցուցակ Firebase-ով (տես config/README.md)։ Եթե apiKey-ն ու projectId-ն դատարկ են, հաշիվները պահվում են միայն այս զննարկչում։",
-    "apiKey": "",
-    "projectId": "",
+    "apiKey": "AIzaSyBIVCjLQseN31SnTFrR4YNhCvJkt3B9fJo",
+    "projectId": "bridgys-farm",
     "emailDomain": "bridgys-farm.app",
     "cloudSaveSeconds": 60,
     "leaderboardSize": 50
+  },
+
+  "leaderboard": {
+    "_readme": "Լավագույնների ցուցակ։ points՝ քանի միավոր է տալիս յուրաքանչյուր հավաքած իրը (հազվագյուտ իրերն արժեն ավելի շատ, ջուրն ու պարարտանյութը 0 են, քանի որ գալիս են ինքնիրեն)։ tiers՝ աստիճաններն ըստ բոլոր ժամանակների միավորների (աճման կարգով)։ timeZone՝ օրը սկսվում է այս գոտու կեսգիշերին։",
+    "timeZone": "Asia/Yerevan",
+    "points": { "Hay": 1, "Wood": 1, "Carrot": 2, "Pumpkin": 4, "Power": 3, "Water": 0, "Fertilizer": 0, "Weird_Substance": 3, "Cactus": 5, "Bone": 20, "Gold": 20 },
+    "tiers": [
+      { "name": "Սերմ", "icon": "🌱", "points": 0 },
+      { "name": "Ծիլ", "icon": "🌿", "points": 200 },
+      { "name": "Հասկ", "icon": "🌾", "points": 1000 },
+      { "name": "Ծառ", "icon": "🌳", "points": 10000 },
+      { "name": "Ֆերմեր", "icon": "🏡", "points": 100000 },
+      { "name": "Վարպետ", "icon": "🚜", "points": 1000000 },
+      { "name": "Ադամանդ", "icon": "💎", "points": 10000000 },
+      { "name": "Լեգենդ", "icon": "🌟", "points": 100000000 }
+    ]
   },
 
   "display": {

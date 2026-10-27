@@ -218,9 +218,68 @@
   flex: none;
   border: 3px solid var(--navy);
 }
+.profile-avatar img {
+  width: 78%;
+  image-rendering: pixelated;
+}
+.profile-avatar.small {
+  width: 30px;
+  height: 30px;
+  border-width: 2px;
+  font-size: 0.85rem;
+}
+.profile-avatar.big {
+  width: 84px;
+  height: 84px;
+  font-size: 2rem;
+}
+.profile-info {
+  flex: 1;
+  min-width: 0;
+}
 .profile-name {
   font-weight: 800;
   font-size: 1.15rem;
+}
+.profile-tier {
+  margin-left: 8px;
+  font-size: 0.9rem;
+  color: var(--navy);
+}
+.tier-bar {
+  height: 8px;
+  margin: 5px 0 3px;
+  border: 2px solid var(--navy);
+  border-radius: 99px;
+  background: #fff;
+  overflow: hidden;
+}
+.tier-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+}
+.profile-chips,
+.breakdown-list,
+.card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.profile-chips {
+  margin: 10px 0;
+}
+.breakdown {
+  margin-bottom: 12px;
+}
+.breakdown-title {
+  font-weight: 800;
+  color: var(--navy);
+  margin-bottom: 6px;
+}
+.breakdown-list small {
+  color: var(--ink-faint);
+  font-weight: 700;
 }
 .profile-meta {
   font-size: 0.85rem;
@@ -244,9 +303,38 @@
   max-height: min(46vh, 420px);
   overflow: auto;
 }
+/* leaderboard tabs: pills (2×2; one row in the profile window) */
+.board-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 8px;
+  border-bottom: 0;
+}
+.board-tabs .login-tab {
+  margin: 0;
+  padding: 6px 8px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 0.85rem;
+}
+.board-tabs .login-tab.active {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: #fff;
+}
+.modal .board-tabs {
+  display: flex;
+  flex-wrap: wrap;
+}
+.modal .board-tabs .login-tab {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
 .board-row {
   display: grid;
-  grid-template-columns: 2.2em 1fr auto auto;
+  grid-template-columns: 2.2em 30px minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 10px;
   padding: 6px 10px;
@@ -254,6 +342,45 @@
   border-radius: 10px;
   background: #fff;
   font-weight: 700;
+  cursor: pointer;
+}
+.board-row:hover {
+  border-color: var(--navy);
+}
+.board-mine {
+  margin-top: 4px;
+}
+.board-who {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.board-badge {
+  flex: none;
+  font-size: 0.85rem;
+}
+.board-value {
+  font-family: var(--font-code);
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--navy);
+  white-space: nowrap;
+}
+.board-champs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--gold-dark);
+}
+.board-help {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-faint);
 }
 .board-row.me {
   border-color: var(--gold-dark);
@@ -283,6 +410,44 @@
 .board-place {
   margin-top: 8px;
   font-weight: 800;
+  color: var(--navy);
+}
+.player-card {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.card-name {
+  font-weight: 800;
+  font-size: 1.3rem;
+}
+.card-tier {
+  font-weight: 800;
+  color: var(--navy);
+}
+.card-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+  text-align: left;
+}
+.card-stat {
+  padding: 6px 10px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+.card-stat span {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.card-stat b {
+  font-family: var(--font-code);
   color: var(--navy);
 }
 

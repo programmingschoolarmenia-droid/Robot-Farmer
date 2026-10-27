@@ -20,7 +20,7 @@ export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-proj
   };
   const owner = (req) => tokens.get(String(req.headers.Authorization || '').replace('Bearer ', ''));
   const ownsDoc = (email, path) => email && email.split('@')[0] === path.split('/').pop();
-  const score = (fields) => Number(fields.score.integerValue);
+  const num = (fields, f) => (fields[f] && 'integerValue' in fields[f] ? Number(fields[f].integerValue) : undefined);
 
   fake.expireTokens = () => tokens.clear();
 
@@ -68,16 +68,24 @@ export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-proj
     }
     const players = [...docs].filter(([k]) => k.startsWith('players/'));
     if (path === ':runQuery') {
+      // Like Firestore: documents without the sort field are left out, and an inequality filter
+      // must be on the first sort field.
       const q = body.structuredQuery;
+      const f = q.orderBy[0].field.fieldPath;
+      const where = q.where && q.where.fieldFilter;
+      if (where && where.field.fieldPath !== f) return fail(400, 'inequality filter property and first sort order must be the same', { status: 'INVALID_ARGUMENT' });
+      const min = where ? Number(where.value.integerValue) : -Infinity;
+      const dir = q.orderBy[0].direction === 'ASCENDING' ? 1 : -1;
       const rows = players
-        .sort((a, b) => score(b[1]) - score(a[1]))
+        .filter(([, fields]) => num(fields, f) > min)
+        .sort((a, b) => dir * (num(a[1], f) - num(b[1], f)))
         .slice(0, q.limit)
         .map(([k, fields]) => ({ document: { name: `${prefix}/${k}`, fields }, readTime: 'now' }));
       return json(200, rows.length ? rows : [{ readTime: 'now' }]);
     }
     if (path === ':runAggregationQuery') {
-      const min = Number(body.structuredAggregationQuery.structuredQuery.where.fieldFilter.value.integerValue);
-      const count = players.filter(([, f]) => score(f) > min).length;
+      const where = body.structuredAggregationQuery.structuredQuery.where.fieldFilter;
+      const count = players.filter(([, fields]) => num(fields, where.field.fieldPath) > Number(where.value.integerValue)).length;
       return json(200, [{ result: { aggregateFields: { n: { integerValue: String(count) } } }, readTime: 'now' }]);
     }
     return fail(404, `Unknown fake endpoint ${url}`);

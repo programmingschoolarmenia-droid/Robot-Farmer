@@ -438,6 +438,24 @@ export class Game {
 
   // ------------------------------------------------------------------ saving
 
+  // What the leaderboard shows about this player (players/{id}, see storage/account.js).
+  leaderStats() {
+    const s = this.stats;
+    return {
+      research: this.research.totalLevels(),
+      playSeconds: this.playSeconds,
+      hat: this.mainDrone.hat,
+      farm: `${this.world.width}×${this.world.height}`,
+      points: s.points(),
+      code: s.codeWords,
+      streak: s.streak,
+      day: s.day,
+      prevDay: s.prevDay,
+      month: s.month,
+      prevMonth: s.prevMonth,
+    };
+  }
+
   toSave() {
     return {
       v: SAVE_VERSION,

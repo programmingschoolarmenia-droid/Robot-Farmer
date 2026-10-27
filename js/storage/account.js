@@ -17,8 +17,23 @@ export class AccountError extends Error {
   }
 }
 
-// Leaderboard order: more research first, then less play time.
-export const scoreOf = (research, playSeconds) => research * 1e7 - Math.min(Math.floor(playSeconds), 1e7 - 1);
+// The public leaderboard row of a player (players/{id}); `s` comes from Game.leaderStats().
+// Day and month points are stored under dated fields (d20261028, m202610), so a new day starts
+// an empty list without deleting anything; yesterday's field stays for the champion's crown.
+export function playerRow(name, s) {
+  const row = { name, hat: s.hat, farm: s.farm, research: s.research, playSeconds: Math.floor(s.playSeconds), points: Math.floor(s.points), code: s.code, streak: s.streak, streakDay: s.day.key };
+  for (const [prefix, periods] of [['d', [s.day, s.prevDay]], ['m', [s.month, s.prevMonth]]]) {
+    for (const p of periods) if (p && p.key && p.points >= 1) row[prefix + p.key] = Math.floor(p.points);
+  }
+  return row;
+}
+
+// The row field a leaderboard tab ranks by (today = 'YYYYMMDD').
+export function boardField(tab, today) {
+  if (tab === 'day') return `d${today}`;
+  if (tab === 'month') return `m${today.slice(0, 6)}`;
+  return tab === 'code' ? 'code' : 'points';
+}
 
 // Upgrades old save formats. (Only version 1 exists so far.)
 export function migrateSave(save) {
@@ -42,6 +57,7 @@ export class Accounts {
     this.backend = this.online ? new FirebaseBackend(online) : new LocalBackend(adapter);
     this.limit = online.leaderboardSize || 50;
     this.session = readJSON(adapter, SESSION_KEY);
+    this.cache = new Map(); // leaderboard field -> { at, rows }
   }
 
   get user() {
@@ -99,23 +115,48 @@ export class Accounts {
     return this.adapter.set(saveKey(this.session.id), JSON.stringify(data));
   }
 
-  // stats: { research, playSeconds } for the leaderboard.
+  // stats: Game.leaderStats() for the leaderboard row.
   async saveOnline(data, stats, keepalive = false) {
     const session = this.session;
     if (!session) return;
-    await this.backend.putSave(session, data, stats, keepalive);
+    await this.backend.putSave(session, data, playerRow(session.name, stats), keepalive);
+    this.cache.clear(); // my row changed
     if (this.session === session) this.persist();
   }
 
-  // { rows: [{ id, name, research, playSeconds }], place } — place is 0 when `me` is not given.
-  async leaderboard(me = null) {
-    const rows = await this.backend.top(this.limit);
-    let place = 0;
-    if (me) {
-      const i = rows.findIndex((r) => r.id === me.id);
-      place = i >= 0 ? i + 1 : 1 + (await this.backend.countAbove(scoreOf(me.research, me.playSeconds)));
+  // { rows, place, rival } for the list ranked by `field` (only players with more than 0).
+  // With `me` ({ id, value }): my place and the closest player above me (null when nobody is).
+  // A list is reused for a minute (until my next save), so switching tabs costs nothing;
+  // `fresh` asks again.
+  async leaderboard(field, me = null, fresh = false) {
+    let c = this.cache.get(field);
+    if (fresh || !c || Date.now() - c.at > 60000) {
+      c = { at: Date.now(), rows: await this.backend.query(field, 0, false, this.limit) };
+      this.cache.set(field, c);
     }
-    return { rows, place };
+    const rows = c.rows;
+    if (!me) return { rows, place: 0, rival: null };
+    const i = rows.findIndex((r) => r.id === me.id);
+    if (i >= 0) return { rows, place: i + 1, rival: rows.slice(0, i).reverse().find((r) => r[field] > me.value) || null };
+    const [above, rival] = await Promise.all([this.backend.count(field, me.value), this.backend.query(field, me.value, true, 1)]);
+    return { rows, place: above + 1, rival: rival[0] || null };
+  }
+
+  // My place (1 = first) in the list of `field` with `value`.
+  async place(field, value) {
+    return 1 + (await this.backend.count(field, value));
+  }
+
+  // The #1 rows of yesterday's and last month's lists: { day, month } (null when empty).
+  champions(dayField, monthField) {
+    const key = `${dayField}/${monthField}`;
+    if (!this.champs || this.champs.key !== key) {
+      const first = (f) => this.backend.query(f, 0, false, 1).then((rows) => rows[0] || null);
+      const entry = { key, promise: Promise.all([first(dayField), first(monthField)]).then(([day, month]) => ({ day, month })) };
+      entry.promise.catch(() => this.champs === entry && (this.champs = null)); // ask again next time
+      this.champs = entry;
+    }
+    return this.champs.promise;
   }
 }
 
@@ -166,6 +207,9 @@ async function call(url, { body, token, keepalive, missingOk } = {}) {
 }
 
 const int = (n) => ({ integerValue: String(Math.floor(n)) });
+const encode = (v) => (typeof v === 'number' ? int(v) : { stringValue: String(v) });
+const decode = (v) => ('integerValue' in v ? Number(v.integerValue) : 'doubleValue' in v ? v.doubleValue : v.stringValue);
+const above = (field, min) => ({ fieldFilter: { field: { fieldPath: field }, op: 'GREATER_THAN', value: int(min) } });
 
 class FirebaseBackend {
   constructor({ apiKey, projectId, emailDomain }) {
@@ -205,8 +249,8 @@ class FirebaseBackend {
     return doc && doc.fields ? JSON.parse(doc.fields.data.stringValue) : null;
   }
 
-  // The farm and the leaderboard row are written together.
-  async putSave(s, data, stats, keepalive) {
+  // The farm and the leaderboard row are written together (the row replaces the old one).
+  async putSave(s, data, row, keepalive) {
     const update = (collection, fields) => ({ update: { name: `${this.docs}/${collection}/${s.id}`, fields } });
     await call(`${this.url}:commit`, {
       token: await this.token(s),
@@ -214,36 +258,35 @@ class FirebaseBackend {
       body: {
         writes: [
           update('saves', { data: { stringValue: JSON.stringify(data) } }),
-          update('players', {
-            name: { stringValue: s.name },
-            research: int(stats.research),
-            playSeconds: int(stats.playSeconds),
-            score: int(scoreOf(stats.research, stats.playSeconds)),
-          }),
+          update('players', Object.fromEntries(Object.entries(row).map(([k, v]) => [k, encode(v)]))),
         ],
       },
     });
   }
 
-  async top(limit) {
+  // Rows whose `field` is above `min`, sorted by it. Firestore indexes every field by itself,
+  // so the dated day / month fields need no setup.
+  async query(field, min, asc, limit) {
     const res = await call(`${this.url}:runQuery?key=${this.key}`, {
-      body: { structuredQuery: { from: [{ collectionId: 'players' }], orderBy: [{ field: { fieldPath: 'score' }, direction: 'DESCENDING' }], limit } },
+      body: {
+        structuredQuery: {
+          from: [{ collectionId: 'players' }],
+          where: above(field, min),
+          orderBy: [{ field: { fieldPath: field }, direction: asc ? 'ASCENDING' : 'DESCENDING' }],
+          limit,
+        },
+      },
     });
     return res
       .filter((r) => r.document)
-      .map(({ document: d }) => ({
-        id: d.name.split('/').pop(),
-        name: d.fields.name.stringValue,
-        research: Number(d.fields.research.integerValue),
-        playSeconds: Number(d.fields.playSeconds.integerValue),
-      }));
+      .map(({ document: d }) => ({ id: d.name.split('/').pop(), ...Object.fromEntries(Object.entries(d.fields).map(([k, v]) => [k, decode(v)])) }));
   }
 
-  async countAbove(score) {
+  async count(field, min) {
     const res = await call(`${this.url}:runAggregationQuery?key=${this.key}`, {
       body: {
         structuredAggregationQuery: {
-          structuredQuery: { from: [{ collectionId: 'players' }], where: { fieldFilter: { field: { fieldPath: 'score' }, op: 'GREATER_THAN', value: int(score) } } },
+          structuredQuery: { from: [{ collectionId: 'players' }], where: above(field, min) },
           aggregations: [{ alias: 'n', count: {} }],
         },
       },
@@ -294,20 +337,21 @@ class LocalBackend {
     return null; // the browser copy is the only copy
   }
 
-  async putSave(s, data, stats) {
+  async putSave(s, data, row) {
     const players = this.table('players.v1');
-    players[s.id] = { name: s.name, research: stats.research, playSeconds: Math.floor(stats.playSeconds) };
+    players[s.id] = row;
     this.adapter.set('players.v1', JSON.stringify(players));
   }
 
-  async top(limit) {
+  async query(field, min, asc, limit) {
     return Object.entries(this.table('players.v1'))
       .map(([id, p]) => ({ id, ...p }))
-      .sort((a, b) => scoreOf(b.research, b.playSeconds) - scoreOf(a.research, a.playSeconds))
+      .filter((r) => r[field] > min)
+      .sort((a, b) => (asc ? a[field] - b[field] : b[field] - a[field]))
       .slice(0, limit);
   }
 
-  async countAbove(score) {
-    return Object.values(this.table('players.v1')).filter((p) => scoreOf(p.research, p.playSeconds) > score).length;
+  async count(field, min) {
+    return (await this.query(field, min, true, Infinity)).length;
   }
 }

@@ -29,7 +29,9 @@ step is needed.
   [`config/README.md`](config/README.md).
 * **Prepare a lesson quickly:** set `"unlockAll": true` in `config/settings.json → dev`.
 * **Accounts and the leaderboard:** students register with a username and a password.
-  Their farm is saved in their account and the leaderboard ranks everybody by research.
+  Their farm is saved in their account. The leaderboard has Today / This month / All time
+  tabs (points for everything gathered, rare items count more) and a «best code» tab
+  (working code words, repeats count once).
   To make this work online (school ↔ home ↔ phone), create a free Firebase project once —
   step by step in [`config/README.md`](config/README.md#accounts-and-the-leaderboard-firebase-free).
   Without it, accounts work only inside one browser.

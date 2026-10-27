@@ -8,10 +8,10 @@ export function openModal({ title, body, buttons = [], onClose, width, className
     if (onClose) onClose();
   };
   const onKey = (e) => {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      close();
-    }
+    // Escape closes only the top window (e.g. a player card over the profile).
+    if (e.key !== 'Escape' || [...document.querySelectorAll('.modal-backdrop')].pop() !== backdrop) return;
+    e.stopPropagation();
+    close();
   };
   const foot = buttons.length
     ? h(

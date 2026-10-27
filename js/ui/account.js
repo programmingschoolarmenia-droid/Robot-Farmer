@@ -1,10 +1,12 @@
 // Start screen (login / registration / leaderboard), the profile window and the leaderboard table.
 import { h, pixelImg } from './dom.js';
 import { openModal } from './modal.js';
-import { formatClock } from '../core/util.js';
+import { formatClock, formatCount, dayKey, prevDayKey, prevMonthKey } from '../core/util.js';
+import { boardField, playerRow } from '../storage/account.js';
 
 const AVATAR_COLORS = ['#2d6be0', '#36a852', '#e2483d', '#f08a24', '#7c3aed', '#0e7490', '#c026d3', '#b45309'];
 const MEDALS = ['🥇', '🥈', '🥉'];
+const TABS = ['day', 'month', 'all', 'code'];
 
 export function accountErrorText(i18n, e) {
   if (!e || !e.code) console.error(e);
@@ -14,11 +16,30 @@ export function accountErrorText(i18n, e) {
 
 const researchTotal = (config) => config.research.nodes.reduce((sum, n) => sum + n.tiers.length, 0);
 
-function avatar(name) {
+// A round badge in the player's own colour with their drone hat (or the first letter).
+function avatar(app, name, hat, cls = '') {
   let n = 0;
   for (const ch of name) n = (n * 31 + ch.codePointAt(0)) >>> 0;
-  return h('div', { class: 'profile-avatar', style: { background: AVATAR_COLORS[n % AVATAR_COLORS.length] } }, name[0].toUpperCase());
+  const sprite = `hatSide:${hat}`;
+  return h(
+    'div',
+    { class: `profile-avatar ${cls}`.trim(), style: { background: AVATAR_COLORS[n % AVATAR_COLORS.length] } },
+    hat && app.sprites.has(sprite) ? pixelImg(app.sprites.url(sprite, 3)) : name[0].toUpperCase(),
+  );
 }
+
+// The rank tier for all-time points (settings.json → leaderboard.tiers): { index, tier, next }.
+export function tierOf(settings, points) {
+  const tiers = (settings.leaderboard && settings.leaderboard.tiers) || [];
+  let index = -1;
+  tiers.forEach((tier, i) => points >= tier.points && (index = i));
+  return { index, tier: tiers[index] || null, next: tiers[index + 1] || null };
+}
+
+const todayKey = (app) => dayKey(Date.now(), (app.config.settings.leaderboard || {}).timeZone);
+
+// Days in a row, while the streak is alive (played today or yesterday).
+const streakOf = (r, today) => (r.streakDay === today || r.streakDay === prevDayKey(today) ? r.streak || 0 : 0);
 
 export class LoginScreen {
   constructor(app, onLogin, notice = '') {
@@ -123,60 +144,195 @@ export class LoginScreen {
   }
 }
 
-// The leaderboard table. `me` = { id, research, playSeconds } highlights the player and shows
-// their place; `before` (a promise) is awaited before the first load (fresh online save).
+// The leaderboard with its tabs (today / this month / all time / best code). `me` =
+// { id, ...Game.leaderStats() } highlights the player, adds their own row when they are outside
+// the top and the rival line; `before` (the fresh online save, a promise) is awaited first.
 export function leaderboardView(app, me = null, before = null) {
   const t = app.i18n.t;
+  const store = app.account.adapter;
+  let tab = TABS.includes(store.get('boardTab')) ? store.get('boardTab') : 'day';
+  let seq = 0; // answers for a tab the player already left are dropped
   const body = h('div', { class: 'board-body' });
-  const load = async () => {
+  const tabs = TABS.map((id) =>
+    h('button', {
+      type: 'button',
+      class: 'login-tab',
+      dataset: { tab: id },
+      onclick: () => {
+        tab = id;
+        store.set('boardTab', id);
+        load();
+      },
+    }, t(`ui.board_${id}`)),
+  );
+  const load = async (refresh = false) => {
+    const mine = ++seq;
+    for (const b of tabs) b.classList.toggle('active', b.dataset.tab === tab);
     body.replaceChildren(h('div', { class: 'board-note' }, t('ui.loading')));
+    const today = todayKey(app);
+    const field = boardField(tab, today);
     try {
       await before;
-      before = null;
-      const { rows, place } = await app.account.leaderboard(me);
-      const list = rows.map((r, i) =>
-        h(
-          'li',
-          { class: `board-row ${me && r.id === me.id ? 'me' : ''}` },
-          h('span', { class: 'board-rank' }, MEDALS[i] || String(i + 1)),
-          h('span', { class: 'board-name' }, r.name),
-          h('span', { class: 'board-stat', title: t('ui.colResearch') }, `🔬 ${r.research}`),
-          h('span', { class: 'board-stat', title: t('ui.colTime') }, `⏱ ${formatClock(r.playSeconds)}`),
-        ),
-      );
-      body.replaceChildren(list.length ? h('ol', { class: 'board' }, list) : h('div', { class: 'board-note' }, t('ui.leadersEmpty')));
-      if (place && !rows.some((r) => r.id === me.id)) body.append(h('div', { class: 'board-place' }, t('ui.yourPlace', { n: place })));
+      const meRow = me && { id: me.id, ...playerRow(app.account.user.name, me) };
+      const [board, champs] = await Promise.all([
+        app.account.leaderboard(field, meRow && { id: meRow.id, value: meRow[field] || 0 }, refresh),
+        app.account.champions(`d${prevDayKey(today)}`, `m${prevMonthKey(today.slice(0, 6))}`).catch((e) => {
+          console.warn('Champions not loaded:', e);
+          return null;
+        }),
+      ]);
+      if (mine === seq) body.replaceChildren(...boardContent(app, { ...board, tab, field, today, me: meRow, champs }));
     } catch (e) {
-      body.replaceChildren(h('div', { class: 'board-note form-error' }, accountErrorText(app.i18n, e)));
+      if (mine === seq) body.replaceChildren(h('div', { class: 'board-note form-error' }, accountErrorText(app.i18n, e)));
     }
   };
   load();
   return h(
     'div',
     { class: 'board-wrap' },
-    h('div', { class: 'board-head' }, h('span', {}, `🏆 ${t('ui.leadersTitle')}`), h('button', { class: 'btn btn-ghost btn-sm', onclick: load }, `↻ ${t('ui.refresh')}`)),
+    h('div', { class: 'board-head' }, h('span', {}, `🏆 ${t('ui.leadersTitle')}`), h('button', { class: 'btn btn-ghost btn-sm', onclick: () => load(true) }, `↻ ${t('ui.refresh')}`)),
+    h('div', { class: 'login-tabs board-tabs', role: 'tablist' }, tabs),
     body,
   );
 }
 
-// stats = { research, playSeconds }; sync = promise of the fresh online save.
+function boardContent(app, ctx) {
+  const t = app.i18n.t;
+  const { rows, place, rival, me, champs, field, tab } = ctx;
+  const out = [];
+  const crowns = [champs && champs.day && t('ui.championDay', { name: champs.day.name }), champs && champs.month && t('ui.championMonth', { name: champs.month.name })];
+  if (crowns.some(Boolean)) out.push(h('div', { class: 'board-champs' }, crowns.filter(Boolean).map((c) => h('span', {}, c))));
+  if (rows.length) out.push(h('ol', { class: 'board' }, rows.map((r, i) => boardRow(app, r, i + 1, ctx))));
+  else out.push(h('div', { class: 'board-note' }, t({ day: 'ui.leadersEmptyDay', code: 'ui.leadersEmptyCode' }[tab] || 'ui.leadersEmpty')));
+  const myValue = me ? me[field] || 0 : 0;
+  if (myValue > 0 && !rows.some((r) => r.id === me.id)) out.push(h('ol', { class: 'board board-mine' }, boardRow(app, me, place, ctx)));
+  if (rival) out.push(h('div', { class: 'board-place' }, t(tab === 'code' ? 'ui.rivalCode' : 'ui.rivalPoints', { name: rival.name, n: formatCount(rival[field] - myValue) })));
+  else if (myValue > 0) out.push(h('div', { class: 'board-place' }, t('ui.rivalFirst')));
+  out.push(h('div', { class: 'board-help' }, t(tab === 'code' ? 'ui.boardCodeHelp' : 'ui.boardPointsHelp')));
+  return out;
+}
+
+function boardRow(app, r, place, ctx) {
+  const t = app.i18n.t;
+  return h(
+    'li',
+    { class: `board-row${ctx.me && r.id === ctx.me.id ? ' me' : ''}`, title: t('ui.cardTitle'), onclick: () => openCard(app, r, ctx) },
+    h('span', { class: 'board-rank' }, MEDALS[place - 1] || String(place)),
+    avatar(app, r.name, r.hat, 'small'),
+    h('span', { class: 'board-who' }, h('span', { class: 'board-name' }, r.name), badges(app, r, ctx)),
+    h('span', { class: 'board-value', title: t(ctx.tab === 'code' ? 'ui.colCode' : 'ui.colPoints') }, formatCount(r[ctx.field] || 0)),
+    h('span', { class: 'board-stat', title: t('ui.colResearch') }, `🔬 ${r.research || 0}`),
+    h('span', { class: 'board-stat', title: t('ui.colTime') }, `⏱ ${formatClock(r.playSeconds || 0)}`),
+  );
+}
+
+// [[icon, title]] for 👑 yesterday's and 🏆 last month's champion.
+function crownsOf(app, r, champs) {
+  const t = app.i18n.t;
+  const out = [];
+  if (champs && champs.day && champs.day.id === r.id) out.push(['👑', t('ui.crownDay')]);
+  if (champs && champs.month && champs.month.id === r.id) out.push(['🏆', t('ui.crownMonth')]);
+  return out;
+}
+
+// Crowns, the rank tier and the 🔥 day streak next to a name.
+function badges(app, r, { champs, today }) {
+  const tier = tierOf(app.config.settings, r.points || 0).tier;
+  const streak = streakOf(r, today);
+  const badge = ([text, title]) => h('span', { class: 'board-badge', title }, text);
+  return [
+    ...crownsOf(app, r, champs).map(badge),
+    tier ? badge([tier.icon, tier.name]) : null,
+    streak >= 2 ? badge([`🔥${streak}`, app.i18n.t('ui.streakDays', { n: streak })]) : null,
+  ];
+}
+
+// A player's card: hat, tier, crowns and every number of their row.
+function openCard(app, r, ctx) {
+  const t = app.i18n.t;
+  const { tier } = tierOf(app.config.settings, r.points || 0);
+  const stat = (label, value) => h('div', { class: 'card-stat' }, h('span', {}, label), h('b', {}, value));
+  openModal({
+    title: `🃏 ${t('ui.cardTitle')}`,
+    width: 'min(420px, calc(100vw - 32px))',
+    body: h(
+      'div',
+      { class: 'player-card' },
+      avatar(app, r.name, r.hat, 'big'),
+      h('div', { class: 'card-name' }, r.name),
+      tier ? h('div', { class: 'card-tier' }, `${tier.icon} ${tier.name}`) : null,
+      h('div', { class: 'card-badges' }, crownsOf(app, r, ctx.champs).map(([icon, title]) => h('span', { class: 'chip' }, `${icon} ${title}`))),
+      h(
+        'div',
+        { class: 'card-stats' },
+        stat(`⭐ ${t('ui.colPoints')}`, formatCount(r.points || 0)),
+        stat(`💻 ${t('ui.colCode')}`, formatCount(r.code || 0)),
+        stat(`🔬 ${t('ui.colResearch')}`, `${r.research || 0} / ${researchTotal(app.config)}`),
+        stat(`⏱ ${t('ui.colTime')}`, formatClock(r.playSeconds || 0)),
+        stat(`🌾 ${t('ui.colFarm')}`, r.farm || '1×1'),
+        stat(`🔥 ${t('ui.colStreak')}`, String(streakOf(r, ctx.today))),
+      ),
+    ),
+    buttons: [{ label: t('ui.close'), class: 'btn-primary' }],
+  });
+}
+
+// What the points are made of: amount × weight = points for each item (gold counts ×20, …).
+function breakdownView(app, list) {
+  const { t, item } = app.i18n;
+  return h(
+    'div',
+    { class: 'breakdown' },
+    h('div', { class: 'breakdown-title' }, t('ui.breakdownTitle')),
+    list.length
+      ? h(
+          'div',
+          { class: 'breakdown-list' },
+          list.map((b) =>
+            h(
+              'span',
+              { class: 'chip', title: t('ui.breakdownItem', { amount: formatCount(b.amount), item: item(b.item), points: formatCount(b.points) }) },
+              pixelImg(app.sprites.url(`item:${b.item}`, 2)),
+              h('small', {}, `${formatCount(b.amount)} × ${b.weight} =`),
+              formatCount(b.points),
+            ),
+          ),
+        )
+      : h('div', { class: 'board-note' }, t('ui.breakdownEmpty')),
+  );
+}
+
+// stats = { ...Game.leaderStats(), breakdown }; sync = promise of the fresh online save.
 export function openProfile(app, { stats, sync, onLogout }) {
   const t = app.i18n.t;
   const user = app.account.user;
+  const { tier, next } = tierOf(app.config.settings, stats.points);
+  const from = tier ? tier.points : 0;
+  const streak = streakOf({ streak: stats.streak, streakDay: stats.day.key }, todayKey(app));
   openModal({
     title: `👤 ${t('ui.profileTitle')}`,
     body: [
       h(
         'div',
         { class: 'profile-head' },
-        avatar(user.name),
+        avatar(app, user.name, stats.hat),
         h(
           'div',
-          {},
-          h('div', { class: 'profile-name' }, user.name),
+          { class: 'profile-info' },
+          h('div', { class: 'profile-name' }, user.name, tier ? h('span', { class: 'profile-tier' }, `${tier.icon} ${tier.name}`) : null),
           h('div', { class: 'profile-meta' }, t('ui.profileStats', { research: stats.research, total: researchTotal(app.config), time: formatClock(stats.playSeconds) })),
+          next ? h('div', { class: 'tier-bar' }, h('span', { style: { width: `${Math.min(100, ((stats.points - from) / (next.points - from)) * 100)}%` } })) : null,
+          h('div', { class: 'profile-meta' }, next ? t('ui.tierNext', { n: formatCount(next.points - stats.points), icon: next.icon, name: next.name }) : t('ui.tierMax')),
         ),
       ),
+      h(
+        'div',
+        { class: 'profile-chips' },
+        h('span', { class: 'chip', title: t('ui.colPoints') }, `⭐ ${formatCount(stats.points)}`),
+        h('span', { class: 'chip', title: t('ui.colCode') }, `💻 ${formatCount(stats.code)}`),
+        streak >= 2 ? h('span', { class: 'chip', title: t('ui.colStreak') }, t('ui.streakDays', { n: streak })) : null,
+      ),
+      breakdownView(app, stats.breakdown),
       leaderboardView(app, { id: user.id, ...stats }, sync),
       app.account.online ? null : h('p', { class: 'form-hint' }, t('ui.localMode')),
     ],

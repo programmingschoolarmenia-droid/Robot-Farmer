@@ -157,6 +157,10 @@
     width: 84px;
     margin-right: -16px;
   }
+  .friend .bridgy-portrait {
+    width: 66px;
+    margin-right: -8px;
+  }
   .bridgy-box {
     flex: 1;
     width: auto;
@@ -218,8 +222,12 @@
     width: 130px;
   }
   .board-row {
+    grid-template-columns: 1.8em 28px minmax(0, 1fr) auto;
     gap: 6px;
     padding: 6px 8px;
+  }
+  .board-stat {
+    display: none; /* on the player card */
   }
   .error-card {
     grid-template-columns: minmax(0, 1fr);
@@ -257,6 +265,13 @@
   .research-zoom {
     top: 12px;
     bottom: auto;
+  }
+}
+
+/* Narrow phones: the leaderboard tabs in the profile window go 2×2. */
+@media (max-width: 599px) {
+  .modal .board-tabs {
+    display: grid;
   }
 }
 

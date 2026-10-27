@@ -166,9 +166,12 @@ export class SpriteBook {
     this.put('icon:debugger', magnifier());
     this.put('icon:trophy', trophy());
 
-    // --- hats for the drone (seen from above)
+    // --- hats for the drone (seen from above) and for the leaderboard avatars (from the side)
     const hats = (settings && settings.hats) || {};
-    for (const [name, h] of Object.entries(hats)) this.put(`hat:${name}`, topHat(name, h.color, h.band));
+    for (const [name, h] of Object.entries(hats)) {
+      this.put(`hat:${name}`, topHat(name, h.color, h.band));
+      this.put(`hatSide:${name}`, sideHat(h.color, h.band));
+    }
   }
 }
 

@@ -21,10 +21,11 @@ export class Bridgy {
     this.textEl = h('div', { class: 'bridgy-text', onclick: () => this.finishTyping() });
     this.extraEl = h('div', {});
     this.buttonsEl = h('div', { class: 'bridgy-buttons' });
+    this.nameEl = h('div', { class: 'bridgy-name' }, t('ui.bridgyName'));
     this.box = h(
       'div',
       { class: 'bridgy-box' },
-      h('div', { class: 'bridgy-name' }, t('ui.bridgyName')),
+      this.nameEl,
       h('button', { class: 'btn btn-ghost btn-sm bridgy-close', title: t('ui.close'), onclick: () => this.end() }, '✕'),
       this.textEl,
       this.extraEl,
@@ -33,10 +34,13 @@ export class Bridgy {
     this.root = h('div', { class: 'bridgy-dialog', hidden: true }, this.portrait, this.box);
     this.toasts = h('div', { class: 'bridgy-toasts' });
     document.body.append(this.root, this.toasts);
+    // Load the friends' pictures now, so the portrait swap does not wait for the network.
+    for (const f of Object.values(this.cfg.friends || {})) if (f.portrait) new Image().src = f.portrait;
   }
 
   destroy() {
     clearInterval(this.timer);
+    clearTimeout(this.swapTimer);
     this.root.remove();
     this.toasts.remove();
   }
@@ -50,7 +54,19 @@ export class Bridgy {
     return p[emotion] || p.happy || 'assets/bridgy/bridgy.png';
   }
 
-  // pages: [{ text, emotion, code, options, node, buttons, quiz }]
+  // A friend from bridgy.json → friends (a student) instead of Bridgy, or null.
+  friend(id) {
+    const f = this.cfg.friends && this.cfg.friends[id];
+    return f && f.portrait ? f : null;
+  }
+
+  // The text with one of the friend's short lines before it.
+  friendText(id, text) {
+    const lines = (this.friend(id) || {}).lines || [];
+    return lines.length ? `${lines[Math.floor(Math.random() * lines.length)]}\n\n${text}` : text;
+  }
+
+  // pages: [{ text, emotion, who, code, options, node, buttons, quiz }] — who: a friends id
   say(pages, opts = {}) {
     if (!pages || !pages.length) return;
     const conv = { pages, ...opts };
@@ -63,6 +79,7 @@ export class Bridgy {
   }
 
   start(conv) {
+    this.fresh = this.root.hidden; // just opening: no picture to swap out
     this.conv = conv;
     this.page = conv.resumeAt || 0;
     this.root.hidden = false;
@@ -77,8 +94,10 @@ export class Bridgy {
     const page = this.conv.pages[this.page];
     const emotion = page.emotion || 'happy';
     this.quizSolved = !page.quiz;
-    this.root.className = `bridgy-dialog open emotion-${emotion}`;
-    this.portraitImg.src = this.portraitFor(emotion);
+    const friend = this.friend(page.who);
+    this.root.className = `bridgy-dialog open emotion-${emotion}${friend ? ' friend' : ''}`;
+    this.setPortrait(friend ? friend.portrait : this.portraitFor(emotion));
+    this.portraitImg.alt = this.nameEl.textContent = friend ? friend.name : this.i18n.t('ui.bridgyName');
     this.extraEl.replaceChildren();
     if (page.code) {
       const pre = h('pre', { class: 'bridgy-code' });
@@ -98,6 +117,26 @@ export class Bridgy {
     if (page.quiz) this.extraEl.append(this.quizNode(page.quiz));
     this.renderButtons(page);
     this.type(page.text || '');
+  }
+
+  // When the speaker changes in an open dialog, the old picture slides out and the new one
+  // slides in once it is decoded.
+  setPortrait(src) {
+    const img = this.portraitImg;
+    const fresh = this.fresh;
+    this.fresh = false;
+    if (img.getAttribute('src') === src) return;
+    clearTimeout(this.swapTimer);
+    const show = () => {
+      img.src = src;
+      img
+        .decode()
+        .catch(() => {})
+        .then(() => img.getAttribute('src') === src && img.classList.remove('swap'));
+    };
+    img.classList.add('swap');
+    if (fresh) show();
+    else this.swapTimer = setTimeout(show, 200);
   }
 
   // Answer buttons for a lesson question: a wrong answer gets an explanation and can be retried;
@@ -243,18 +282,19 @@ export class Bridgy {
     );
   }
 
-  showHint(hint, quest) {
+  // who: a friend who gives the hint (only from the help menu); intro: the friend's short line first.
+  showHint(hint, quest, who, intro) {
     const t = this.i18n.t;
     if (!hint) return;
     const tier = h('span', { class: 'bridgy-hint-tier' }, `${t('ui.hint')} ${hint.tier + 1}/${quest.hints.length}`);
-    const page = { emotion: 'thinking', text: hint.text, node: tier };
+    const page = { emotion: 'thinking', who, text: who && intro ? this.friendText(who, hint.text) : hint.text, node: tier };
     if (!hint.last) {
-      page.buttons = [{ label: `💡 ${t('ui.moreHint')}`, class: 'btn-gold', onClick: () => this.helpHint(true) }];
+      page.buttons = [{ label: `💡 ${t('ui.moreHint')}`, class: 'btn-gold', onClick: () => this.helpHint(true, who, false) }];
     }
     this.say([page], { key: 'hint', replaceSame: true, interrupt: true });
   }
 
-  helpHint(fromButton = false) {
+  helpHint(fromButton = false, who, intro = true) {
     const ctx = this.getHelpContext();
     const q = ctx.quests.current();
     if (!q) {
@@ -263,7 +303,7 @@ export class Bridgy {
     }
     const hint = ctx.quests.nextHint();
     if (!hint) return;
-    this.showHint(hint, q);
+    this.showHint(hint, q, who, intro);
   }
 
   helpMenu() {
@@ -274,11 +314,12 @@ export class Bridgy {
       {
         label: `🧭 ${t('ui.helpWhatNow')}`,
         onClick: () => {
+          const who = this.friend('nshan') ? 'nshan' : undefined;
           const text = q ? `${q.title}. ${q.text}` : t('ui.allQuestsDone');
-          this.say([{ emotion: 'happy', text }], { key: 'menu', replaceSame: true, interrupt: true });
+          this.say([{ emotion: 'happy', who, text: who ? this.friendText(who, text) : text }], { key: 'menu', replaceSame: true, interrupt: true });
         },
       },
-      { label: `💡 ${t('ui.helpHint')}`, onClick: () => this.helpHint(true) },
+      { label: `💡 ${t('ui.helpHint')}`, onClick: () => this.helpHint(true, this.friend('erik') ? 'erik' : undefined) },
       { label: `📖 ${t('ui.helpCommands')}`, onClick: () => this.openBook('commands') },
       { label: `🟨 ${t('ui.helpJs')}`, onClick: () => this.openBook('js') },
       { label: `🌱 ${t('ui.helpPlants')}`, onClick: () => this.openBook('plants') },

@@ -1,6 +1,7 @@
 // Runs player code on drones against game time: start / stop / pause / step.
 import { Interpreter, Y } from '../lang/interpreter.js';
 import { GameError, locOf } from '../lang/errors.js';
+import { codeFingerprints } from '../lang/codeWords.js';
 import { Drone } from './drone.js';
 
 const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
@@ -15,6 +16,7 @@ export class Runner {
     this.lastError = null;
     this.host = null;
     this.nextDroneId = 1;
+    this.runId = 0;
   }
 
   get settings() {
@@ -31,6 +33,7 @@ export class Runner {
     });
     I.drone = drone;
     I.game = this.game;
+    I.runId = this.runId;
     return I;
   }
 
@@ -53,6 +56,7 @@ export class Runner {
       return { ok: false, error: e };
     }
     const d = game.mainDrone;
+    this.runId++;
     d.interp = this.makeInterpreter(d);
     d.gen = d.interp.runModule(script.name);
     d.time = game.time;
@@ -76,6 +80,7 @@ export class Runner {
 
   stop(reason = 'user', silent = false) {
     if (!this.isActive()) return;
+    const code = this.countCode();
     this.state = 'idle';
     this.stepTarget = null;
     for (const d of this.drones) {
@@ -83,7 +88,19 @@ export class Runner {
       d.gen = null;
     }
     this.removeExtraDrones();
-    if (!silent) this.game.events.emit('runEnd', { reason });
+    if (!silent) this.game.events.emit('runEnd', { reason, code });
+  }
+
+  // A run ended without an error: adds the code words of its new statements (codeWords.js).
+  countCode() {
+    const I = this.game.mainDrone.interp;
+    if (!I) return 0;
+    try {
+      return this.game.stats.addCode(codeFingerprints([...I.modules.values()].map((m) => m.ast), I.runId, this.game.api));
+    } catch (e) {
+      console.error('Counting code words failed:', e); // a bug in this bonus must never block Stop
+      return 0;
+    }
   }
 
   removeExtraDrones() {
@@ -217,10 +234,11 @@ export class Runner {
     }
     if (d.id !== 0) this.game.events.emit('droneDone', { drone: d.id });
     if (!this.drones.some((x) => x.state === 'running' || x.state === 'waiting')) {
+      const code = this.countCode();
       this.state = 'idle';
       this.stepTarget = null;
       this.removeExtraDrones();
-      this.game.events.emit('runEnd', { reason: 'done' });
+      this.game.events.emit('runEnd', { reason: 'done', code });
     }
   }
 

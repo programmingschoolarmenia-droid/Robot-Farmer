@@ -89,7 +89,28 @@ here, give it a name in `texts.json → hats`, and unlock it from a research car
 | `apiKey`, `projectId` | Your Firebase project's keys (see **Accounts and the leaderboard** below). Empty = accounts and the leaderboard live only in this browser | `""` |
 | `emailDomain` | Hidden e-mail domain for usernames (`aram` → `aram@bridgys-farm.app`). If you change it, change it in the Firestore rules too | `bridgys-farm.app` |
 | `cloudSaveSeconds` | How often a changed farm is saved online (it is also saved right after a research, when the page is hidden or closed, and on log out) | `60` |
-| `leaderboardSize` | How many players the leaderboard shows (a player outside it sees "Քո տեղը՝ N") | `50` |
+| `leaderboardSize` | How many players each leaderboard list shows (a player outside it still sees their own row and place) | `50` |
+
+### `leaderboard` (points, tiers)
+| Field | Meaning | Default |
+|---|---|---|
+| `points` | Points for each gathered item, e.g. `{ "Hay": 1, "Gold": 20 }`. A student's **score** is everything they ever gathered (what they have + what they spent) × these weights. Water and fertilizer are `0` because they come by themselves. Changing a weight also changes old points (all-time points are recomputed) | see the file |
+| `tiers` | Rank tiers by all-time points, in growing order: `{ "name": "Հասկ", "icon": "🌾", "points": 1000 }`. Reaching a new tier gives confetti and a word from Bridgy. (Avoid 🥇🥈🥉 here: they already mark the first three places.) | 🌱 0 … 🌟 100 000 000 |
+| `timeZone` | The day and month lists restart at midnight in this time zone | `Asia/Yerevan` |
+
+The leaderboard has four tabs: **Այսօր** (points gathered today), **Այս ամիս** (this month),
+**Բոլոր ժամանակները** (all-time points) and **💻 Լավագույն կոդ** (code words). Next to each name:
+the drone hat, the tier icon, 🔥 days played in a row, 👑 yesterday's champion and 🏆 last
+month's champion. Clicking a name opens the player's card. In the Profile, students also see
+where their points come from, how far the next tier is, and «🎯 Հաջորդը…», the player just
+above them.
+
+**Code words** (the 💻 tab) count working code a student wrote: only code that ran without an
+error, and only statements that really ran. Each piece of code counts **once per student,
+ever**: repeating it (`tpel(); tpel(); tpel();`), changing its numbers or texts, or renaming
+variables gives nothing new, and long repeated chains (`1 + 1 + 1 + …`, `[1, 2, 3, …]`) count as
+one step. Words are names, keywords, values and operators (brackets and `;` do not count). After
+each run the console shows the new words, e.g. «💻 +7 նոր կոդի բառ».
 
 ### `display` (defaults for new players; each student can change them in ⚙)
 `animations`, `lowGraphics`, `fontSize` (`small` / `normal` / `large`), `sfxVolume`,
@@ -164,6 +185,7 @@ A `label` with code (`tnkel()`, `while`…) should use the Armenian command name
 * `reactions` — random short lines (`questDone`, `errorIntro`, `research`, …).
 * `credits` — pages shown after the final research.
 * `portraits` — Bridgy images per emotion (replace with your own pictures if you like).
+* `friends` — Bridgy's two student friends: **Nshan** answers «Ի՞նչ անեմ հիմա», **Erik** gives the hints from «Հուշում տուր» (both only in the «Բրիջի, օգնի՛ր» menu). Each has a `name`, a `portrait` (in `assets/friends/`) and short `lines`, one of which is said first. Remove a friend and Bridgy speaks again.
 
 ## aliases.json
 The Armenian names of the game commands. Left = the internal (English) name, right = a list
@@ -196,18 +218,18 @@ Opened from «Բրիջի, օգնի՛ր» → 📖 Խաղի հրամաններ / 
 ## Accounts and the leaderboard (Firebase, free)
 Students register with a **username and a password** only (no e-mail, no verification).
 Their farm is saved in their account, so they can play at school and continue on a phone at
-home, and the leaderboard ranks everybody by research levels (less play time wins a tie).
+home, and the leaderboard ranks everybody by points and code words (see `leaderboard` above).
 
 Until you add Firebase keys, accounts and the leaderboard work **only inside one browser**
 (the login screen says so). To put them online (~10 minutes, once):
 
 1. Open <https://console.firebase.google.com>, sign in with your Google account and create a
    project (any name, e.g. `bridgys-farm`; Google Analytics is not needed).
-2. **Build → Authentication → Get started → Sign-in method → Email/Password → Enable**
-   (only the first switch) → Save.
-3. **Build → Firestore Database → Create database** → pick a location (e.g. `europe-west`)
-   → *production mode* → Create. Open the **Rules** tab, replace everything with the rules
-   below and press **Publish**:
+2. **Authentication** (in the newer console under *Security*, in the older one under *Build*)
+   **→ Get started → Sign-in method → Email/Password → Enable** (only the first switch) → Save.
+3. **Firestore Database** (under *Databases & Storage*, or *Build*) **→ Create database** →
+   pick a location (e.g. `europe-west`) → *production mode* → Create. Open the **Rules** tab,
+   replace everything with the rules below and press **Publish**:
    ```
    rules_version = '2';
    service cloud.firestore {
@@ -238,7 +260,9 @@ Until you add Firebase keys, accounts and the leaderboard work **only inside one
 username). To remove a student completely, also delete `saves/username` and
 `players/username` in Firestore.
 
-The free plan (50 000 reads and 20 000 writes per day) is plenty for a school.
+The free plan (50 000 reads and 20 000 writes per day) is plenty for a school. The leaderboard
+needs no extra setup: every list is one query, a list is reused for a minute when students
+switch tabs, and «you moved up» costs one small count per online save.
 
 ## texts.json
 All interface text. Words in `{curly}` braces are filled in by the game — keep them.

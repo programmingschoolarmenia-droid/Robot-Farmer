@@ -43,6 +43,29 @@ export function formatClock(seconds) {
   return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
 }
 
+// Calendar day 'YYYYMMDD' in a time zone (undefined = this device's), so every player's day
+// starts at the same midnight. Used for the daily / monthly leaderboards.
+const dayFormats = new Map();
+export function dayKey(ms, timeZone) {
+  let f = dayFormats.get(timeZone);
+  if (!f) dayFormats.set(timeZone, (f = new Intl.DateTimeFormat('en-US', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' })));
+  const p = Object.fromEntries(f.formatToParts(ms).map((x) => [x.type, x.value]));
+  return `${p.year}${p.month}${p.day}`;
+}
+
+// '20261101' -> '20261031'
+export function prevDayKey(key) {
+  const d = new Date(Date.UTC(+key.slice(0, 4), +key.slice(4, 6) - 1, +key.slice(6, 8) - 1));
+  return d.toISOString().slice(0, 10).replace(/-/g, '');
+}
+
+// '202601' -> '202512'
+export function prevMonthKey(key) {
+  const y = +key.slice(0, 4);
+  const m = +key.slice(4, 6);
+  return m === 1 ? `${y - 1}12` : `${y}${String(m - 1).padStart(2, '0')}`;
+}
+
 export function levenshtein(a, b) {
   if (a === b) return 0;
   const m = a.length;

@@ -129,6 +129,7 @@ export class Interpreter {
     this.modules = new Map(); // name -> { name, scope, exports: Map, state }
     this.drone = null;
     this.game = null;
+    this.runId = 0; // stamped on each executed statement (node._ran), see codeWords.js
   }
 
   // ---------------------------------------------------------------- entry points
@@ -263,6 +264,7 @@ export class Interpreter {
   }
 
   *exec(node, scope) {
+    node._ran = this.runId;
     switch (node.type) {
       case 'ExpressionStatement': {
         this.currentNode = node;

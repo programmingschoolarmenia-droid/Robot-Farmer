@@ -212,6 +212,30 @@ export function validateConfig(config) {
       needNum('online.leaderboardSize', o.leaderboardSize, { min: 1, int: true, optional: true });
     }
   }
+  if (settings.leaderboard !== undefined) {
+    const lb = settings.leaderboard;
+    if (!isObj(lb)) err(S, 'leaderboard', 'Պետք է լինի օբյեկտ');
+    else {
+      try {
+        if (lb.timeZone !== undefined) new Intl.DateTimeFormat('en-US', { timeZone: lb.timeZone });
+      } catch {
+        err(S, 'leaderboard.timeZone', 'Անհայտ ժամային գոտի, օրինակ՝ "Asia/Yerevan"');
+      }
+      if (!isObj(lb.points)) err(S, 'leaderboard.points', 'Պետք է լինի օբյեկտ, օրինակ՝ { "Hay": 1, "Gold": 20 }');
+      else
+        for (const [item, n] of Object.entries(lb.points)) {
+          if (!ITEM_NAMES.includes(item)) err(S, `leaderboard.points.${item}`, `Անհայտ իր «${item}»`);
+          else needNum(`leaderboard.points.${item}`, n, { min: 0 });
+        }
+      if (lb.tiers !== undefined && !Array.isArray(lb.tiers)) err(S, 'leaderboard.tiers', 'Պետք է լինի աստիճանների ցուցակ');
+      else
+        (lb.tiers || []).forEach((tier, i) => {
+          const p = `leaderboard.tiers[${i}]`;
+          if (!isObj(tier) || typeof tier.name !== 'string' || typeof tier.icon !== 'string' || !isNum(tier.points)) err(S, p, 'Պետք է լինի { "name": "…", "icon": "🥉", "points": 1000 }');
+          else if (i > 0 && isObj(lb.tiers[i - 1]) && !(tier.points > lb.tiers[i - 1].points)) err(S, `${p}.points`, 'Աստիճանները պետք է լինեն միավորների աճման կարգով');
+        });
+    }
+  }
   if (!isObj(settings.hats) || !settings.hats.Straw_Hat) err(S, 'hats', 'Պետք է պարունակի առնվազն "Straw_Hat"');
   if (settings.items && settings.items.order && !settings.items.order.every((x) => ITEM_NAMES.includes(x))) {
     err(S, 'items.order', `Թույլատրված իրեր՝ ${ITEM_NAMES.join(', ')}`);
@@ -267,6 +291,11 @@ export function validateConfig(config) {
       }
   }
   if (!Array.isArray(bridgy.intro)) err(B, 'intro', 'Պետք է լինի էջերի ցուցակ');
+  for (const [id, f] of Object.entries(bridgy.friends || {})) {
+    if (id === '_readme') continue;
+    if (!isObj(f) || typeof f.name !== 'string' || typeof f.portrait !== 'string') err(B, `friends.${id}`, 'Պետք է լինի { "name": "…", "portrait": "assets/…png", "lines": ["…"] }');
+    else if (f.lines !== undefined && (!Array.isArray(f.lines) || !f.lines.every((l) => typeof l === 'string'))) err(B, `friends.${id}.lines`, 'Պետք է լինի տեքստերի ցուցակ');
+  }
 
   // ---------------------------------------------------------------- guide (Bridgy's book)
   if (!isObj(guide.commands)) err(G, 'commands', 'Պարտադիր բաժին է');

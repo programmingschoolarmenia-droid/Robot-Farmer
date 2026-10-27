@@ -10,9 +10,9 @@ import { DebugPanel } from './debugPanel.js';
 import { Bridgy } from './bridgy.js';
 import { openSettings } from './settingsModal.js';
 import { describeError, describeWarning } from './errorText.js';
-import { openProfile, accountErrorText } from './account.js';
+import { openProfile, accountErrorText, tierOf } from './account.js';
 import { openBook } from './book.js';
-import { formatClock } from '../core/util.js';
+import { formatClock, dayKey } from '../core/util.js';
 
 // Warnings Bridgy explains in a dialog the first time they happen.
 const TEACH_WARNINGS = new Set(['plant_wrongGround', 'plant_cost', 'plant_entityLocked', 'hatLocked', 'indexOutOfRange', 'notEnoughItem']);
@@ -38,6 +38,7 @@ export class GameScreen {
     app.prefs = this.prefs;
     this.game = new Game(app.config, saved.game || {});
     this.quests = new QuestTracker(this.game, saved.quests || {});
+    this.tier = tierOf(app.config.settings, this.game.stats.points()).index;
     this.lastError = null;
     this.destroyed = false;
     this.offs = [];
@@ -235,6 +236,7 @@ export class GameScreen {
     on('runEnd', (e) => {
       this.editor.setRunning(false);
       con.log(e.reason === 'done' ? t('ui.runFinished') : t('ui.runStopped'), e.reason === 'done' ? 'ok' : 'info');
+      if (e.code > 0) con.log(t('ui.codeWordsEarned', { n: e.code, total: this.game.stats.codeWords }), 'ok');
       if (e.reason !== 'done' && e.reason !== 'restart') app.audio.play('stop');
       this.save();
     });
@@ -426,7 +428,7 @@ export class GameScreen {
   openProfile() {
     this.save();
     openProfile(this.app, {
-      stats: { research: this.game.research.totalLevels(), playSeconds: this.game.playSeconds },
+      stats: { ...this.game.leaderStats(), breakdown: this.game.stats.breakdown() },
       sync: this.syncCloud({ now: true }),
       onLogout: () => this.exit(),
     });
@@ -472,6 +474,7 @@ export class GameScreen {
         this.inventory.update();
         this.updateResearchBadge();
         if (this.research.isOpen) this.research.refresh();
+        this.checkTier();
       } else this.inventory.update();
       this.debugPanel.update();
       if (this.questDirty) {
@@ -513,6 +516,35 @@ export class GameScreen {
     this.dirty = true;
   }
 
+  // A new rank tier (settings.json → leaderboard.tiers): confetti and a word from Bridgy.
+  checkTier() {
+    const { index, tier } = tierOf(this.app.config.settings, this.game.stats.points());
+    if (index > this.tier) {
+      this.app.audio.play('quest');
+      if (this.prefs.animations !== false && !this.prefs.lowGraphics) this.app.confetti.burst(window.innerWidth / 2, window.innerHeight / 3, 90);
+      this.bridgy.toast(this.app.i18n.t('ui.tierUp', { icon: tier.icon, name: tier.name }), 6000);
+    }
+    this.tier = index;
+  }
+
+  // «You moved up»: today's place after an online save (one count query; the first only remembers).
+  async checkPlace(stats) {
+    const today = dayKey(Date.now(), (this.app.config.settings.leaderboard || {}).timeZone);
+    const value = stats.day.key === today ? Math.floor(stats.day.points) : 0;
+    if (value < 1) return;
+    try {
+      const place = await this.app.account.place(`d${today}`, value);
+      const last = this.dayPlace;
+      this.dayPlace = { today, place };
+      if (last && last.today === today && place < last.place && !this.destroyed) {
+        const t = this.app.i18n.t;
+        this.bridgy.toast(t('ui.movedUp', { place: place === 1 ? t('ui.ordinalFirst') : t('ui.ordinal', { n: place }) }), 6000);
+      }
+    } catch (e) {
+      console.warn("Today's place not checked:", e); // the save itself worked; the next one tries again
+    }
+  }
+
   // ------------------------------------------------------------------ saving
 
   // The browser copy is written on every save; the online copy by syncCloud().
@@ -538,13 +570,14 @@ export class GameScreen {
     this.cloudDirty = this.cloudSoon = false;
     this.lastPush = Date.now();
     const t = this.app.i18n.t;
-    const stats = { research: this.game.research.totalLevels(), playSeconds: this.game.playSeconds };
+    const stats = this.game.leaderStats();
     this.pushing = this.app.account
       .saveOnline(this.lastData, stats, keepalive)
       .then(
         () => {
           if (this.syncFailed) this.app.toast(t('ui.syncBack'));
           this.syncFailed = false;
+          if (!keepalive) this.checkPlace(stats);
           return true;
         },
         (e) => {
@@ -571,6 +604,7 @@ export class GameScreen {
   async exit() {
     if (this.leaving) return;
     this.leaving = true;
+    this.game.runner.stop('exit', true); // a running program's code words go into this last save
     this.save();
     const saved = await Promise.race([this.syncCloud({ now: true }), new Promise((r) => setTimeout(() => r(false), 5000))]);
     if (!saved) this.app.toast(this.app.i18n.t('ui.logoutOffline'), 'warn');

@@ -27,6 +27,17 @@
   display: block;
   image-rendering: pixelated;
   filter: drop-shadow(0 6px 0 rgba(23, 58, 122, 0.25));
+  transition:
+    opacity 0.2s ease,
+    translate 0.2s ease;
+}
+.bridgy-portrait img.swap {
+  opacity: 0;
+  translate: 0 24px;
+}
+.friend .bridgy-portrait {
+  width: 170px; /* the students' pictures are taller than Bridgy */
+  margin-right: -12px;
 }
 .bridgy-box {
   position: relative;

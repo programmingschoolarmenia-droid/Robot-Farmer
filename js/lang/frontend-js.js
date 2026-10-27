@@ -29,12 +29,15 @@ export function parseProgram(source, moduleName = 'main') {
     throw e;
   }
   annotate(ast, moduleName);
+  ast._source = source; // for counting code words (codeWords.js)
   return ast;
 }
 
-// Marks each node with `_call` when evaluating it may call a function.
+// Marks each node with `_call` when evaluating it may call a function. `_ran` is set by the
+// interpreter to the run id when a statement executes.
 function annotate(node, mod) {
   node._mod = mod;
+  node._ran = 0;
   let call = false;
   for (const key in node) {
     if (SKIP_KEYS.has(key) || key.charCodeAt(0) === 95 /* _ */) continue;
