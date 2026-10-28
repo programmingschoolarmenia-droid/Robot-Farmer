@@ -7,11 +7,12 @@ import { parseProgram } from '../lang/frontend-js.js';
 import { checkProgram } from '../lang/gate.js';
 import { suggestNames } from '../core/util.js';
 import { DIRECTIONS } from './world.js';
+import { SEASON_NAMES, WEATHER_NAMES } from './calendar.js';
 
 export const ENTITY_NAMES = ['Grass', 'Bush', 'Tree', 'Carrot', 'Pumpkin', 'Dead_Pumpkin', 'Sunflower', 'Cactus', 'Hedge', 'Treasure', 'Apple', 'Dinosaur'];
 export const ITEM_NAMES = ['Hay', 'Wood', 'Carrot', 'Pumpkin', 'Power', 'Water', 'Fertilizer', 'Weird_Substance', 'Cactus', 'Bone', 'Gold', 'Fish'];
 export const GROUND_NAMES = ['Grassland', 'Soil', 'Pond'];
-export const FISH_NAMES = ['Carp', 'Barbel', 'Trout', 'Golden_Fish'];
+export const FISH_NAMES = ['Carp', 'Barbel', 'Trout', 'Golden_Fish', 'Whitefish', 'Catfish'];
 
 // Python habits → JavaScript (shown in "not defined" errors).
 const PYTHON_HINTS = {
@@ -68,6 +69,8 @@ export class GameApi {
     mk('Items', ITEM_NAMES);
     mk('Grounds', GROUND_NAMES);
     mk('Fishes', FISH_NAMES);
+    mk('Seasons', SEASON_NAMES);
+    mk('Weathers', WEATHER_NAMES);
     mk('Hats', Object.keys(this.settings.hats || { Straw_Hat: {} }));
     mk('Unlocks', this.game.config.research.nodes.map((n) => n.id));
     this.directions = {};
@@ -581,6 +584,16 @@ export class GameApi {
       },
       { gen: true },
     );
+
+    // --- research: Calendar (the same season and weather for everyone, from the real clock)
+    const calendar = (I, group, key) => {
+      api.getter(I);
+      const s = game.calendar.state;
+      return s ? this.enums[group].get(s[key]) : null;
+    };
+    this.def('getSeason', (I) => calendar(I, 'Seasons', 'season'));
+    this.def('getWeather', (I) => calendar(I, 'Weathers', 'weather'));
+    this.def('getNextWeather', (I) => calendar(I, 'Weathers', 'next'));
 
     // --- farm reset helper
     this.def('clear', (I) => {

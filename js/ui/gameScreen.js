@@ -12,7 +12,11 @@ import { openSettings } from './settingsModal.js';
 import { describeError, describeWarning } from './errorText.js';
 import { openProfile, accountErrorText, tierOf } from './account.js';
 import { openBook } from './book.js';
+import { openModal } from './modal.js';
 import { formatClock, dayKey } from '../core/util.js';
+import { SEASON_NAMES } from '../engine/calendar.js';
+
+const CALENDAR_ICONS = { Spring: '🌸', Summer: '🌻', Autumn: '🍂', Winter: '❄️', Sunny: '☀️', Rain: '🌧️', Storm: '⛈️', Heat: '🔥', Snow: '🌨️' };
 
 // Warnings Bridgy explains in a dialog the first time they happen.
 const TEACH_WARNINGS = new Set(['plant_wrongGround', 'plant_cost', 'plant_entityLocked', 'hatLocked', 'indexOutOfRange', 'notEnoughItem']);
@@ -98,6 +102,7 @@ export class GameScreen {
       h('button', { class: 'btn mobile-tab', dataset: { tab: id }, onclick: () => this.setTab(id) }, h('span', { class: 'ico' }, icon), label, id === 'storage' ? this.tabBadge : null),
     );
     this.farmSizeLabel = h('span', { class: 'muted' });
+    this.calendarChip = h('button', { class: 'btn btn-sm calendar-chip', title: t('ui.tvButton'), hidden: true, onclick: () => this.openTv() });
     this.farmStage = h('div', { class: 'farm-stage' });
     this.codePanel = h('section', { class: 'panel code-panel' });
     this.inventoryList = h('ul', { class: 'inventory-list' });
@@ -123,7 +128,7 @@ export class GameScreen {
       h(
         'main',
         { class: 'game-main' },
-        h('section', { class: 'panel farm-panel' }, h('div', { class: 'panel-head' }, '🌾 ', t('ui.farm'), h('span', { class: 'spacer' }), this.farmSizeLabel), this.farmStage),
+        h('section', { class: 'panel farm-panel' }, h('div', { class: 'panel-head' }, '🌾 ', t('ui.farm'), h('span', { class: 'spacer' }), this.calendarChip, this.farmSizeLabel), this.farmStage),
         this.codePanel,
         (this.sidePanel = h(
           'aside',
@@ -191,6 +196,7 @@ export class GameScreen {
       }),
     });
     this.updateFarmLabel();
+    this.updateCalendarChip();
   }
 
   // Wide screens: the farm panel is a square as tall as the main area (leaving room for the
@@ -291,6 +297,19 @@ export class GameScreen {
       if (this.first('pumpkinDied')) this.bridgy.say([{ emotion: 'worried', text: this.bridgy.pick('pumpkinDied') }], { key: 'died' });
     });
     on('worldResized', () => this.updateFarmLabel());
+    on('calendar', (e) => {
+      this.updateCalendarChip();
+      if (!e.before) return;
+      if (e.day !== e.before.day) this.showLuck();
+      this.calendarToast(e.season !== e.before.season, e.weather !== e.before.weather);
+    });
+    on('lightning', (e) => {
+      app.audio.play('thunder');
+      if (e.charged && this.first('lightning')) this.bridgy.toast(t('ui.lightningFirst', { n: this.game.calendar.lightningMultiplier }), 7000);
+    });
+    on('useItem', (e) => {
+      if (e.item === 'Water' && this.game.calendar.frozen && this.game.world.tile(e.x, e.y).ground !== 'Pond' && this.first('winterWater')) this.bridgy.toast(t('ui.winterWater'), 7000);
+    });
     on('items', () => {
       this.itemsDirty = true;
     });
@@ -300,6 +319,105 @@ export class GameScreen {
     if (this.ui.firsts.includes(key)) return false;
     this.ui.firsts.push(key);
     return true;
+  }
+
+  // ------------------------------------------------------------------ calendar (seasons, weather, luck)
+
+  // «📺 🍂 Աշուն 🌧️» in the farm panel's head; it opens Bridgy's TV.
+  updateCalendarChip() {
+    const s = this.game.calendar.state;
+    this.calendarChip.hidden = !s;
+    if (s) this.calendarChip.replaceChildren(`📺 ${CALENDAR_ICONS[s.season]}`, h('span', { class: 'btn-label' }, this.app.i18n.t(`seasons.${s.season}`)), CALENDAR_ICONS[s.weather]);
+  }
+
+  // The plants that grow fast in a season (settings.json → entities.X.seasons).
+  fastCrops(season) {
+    const { i18n } = this.app;
+    return Object.entries(this.game.settings.entities)
+      .filter(([, e]) => e.seasons && e.seasons.includes(season))
+      .map(([name]) => i18n.entity(name))
+      .join(', ');
+  }
+
+  seasonText(season) {
+    const t = this.app.i18n.t;
+    const crops = this.fastCrops(season);
+    const name = t(`seasons.${season}`);
+    const text = `${CALENDAR_ICONS[season]} ${crops ? t('ui.seasonStart', { season: name, crops }) : t('ui.seasonStartPlain', { season: name })}`;
+    return season === 'Winter' ? `${text} ${t('ui.winterInfo')}` : text;
+  }
+
+  weatherInfo(weather) {
+    const c = this.game.settings.calendar || {};
+    return this.app.i18n.t(`ui.weatherInfo.${weather}`, { n: weather === 'Heat' ? c.heatEvaporation ?? 3 : this.game.calendar.lightningMultiplier });
+  }
+
+  weatherText(weather) {
+    const t = this.app.i18n.t;
+    return `${CALENDAR_ICONS[weather]} ${t('ui.weatherFirst', { weather: t(`weathers.${weather}`), info: this.weatherInfo(weather) })}`;
+  }
+
+  // Bridgy announces today's luck once a day.
+  showLuck() {
+    const s = this.game.calendar.state;
+    if (!s || !s.luck || this.ui.luckDay === s.day) return;
+    this.ui.luckDay = s.day;
+    this.bridgy.toast(this.app.i18n.t('ui.luckToday', { text: s.luck.text }), 9000);
+  }
+
+  // One toast for a new season (every time) and a weather seen for the first time.
+  calendarToast(newSeason, newWeather) {
+    const s = this.game.calendar.state;
+    const parts = [];
+    if (newSeason) {
+      this.first('season');
+      parts.push(this.seasonText(s.season));
+    }
+    if (newWeather && s.weather !== 'Sunny' && this.first(`weather_${s.weather}`)) parts.push(this.weatherText(s.weather));
+    if (parts.length) this.bridgy.toast(parts.join(' '), 5000 + 2500 * parts.length);
+  }
+
+  // After the intro: today's luck, and what the season and the weather do (the first time).
+  greetCalendar() {
+    if (this.destroyed || !this.game.calendar.state) return;
+    this.showLuck();
+    this.calendarToast(!this.ui.firsts.includes('season'), true);
+  }
+
+  // Bridgy's TV: today's luck, the season and the weather with live countdowns.
+  openTv() {
+    const t = this.app.i18n.t;
+    const body = h('div', { class: 'tv' });
+    const render = () => {
+      const s = this.game.calendar.state;
+      if (!s) return;
+      const now = this.game.stats.clock();
+      const next = (ends, label) => h('span', { class: 'muted' }, ` · ${t('ui.tvNext', { time: formatClock((ends - now) / 1000), next: label })}`);
+      const nextSeason = SEASON_NAMES[(SEASON_NAMES.indexOf(s.season) + 1) % SEASON_NAMES.length];
+      const crops = this.fastCrops(s.season);
+      body.replaceChildren(
+        s.luck ? h('div', { class: 'tv-row' }, h('b', {}, t('ui.tvLuck')), h('div', {}, s.luck.text)) : '',
+        h(
+          'div',
+          { class: 'tv-row' },
+          h('b', {}, `${CALENDAR_ICONS[s.season]} ${t(`seasons.${s.season}`)}`),
+          next(s.seasonEnds, `${CALENDAR_ICONS[nextSeason]} ${t(`seasons.${nextSeason}`)}`),
+          crops ? h('div', {}, t('ui.tvFast', { crops })) : '',
+          s.season === 'Winter' ? h('div', {}, t('ui.winterInfo')) : '',
+        ),
+        h(
+          'div',
+          { class: 'tv-row' },
+          h('b', {}, `${CALENDAR_ICONS[s.weather]} ${t(`weathers.${s.weather}`)}`),
+          next(s.weatherEnds, `${CALENDAR_ICONS[s.next]} ${t(`weathers.${s.next}`)}`),
+          h('div', {}, this.weatherInfo(s.weather)),
+        ),
+        h('p', { class: 'muted tv-note' }, t('ui.tvSame')),
+      );
+    };
+    render();
+    const timer = setInterval(render, 1000);
+    openModal({ title: `📺 ${t('ui.tvTitle')}`, body, className: 'tv-modal', onClose: () => clearInterval(timer) });
   }
 
   explainError(err) {
@@ -376,9 +494,10 @@ export class GameScreen {
         onDone: () => {
           this.ui.introDone = true;
           this.save();
+          setTimeout(() => this.greetCalendar(), 1500);
         },
       });
-    }
+    } else setTimeout(() => this.greetCalendar(), 1500);
     this.quests.check();
   }
 

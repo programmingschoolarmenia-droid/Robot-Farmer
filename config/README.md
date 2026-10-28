@@ -66,6 +66,7 @@ Each plant has:
 | `giant` | (Pumpkin) giant yield: n³ up to `cubeUntil`, then n²×`bigMultiplier` | |
 | `petals`, `minForBonus`, `bonusMultiplier` | (Sunflower) petals range and the big-sunflower bonus | |
 | `sizes` | (Cactus) size range | `[0, 9]` |
+| `seasons` | The plant's favourite seasons (`Spring`, `Summer`, `Autumn`, `Winter`): it grows `calendar.inSeason` times faster in them and `calendar.outOfSeason` times as fast in the others. No `seasons` = the same speed all year | `["Spring", "Autumn"]` |
 
 ### `water`, `fertilizer`, `power`, `megafarm`, `maze`, `dinosaur`, `polyculture`, `fishing`
 | Section | Fields |
@@ -77,13 +78,36 @@ Each plant has:
 | `maze` | `research`, `maxReuses` (how many times the treasure can be moved) |
 | `dinosaur` | `research`, `appleCost`, `moveTicks`, `speedupPerApple` |
 | `polyculture` | `research`, `entities`, `distance`, `baseMultiplier` |
-| `fishing` | `research`, `castSeconds` (one cast at the base speed; speed upgrades make it faster), `fish` (`Carp`, `Barbel`, `Trout`, `Golden_Fish`, each `{ "chance": 70, "amount": 1 }`: chance weight and how many fish it gives, doubled by every research level after the first), `hat` (unlocked by the first golden fish) |
+| `fishing` | `research`, `castSeconds` (one cast at the base speed; speed upgrades make it faster), `fish` (`Carp`, `Barbel`, `Trout`, `Golden_Fish`, `Whitefish`, `Catfish`, each `{ "chance": 70, "amount": 1 }`: chance weight and how many fish it gives, doubled by every research level after the first; optional `"seasons": ["Winter"]` / `"weather": ["Rain", "Storm"]` = the fish bites only then), `hat` (unlocked by the first golden fish) |
 
 **Fishing:** `porel()` digs a pond under the drone (plants can't grow there; `herkel()` fills it
 in again). `ogtagorcel(Irer.Jur)` fills it with water (a pond does not dry out); when
 `jriQanak()` is 1 the pond is full and `dzknorsel()` catches a random fish: Karas, Kogak, Ishkhan
-or the golden fish. The fish (`Irer.Dzuk`) go to the storage, count for the leaderboard and pay
-for the next fishing levels.
+or the golden fish, in winter also Sig (whitefish) and in the rain Loqo (catfish). The fish
+(`Irer.Dzuk`) go to the storage, count for the leaderboard and pay for the next fishing levels.
+
+### `calendar` (seasons, weather, luck of the day)
+Seasons, weather and the luck of the day follow the **real clock**, so every student has the
+same season, weather and luck at the same moment (the whole class sees the snow together, and the
+Today list stays fair). Delete the whole section to turn seasons off.
+
+| Field | Meaning | Default |
+|---|---|---|
+| `seasonMinutes` | Length of one season. With 15 every hour is a year: spring from :00, summer from :15, autumn from :30, winter from :45 | `15` |
+| `weatherMinutes` | How often the weather changes | `5` |
+| `inSeason`, `outOfSeason` | Growth speed of a plant in its favourite seasons (`entities.X.seasons`) and in the others | `2`, `0.5` |
+| `weather` | Weather weights for each season, e.g. `"Winter": { "Sunny": 4, "Snow": 6 }`. Weathers: `Sunny` (☀️), `Rain` (🌧️ every square and pond is full of water), `Storm` (⛈️ rain + lightning), `Heat` (🔥 water dries faster), `Snow` (🌨️) | see the file |
+| `heatEvaporation` | Water dries this many times faster in the heat | `3` |
+| `lightningSeconds`, `lightningMultiplier` | In a storm, lightning strikes a random square every N seconds of game time; a plant there gets ⚡ and its harvest is × this | `15`, `3` |
+| `luck` | Luck of the day: one per day (the date in `leaderboard.timeZone`), each once in every run of N days, never the same two days in a row. Each: `text` and any of `yield` (`{ "Carrot": 2 }`: everything gathered of that item, i.e. harvests, fish, maze gold or bones, × a whole number), `fish` (`{ "Golden_Fish": 3 }`: catch chance ×), `growth` (all plants grow × this), `pumpkinDeath` (`0` = pumpkins don't rot) | 12 lucks |
+
+In winter the water on the ground is ice: watering still works, but it doesn't speed plants up
+(ponds still have fish). Students see the season and the weather on the **📺** button above the
+farm; it opens Bridgy's TV with today's luck, what grows fast now and when the next season and
+weather come. Bridgy also says a word at every new season. In code (research «Օրացույց»):
+`sezon()` → `Sezonner.Garun / Amar / Ashun / Dzmer`, `exanak()` and `hajordExanak()` (the next
+weather) → `Exanakner.Arev / Andzrev / Amprop / Shog / Dzyun`. If you change `seasonMinutes`,
+also change «15 րոպե» in the Calendar lesson (`bridgy.json → lessons.Calendar`).
 
 ### `hats`
 Hat colours: `{ "Red_Hat": { "color": "#ef4444", "band": "#7f1d1d" } }`. To add a hat, add it
@@ -154,7 +178,8 @@ Each card in `nodes`:
 }
 ```
 Icons available: `hat, goldhat, speed, grass, expand, carrot, water, tree, fertilizer,
-sunflower, maze, drones, pumpkin, cactus, polyculture, dinosaur, secret, debugger, trophy, fishing`.
+sunflower, maze, drones, pumpkin, cactus, polyculture, dinosaur, secret, debugger, trophy, fishing,
+calendar`.
 A function that is not listed in any card is available from the start (e.g. `harvest` = `havaqel()`).
 A `label` with code (`tnkel()`, `while`…) should use the Armenian command names.
 

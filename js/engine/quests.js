@@ -2,7 +2,7 @@
 import { walk } from '../lang/frontend-js.js';
 
 // Quests inserted after saves kept only the position (index) of the current quest.
-const ADDED_LATER = new Set(['buy_fishing', 'fill_pond', 'fish_20', 'golden_fish']);
+const ADDED_LATER = new Set(['buy_fishing', 'fill_pond', 'fish_20', 'golden_fish', 'buy_calendar', 'season_code']);
 
 export class QuestTracker {
   constructor(game, saved = {}) {

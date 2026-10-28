@@ -515,6 +515,30 @@
   color: var(--ink-faint);
   font-size: 0.85rem;
 }
+/* 📺 season · weather (opens Bridgy's TV) */
+.calendar-chip {
+  gap: 4px;
+  padding: 2px 8px;
+}
+.tv {
+  display: grid;
+  gap: 10px;
+  line-height: 1.45;
+}
+.tv-row {
+  padding: 8px 12px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper-2);
+}
+.tv .muted {
+  font-weight: 600;
+  color: var(--ink-faint);
+}
+.tv-note {
+  margin: 0;
+  font-size: 0.85rem;
+}
 
 .farm-panel .farm-stage {
   position: relative;

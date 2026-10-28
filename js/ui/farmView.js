@@ -5,6 +5,8 @@ import { formatCount } from '../core/util.js';
 const MAX_TILE_CSS = 80;
 const MEADOW_TILE_CSS = 48;
 const SWAY = new Set(['Grass', 'Bush', 'Tree', 'Carrot', 'Sunflower']);
+// Colour laid over the meadow and the ground in each season (spring keeps the plain colours).
+const SEASON_TINT = { Summer: 'rgba(255, 210, 90, 0.10)', Autumn: 'rgba(205, 110, 35, 0.20)', Winter: 'rgba(236, 244, 255, 0.62)' };
 const PARTICLE_COLORS = {
   Grass: ['#ffd541', '#f9a31b', '#9cdb43'],
   Bush: ['#59c135', '#14a02e', '#df3e23'],
@@ -102,6 +104,10 @@ export class FarmView {
         this.puff(e.x, e.y, ['#249fde', '#a6fcdb', '#ffffff'], 12);
         if (e.species === 'Golden_Fish') this.puff(e.x, e.y, ['#ffd541', '#fffc40', '#ffffff'], 24);
         this.popup(e.x, e.y, `+${formatCount(e.amount)}`, `fish:${e.species}`);
+      }),
+      ev.on('lightning', (e) => {
+        this.bolt = { x: e.x, y: e.y, at: performance.now() };
+        this.puff(e.x, e.y, ['#ffd541', '#fffc40', '#ffffff'], 14);
       }),
       ev.on('mazeCreated', (e) => {
         for (let y = e.y0; y < e.y0 + e.size; y++) for (let x = e.x0; x < e.x0 + e.size; x++) this.puff(x, y, ['#bc4a9b', '#1a7a3e'], 2);
@@ -277,14 +283,22 @@ export class FarmView {
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(this.bg, 0, 0);
     ctx.drawImage(this.groundCache, this.ox, this.oy);
+    const cal = game.calendar;
+    const tint = cal.state && SEASON_TINT[cal.state.season];
+    if (tint) {
+      ctx.fillStyle = tint;
+      ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
 
-    // wet ground; pond water grows from the middle as the pond fills
+    // wet ground (ice in winter, lighter while it rains on everything); pond water grows from the
+    // middle as the pond fills
     for (const tl of world.tiles) {
       if (tl.ground === 'Pond') {
         if (tl.water > 0.01) this.drawPondWater(ctx, tl, t);
       } else if (tl.water > 0.01) {
         const r = this.tileRect(tl.x, tl.y);
-        ctx.fillStyle = `rgba(30, 70, 150, ${Math.min(0.42, tl.water * 0.45)})`;
+        const a = cal.raining ? 0.22 : Math.min(0.42, tl.water * 0.45);
+        ctx.fillStyle = cal.frozen ? `rgba(200, 235, 255, ${a})` : `rgba(30, 70, 150, ${a})`;
         ctx.fillRect(r.x, r.y, r.s, r.s);
       }
     }
@@ -341,6 +355,7 @@ export class FarmView {
         ctx.drawImage(sprite, r.x, r.y, r.s, r.s);
       }
       if (e.data.infected) this.drawInfection(ctx, r, t);
+      if (e.data.charged) this.drawCharge(ctx, r, t);
       if (fx && e.progress >= 1 && e.type !== 'Dead_Pumpkin') this.drawSparkle(ctx, r, t, hash(tl.x, tl.y));
     }
     for (const g of giants) this.drawGiant(ctx, g, now);
@@ -366,6 +381,7 @@ export class FarmView {
       this.updateTip();
     }
 
+    this.drawWeather(ctx, t);
     this.drawEffects(ctx);
   }
 
@@ -418,6 +434,10 @@ export class FarmView {
     const r = this.tileRect(tl.x, tl.y);
     const s = r.s * (0.45 + 0.55 * tl.water);
     ctx.drawImage(this.sprites.get('pondWater'), r.x + (r.s - s) / 2, r.y + (r.s - s) / 2, s, s);
+    if (this.game.calendar.frozen) {
+      ctx.fillStyle = 'rgba(225, 245, 255, 0.55)'; // ice (fish still bite under it)
+      ctx.fillRect(r.x + (r.s - s) / 2, r.y + (r.s - s) / 2, s, s);
+    }
     if (this.fx && this.game.world.isFullPond(tl)) {
       // a glint gliding over the full pond
       const k = (t * 0.4 + hash(tl.x, tl.y) / 97) % 1;
@@ -437,6 +457,70 @@ export class FarmView {
       const s = Math.max(2, r.s / 12);
       ctx.fillRect(px, py, s, s);
     }
+  }
+
+  // ⚡ on a plant charged by lightning (its harvest is bigger).
+  drawCharge(ctx, r, t) {
+    const p = Math.max(2, r.s / 16);
+    const x = r.x + r.s * 0.7;
+    const y = r.y + r.s * 0.06;
+    ctx.globalAlpha = 0.7 + 0.3 * Math.sin(t * 8);
+    ctx.fillStyle = '#ffd541';
+    ctx.fillRect(x + p, y, p * 2, p * 2);
+    ctx.fillRect(x, y + p * 2, p * 3, p);
+    ctx.fillRect(x - p, y + p * 3, p * 2, p * 2);
+    ctx.globalAlpha = 1;
+  }
+
+  // Rain or snow falling over the farm (positions come from the time, nothing to keep), a darker sky
+  // while it rains, and the flash and bolt of the last lightning.
+  drawWeather(ctx, t) {
+    const s = this.game.calendar.state;
+    if (!s) return;
+    const W = this.canvas.width;
+    const H = this.canvas.height;
+    const wet = this.game.calendar.raining;
+    const sky = wet ? 'rgba(25, 35, 70, 0.16)' : s.weather === 'Heat' ? 'rgba(255, 140, 50, 0.09)' : null;
+    if (sky) {
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, W, H);
+    }
+    if (!this.fx) return;
+    if (wet || s.weather === 'Snow') {
+      const p = Math.max(1, this.dpr);
+      for (let i = 0; i < (wet ? 70 : 50); i++) {
+        const seed = hash(i, 7);
+        const k = (t * (wet ? 0.9 + (seed % 40) / 100 : 0.12 + (seed % 30) / 300) + (seed % 1000) / 1000) % 1;
+        const y = k * (H + 20 * p) - 10 * p;
+        const x0 = (((seed >>> 10) % 1000) / 1000) * W;
+        if (wet) {
+          ctx.fillStyle = 'rgba(140, 180, 245, 0.6)';
+          ctx.fillRect((((x0 - k * H * 0.15) % W) + W) % W, y, p, p * 7);
+        } else {
+          const x = x0 + Math.sin(t * 1.5 + i) * 6 * p;
+          ctx.fillStyle = 'rgba(90, 120, 170, 0.45)'; // a shadow, so flakes show on the snow too
+          ctx.fillRect(x + p, y + p, p * 2.5, p * 2.5);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(x, y, p * 2.5, p * 2.5);
+        }
+      }
+    }
+    const b = this.bolt;
+    if (!b) return;
+    const age = (performance.now() - b.at) / 400;
+    if (age >= 1) {
+      this.bolt = null;
+      return;
+    }
+    ctx.fillStyle = `rgba(255, 255, 240, ${0.3 * (1 - age)})`;
+    ctx.fillRect(0, 0, W, H);
+    const { cx, cy } = this.center(b.x, b.y);
+    ctx.strokeStyle = `rgba(255, 245, 160, ${1 - age})`;
+    ctx.lineWidth = Math.max(2, this.tile / 14);
+    ctx.beginPath();
+    ctx.moveTo(cx + this.tile * 0.3, 0);
+    for (let i = 1; i <= 5; i++) ctx.lineTo(i === 5 ? cx : cx + (i % 2 ? -1 : 1) * this.tile * 0.25, (cy * i) / 5);
+    ctx.stroke();
   }
 
   drawSparkle(ctx, r, t, seed) {

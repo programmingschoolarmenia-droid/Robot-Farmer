@@ -122,6 +122,10 @@ export class GameAudio {
       case 'died':
         this.tone(200, 0.25, { type: 'sawtooth', vol: 0.05, slide: -120 });
         break;
+      case 'thunder':
+        this.tone(90, 0.7, { type: 'sawtooth', vol: 0.05, slide: -45, attack: 0.02 });
+        this.tone(60, 0.9, { type: 'square', vol: 0.03, slide: -15, delay: 0.08, attack: 0.05 });
+        break;
       default:
         break;
     }

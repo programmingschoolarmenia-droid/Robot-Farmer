@@ -28,6 +28,11 @@ step is needed.
 * **Change the game** (prices, speeds, plants, texts, Bridgy's lessons and quests): see
   [`config/README.md`](config/README.md).
 * **Prepare a lesson quickly:** set `"unlockAll": true` in `config/settings.json → dev`.
+* **Seasons, weather and the luck of the day** follow the real clock, the same for every
+  student: with the default 15-minute seasons, each hour is spring (:00), summer (:15), autumn
+  (:30) and winter (:45). Plants grow faster in their favourite season, rain waters the whole
+  farm, lightning makes a plant give ×3, and every day has its own luck. The 📺 button above the
+  farm shows it all; see [`config/README.md`](config/README.md) → `calendar`.
 * **Accounts and the leaderboard:** students register with a username and a password.
   Their farm is saved in their account. The leaderboard has Today / This month / All time
   tabs (points for everything gathered, rare items count more) and a «best code» tab

@@ -97,9 +97,27 @@
     },
     "catchFish": {
       "sig": "dzknorsel()",
-      "doc": "Լիքը լճակում բռնում է պատահական ձուկ և վերադարձնում այն՝ Dzkner.Karas, Dzkner.Kogak, Dzkner.Ishkhan կամ Dzkner.Voske։ Ձկները գնում են պահեստ։",
+      "doc": "Լիքը լճակում բռնում է պատահական ձուկ և վերադարձնում այն՝ Dzkner.Karas, Dzkner.Kogak, Dzkner.Ishkhan կամ Dzkner.Voske, ձմռանը՝ նաև Dzkner.Sig, իսկ անձրևին՝ Dzkner.Loqo։ Ձկները գնում են պահեստ։",
       "example": "let dzuk = dzknorsel();\ntpel(dzuk);",
       "notes": "Մեկ նետումը մի քանի վայրկյան է տևում։ Եթե լճակ չկա կամ այն լիքը չէ, վերադարձնում է null։"
+    },
+    "getSeason": {
+      "sig": "sezon()",
+      "doc": "Վերադարձնում է հիմիկվա սեզոնը՝ Sezonner.Garun (գարուն), Sezonner.Amar (ամառ), Sezonner.Ashun (աշուն) կամ Sezonner.Dzmer (ձմեռ)։ Սեզոնը նույնն է բոլոր աշակերտների համար։",
+      "example": "if (sezon() === Sezonner.Ashun) {\n  tpel(\"Աշուն է 🍂\");\n}",
+      "notes": "Ամեն բույս իր սիրած սեզոնին աճում է 2 անգամ արագ, իսկ մյուսներին՝ 2 անգամ դանդաղ (տես «Բույսեր» բաժինը)։"
+    },
+    "getWeather": {
+      "sig": "exanak()",
+      "doc": "Վերադարձնում է հիմիկվա եղանակը՝ Exanakner.Arev (արև), Exanakner.Andzrev (անձրև), Exanakner.Amprop (ամպրոպ), Exanakner.Shog (շոգ) կամ Exanakner.Dzyun (ձյուն)։",
+      "example": "if (exanak() !== Exanakner.Andzrev) {\n  ogtagorcel(Irer.Jur);\n}",
+      "notes": "Անձրևն ու ամպրոպը ջրում են բոլոր վանդակներն ու լճակները, շոգին ջուրն արագ է չորանում, իսկ ամպրոպի կայծակը ⚡ բույսին տալիս է 3 անգամ շատ բերք։"
+    },
+    "getNextWeather": {
+      "sig": "hajordExanak()",
+      "doc": "Վերադարձնում է հաջորդ եղանակը, որը կսկսվի մի քանի րոպեից (եղանակի կանխատեսում)։",
+      "example": "if (hajordExanak() === Exanakner.Andzrev) {\n  tpel(\"Շուտով անձրև կգա 🌧\");\n}",
+      "notes": "Օգտակար է առաջ մտածելու համար, օրինակ՝ ջուր չծախսել, եթե շուտով անձրև է գալու։"
     },
     "measure": {
       "sig": "chapel(ուղղություն)",

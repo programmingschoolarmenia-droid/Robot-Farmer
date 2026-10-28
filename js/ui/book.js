@@ -106,6 +106,7 @@ function plantCard(app, game, p) {
       fact(t('ui.plantWhere'), (cfg.grounds || []).includes('Grassland') ? t('ui.groundAny') : t('ui.groundSoil')),
       fact(t('ui.plantCost'), Object.keys(cost).length ? i18n.costText(cost) : t('ui.free')),
       fact(t('ui.plantGrow'), t('ui.seconds', { n: min === max ? min : `${min}–${max}` })),
+      cfg.seasons ? fact(t('ui.plantSeasons'), cfg.seasons.map((s) => t(`seasons.${s}`)).join(', ')) : null,
       fact(t('ui.plantYield'), Object.entries(cfg.yield || {}).map(([item, n]) => `${n * mult} ${i18n.item(item)}`).join(', ')),
     );
   }

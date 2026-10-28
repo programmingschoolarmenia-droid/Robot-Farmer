@@ -332,6 +332,15 @@
       "grants": { "functions": ["getPosX", "getPosY", "getWorldSize", "numItems"] }
     },
     {
+      "id": "Calendar",
+      "icon": "calendar",
+      "name": "Օրացույց",
+      "description": "sezon(), exanak() և hajordExanak()։ Կոդդ իմանում է սեզոնն ու եղանակը և կարող է ձմռանը մի բան անել, իսկ ամռանը՝ ուրիշ։",
+      "parents": ["Operators"],
+      "tiers": [{ "Wood": 100, "Carrot": 50 }],
+      "grants": { "functions": ["getSeason", "getWeather", "getNextWeather"] }
+    },
+    {
       "id": "Variables",
       "label": "a = 2",
       "name": "Փոփոխականներ",

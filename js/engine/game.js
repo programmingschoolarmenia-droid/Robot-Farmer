@@ -6,6 +6,7 @@ import { Research } from './research.js';
 import { World, DIRECTIONS } from './world.js';
 import { Drone } from './drone.js';
 import { Stats } from './stats.js';
+import { Calendar } from './calendar.js';
 import { GameApi, FISH_NAMES } from './api.js';
 import { Runner } from './runner.js';
 import { locOf } from '../lang/errors.js';
@@ -21,6 +22,7 @@ export class Game {
     this.time = save.time ?? 0;
     this.playSeconds = save.playSeconds ?? 0;
     this.stats = new Stats(this, save.stats);
+    this.calendar = new Calendar(this); // before the world: World.sync reads its rules
     this.inventory = new Inventory(this, save.inventory ?? (this.settings.game && this.settings.game.startItems) ?? {});
     const extra = this.settings.dev && this.settings.dev.extraItems;
     if (extra && !save.inventory) for (const [k, v] of Object.entries(extra)) this.inventory.items.set(k, v);
@@ -50,6 +52,7 @@ export class Game {
       this.dino = { drone: this.mainDrone, tail: save.dino.tail || [], apple: save.dino.apple || null, eaten: save.dino.eaten || 0 };
     } else if (this.mainDrone.hat === 'Dinosaur_Hat') this.mainDrone.hat = 'Straw_Hat';
     this.events.on('research', (e) => this.onResearch(e));
+    this.calendar.update(this.time);
   }
 
   get settings() {
@@ -86,6 +89,7 @@ export class Game {
   // Called every animation frame with real seconds elapsed.
   update(realDt) {
     const g = this.settings.game || {};
+    this.calendar.update(this.time);
     const dt = Math.min(realDt, g.maxFrameSeconds ?? 0.1) * this.speed;
     this.playSeconds += Math.min(realDt, 0.25);
     const runner = this.runner;
@@ -106,6 +110,7 @@ export class Game {
     this.time = t;
     this.produce('Water', this.settings.water, dt);
     this.produce('Fertilizer', this.settings.fertilizer, dt);
+    this.calendar.tick(dt, t);
   }
 
   // Passive production of water tanks / fertilizer after their research.
@@ -184,7 +189,7 @@ export class Game {
     const dino = this.dino;
     if (!dino) return;
     const length = dino.eaten + 1;
-    const bones = length * length * Math.pow(2, Math.max(0, this.dinoLevel() - 1));
+    const bones = length * length * Math.pow(2, Math.max(0, this.dinoLevel() - 1)) * this.calendar.yieldOf('Bone');
     for (const p of dino.tail) {
       const tl = this.world.tileNoWrap(p.x, p.y);
       if (tl && tl.entity && tl.entity.type === 'Dinosaur') {
@@ -393,15 +398,16 @@ export class Game {
     return this.world.isFullPond(tile) ? null : 'pondNotFull';
   }
 
-  // A random fish from a full pond (settings.json → fishing). Its fish go to the storage; the first
-  // golden fish also unlocks the fisher's hat. Returns the species.
+  // A random fish from a full pond (settings.json → fishing; some bite only in their seasons or
+  // weather). Its fish go to the storage; the first golden fish also unlocks the fisher's hat.
+  // Returns the species.
   catchFish(drone, tile) {
     const cfg = this.settings.fishing || {};
-    const chance = (f) => (cfg.fish && cfg.fish[f] && cfg.fish[f].chance) || 0;
+    const chance = (f) => this.calendar.fishChance(f, cfg.fish && cfg.fish[f]);
     let r = this.rng.next() * FISH_NAMES.reduce((sum, f) => sum + chance(f), 0);
     const species = FISH_NAMES.find((f) => (r -= chance(f)) < 0) || FISH_NAMES[0];
     const level = this.research.level(cfg.research || 'Fishing');
-    const amount = ((cfg.fish && cfg.fish[species] && cfg.fish[species].amount) || 1) * Math.pow(2, Math.max(0, level - 1));
+    const amount = ((cfg.fish && cfg.fish[species] && cfg.fish[species].amount) || 1) * Math.pow(2, Math.max(0, level - 1)) * this.calendar.yieldOf('Fish');
     this.inventory.add('Fish', amount, { x: tile.x, y: tile.y, drone: drone.id });
     this.stats.recordHarvest(species);
     const hat = species === 'Golden_Fish' && cfg.hat && !this.flags.fisherHat ? cfg.hat : null;

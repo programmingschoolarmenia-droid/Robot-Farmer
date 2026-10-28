@@ -151,6 +151,8 @@ export class SpriteBook {
     this.put('fish:Barbel', fish('#a0694e', '#c08a68', '#71413b', 'whiskers'));
     this.put('fish:Trout', fish('#9fb6c8', '#e3eef5', '#5c7a96', 'spots'));
     this.put('fish:Golden_Fish', fish(PAL.yellow, PAL.brightYellow, PAL.amber, 'sparkles'));
+    this.put('fish:Whitefish', fish('#c7d3dd', '#ffffff', '#8796a5'));
+    this.put('fish:Catfish', fish('#6b6a5e', '#9a9886', '#3f3e36', 'whiskers'));
 
     // --- research icons
     this.put('icon:hat', sideHat('#f2c04d', '#2b6fd6'));
@@ -173,6 +175,7 @@ export class SpriteBook {
     this.put('icon:debugger', magnifier());
     this.put('icon:trophy', trophy());
     this.put('icon:fishing', fishingRod());
+    this.put('icon:calendar', calendarIcon());
 
     // --- hats for the drone (seen from above) and for the leaderboard avatars (from the side)
     const hats = (settings && settings.hats) || {};
@@ -596,6 +599,19 @@ function fishingRod() {
   p.set(13, 13, PAL.white);
   p.outline(PAL.outlineBrown);
   p.line(13, 3, 13, 10, PAL.lightGrey);
+  return p;
+}
+
+// A calendar page: red top, two rings, day squares (today in blue).
+function calendarIcon() {
+  const p = new Pixels();
+  p.rect(2, 3, 12, 11, PAL.white);
+  p.rect(2, 3, 12, 3, PAL.brightRed);
+  for (const x of [4, 7, 10]) for (const y of [8, 11]) p.rect(x, y, 2, 2, PAL.lightGrey);
+  p.rect(10, 11, 2, 2, PAL.sky);
+  p.outline(PAL.outline);
+  p.rect(4, 1, 1, 3, PAL.grey);
+  p.rect(11, 1, 1, 3, PAL.grey);
   return p;
 }
 

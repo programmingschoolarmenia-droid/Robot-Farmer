@@ -36,7 +36,10 @@
     "numDrones": ["dronneriQanak", "դրոններիքանակ"],
     "maxDrones": ["maxDronner", "մաքսդրոններ"],
     "digPond": ["porel", "փորել"],
-    "catchFish": ["dzknorsel", "ձկնորսել"]
+    "catchFish": ["dzknorsel", "ձկնորսել"],
+    "getSeason": ["sezon", "սեզոն"],
+    "getWeather": ["exanak", "եղանակ"],
+    "getNextWeather": ["hajordExanak", "հաջորդեղանակ"]
   },
 
   "constants": {
@@ -52,7 +55,9 @@
     "Grounds": ["Hoxer", "Հողեր"],
     "Hats": ["Glxarkner", "Գլխարկներ"],
     "Unlocks": ["Hetazotutyunner", "Հետազոտություններ"],
-    "Fishes": ["Dzkner", "Ձկներ"]
+    "Fishes": ["Dzkner", "Ձկներ"],
+    "Seasons": ["Sezonner", "Սեզոններ"],
+    "Weathers": ["Exanakner", "Եղանակներ"]
   },
 
   "members": {
@@ -93,7 +98,22 @@
       "Carp": ["Karas", "Կարաս"],
       "Barbel": ["Kogak", "Կողակ"],
       "Trout": ["Ishkhan", "Իշխան"],
-      "Golden_Fish": ["Voske", "Ոսկե"]
+      "Golden_Fish": ["Voske", "Ոսկե"],
+      "Whitefish": ["Sig", "Սիգ"],
+      "Catfish": ["Loqo", "Լոքո"]
+    },
+    "Seasons": {
+      "Spring": ["Garun", "Գարուն"],
+      "Summer": ["Amar", "Ամառ"],
+      "Autumn": ["Ashun", "Աշուն"],
+      "Winter": ["Dzmer", "Ձմեռ"]
+    },
+    "Weathers": {
+      "Sunny": ["Arev", "Արև"],
+      "Rain": ["Andzrev", "Անձրև"],
+      "Storm": ["Amprop", "Ամպրոպ"],
+      "Heat": ["Shog", "Շոգ"],
+      "Snow": ["Dzyun", "Ձյուն"]
     },
     "Hats": {
       "Straw_Hat": ["Cxote", "Ծղոտե"],
@@ -134,6 +154,7 @@
       "Debugger": ["PopoxakanneriPatuhan", "ՓոփոխականներիՊատուհան"],
       "Final": ["VoskeFerma", "ՈսկեՖերմա"],
       "Senses": ["Zgayaranner", "Զգայարաններ"],
+      "Calendar": ["Oracuyc", "Օրացույց"],
       "Variables": ["Popoxakanner", "Փոփոխականներ"],
       "Lists": ["Cucakner", "Ցուցակներ"],
       "Objects": ["Obyektner", "Օբյեկտներ"],

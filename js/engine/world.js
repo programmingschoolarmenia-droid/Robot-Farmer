@@ -164,12 +164,14 @@ export class World {
     const dt = t - tile.lastSync;
     if (!(dt > 0)) return;
     tile.lastSync = t;
+    const cal = this.game.calendar; // seasons and weather (constant during this interval)
+    if (cal.raining) tile.water = 1;
     let effective = dt;
     const w0 = tile.water;
     if (w0 > 0 && tile.ground !== 'Pond') {
       const water = this.settings.water || {};
-      const k = water.evaporationPerSecond ?? 0.01;
-      const boost = (water.maxGrowthMultiplier ?? 5) - 1;
+      const k = cal.raining ? 0 : (water.evaporationPerSecond ?? 0.01) * cal.evaporation;
+      const boost = cal.frozen ? 0 : (water.maxGrowthMultiplier ?? 5) - 1;
       const decay = Math.exp(-k * dt);
       tile.water = w0 * decay;
       if (tile.water < 0.0005) tile.water = 0;
@@ -178,7 +180,7 @@ export class World {
     const e = tile.entity;
     if (e && e.progress < 1) {
       const gt = e.growTime * this.growthSlowdown(tile, e);
-      e.progress = Math.min(1, e.progress + effective / gt);
+      e.progress = Math.min(1, e.progress + (effective * cal.growth(e.type)) / gt);
       if (e.progress >= 1) this.onRipe(tile, e, t);
     }
   }
@@ -190,7 +192,7 @@ export class World {
   onRipe(tile, e, t) {
     if (e.type === 'Pumpkin') {
       const cfg = this.entityConfig('Pumpkin');
-      if (this.rng.chance(cfg.deathChance ?? 0.2)) {
+      if (this.rng.chance(this.game.calendar.pumpkinDeath(cfg.deathChance ?? 0.2))) {
         e.type = 'Dead_Pumpkin';
         this.game.events.emit('pumpkinDied', { x: tile.x, y: tile.y });
         return;
@@ -361,7 +363,7 @@ export class World {
     if (e.type === 'Dinosaur' || e.type === 'Apple') return { ok: false, removed: false };
     const items = {};
     const add = (item, n) => {
-      if (n > 0) items[item] = (items[item] || 0) + n;
+      if (n > 0) items[item] = (items[item] || 0) + n * this.game.calendar.yieldOf(item); // × today's luck
     };
     let tiles = [tile];
 
@@ -371,7 +373,7 @@ export class World {
     }
 
     const cfg = this.entityConfig(e.type);
-    const mult = this.yieldMultiplier(e.type);
+    const mult = this.yieldMultiplier(e.type) * (e.data.charged ? this.game.calendar.lightningMultiplier : 1); // ⚡ storms
     let extra = {};
 
     if (e.type === 'Pumpkin') {
@@ -567,7 +569,7 @@ export class World {
 
   mazeGold() {
     const m = this.maze;
-    return m.size * m.size * this.mazeMultiplier();
+    return m.size * m.size * this.mazeMultiplier() * this.game.calendar.yieldOf('Gold'); // × today's luck
   }
 
   harvestMaze(tile, t) {

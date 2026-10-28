@@ -15,9 +15,12 @@ export function loadConfig() {
   };
 }
 
-// Creates a game. Options: unlockAll, items, seed, levels ({ id: level }), available (all nodes).
+// Creates a game. Options: unlockAll, items, seed, levels ({ id: level }), available (all nodes),
+// clock (real ms: seasons, weather, luck and the leaderboard day). Seasons follow the real clock,
+// so they are off unless a test passes `clock`.
 export function makeGame(opts = {}) {
   const config = loadConfig();
+  if (opts.clock === undefined) delete config.settings.calendar;
   if (opts.available) for (const n of config.research.nodes) n.available = true;
   config.settings.dev.unlockAll = !!opts.unlockAll;
   config.settings.game.frameBudgetMs = 10000;
@@ -25,6 +28,11 @@ export function makeGame(opts = {}) {
   if (opts.items) save.inventory = { ...opts.items };
   if (opts.levels) save.research = { ...opts.levels };
   const game = new Game(config, save);
+  if (opts.clock !== undefined) {
+    game.stats.clock = () => opts.clock;
+    game.calendar.state = null; // read the season again from the test's clock
+    game.calendar.update(game.time);
+  }
   game.speed = opts.speed ?? 1;
   return game;
 }

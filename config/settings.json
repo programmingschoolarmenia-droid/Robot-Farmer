@@ -55,6 +55,7 @@
 
   "entities": {
     "Grass": {
+      "seasons": ["Spring", "Summer"],
       "grounds": ["Grassland", "Soil"],
       "growTime": [0.5, 0.5],
       "yield": { "Hay": 1 },
@@ -62,6 +63,7 @@
       "yieldBaseLevel": 0
     },
     "Bush": {
+      "seasons": ["Spring", "Autumn"],
       "grounds": ["Grassland", "Soil"],
       "growTime": [3.2, 4.8],
       "yield": { "Wood": 1 },
@@ -69,6 +71,7 @@
       "yieldBaseLevel": 0
     },
     "Tree": {
+      "seasons": ["Autumn", "Winter"],
       "grounds": ["Grassland", "Soil"],
       "growTime": [5.6, 8.4],
       "yield": { "Wood": 5 },
@@ -77,6 +80,7 @@
       "neighborSlowdown": 2
     },
     "Carrot": {
+      "seasons": ["Spring", "Autumn"],
       "grounds": ["Soil"],
       "growTime": [4.8, 7.2],
       "yield": { "Carrot": 1 },
@@ -86,6 +90,7 @@
       "plantCostScales": true
     },
     "Pumpkin": {
+      "seasons": ["Autumn"],
       "grounds": ["Soil"],
       "growTime": [0.2, 3.8],
       "yield": { "Pumpkin": 1 },
@@ -97,6 +102,7 @@
       "giant": { "cubeUntil": 5, "bigMultiplier": 6 }
     },
     "Sunflower": {
+      "seasons": ["Summer"],
       "grounds": ["Soil"],
       "growTime": [5.6, 8.4],
       "yield": { "Power": 1 },
@@ -106,6 +112,7 @@
       "bonusMultiplier": 8
     },
     "Cactus": {
+      "seasons": ["Summer"],
       "grounds": ["Soil"],
       "growTime": [1, 1],
       "yield": { "Cactus": 1 },
@@ -184,16 +191,49 @@
   },
 
   "fishing": {
-    "_readme": "Ձկնորսություն։ porel()-ը փորում է լճակ, ogtagorcel(Irer.Jur)-ը լցնում է այն (լիքը = 1), dzknorsel()-ը լիքը լճակում բռնում է պատահական ձուկ։ chance՝ հավանականության կշիռը, amount՝ քանի ձուկ է այն տալիս (հետազոտության ամեն նոր մակարդակ կրկնապատկում է)։ castSeconds՝ մեկ նետման տևողությունը։ hat՝ գլխարկը, որը բացվում է առաջին ոսկե ձկնից։",
+    "_readme": "Ձկնորսություն։ porel()-ը փորում է լճակ, ogtagorcel(Irer.Jur)-ը լցնում է այն (լիքը = 1), dzknorsel()-ը լիքը լճակում բռնում է պատահական ձուկ։ chance՝ հավանականության կշիռը, amount՝ քանի ձուկ է այն տալիս (հետազոտության ամեն նոր մակարդակ կրկնապատկում է), seasons / weather՝ եթե կա, ձուկը բռնվում է միայն այդ սեզոններին / եղանակին (տես calendar)։ castSeconds՝ մեկ նետման տևողությունը։ hat՝ գլխարկը, որը բացվում է առաջին ոսկե ձկնից։",
     "research": "Fishing",
     "castSeconds": 3,
     "fish": {
       "Carp": { "chance": 70, "amount": 1 },
       "Barbel": { "chance": 25, "amount": 3 },
       "Trout": { "chance": 4, "amount": 10 },
-      "Golden_Fish": { "chance": 1, "amount": 50 }
+      "Golden_Fish": { "chance": 1, "amount": 50 },
+      "Whitefish": { "chance": 20, "amount": 5, "seasons": ["Winter"] },
+      "Catfish": { "chance": 15, "amount": 8, "weather": ["Rain", "Storm"] }
     },
     "hat": "Fisher_Hat"
+  },
+
+  "calendar": {
+    "_readme": "Սեզոններ, եղանակ և օրվա բախտ։ Դրանք գնում են իրական ժամացույցով, ուստի բոլոր աշակերտներն ունեն նույն սեզոնը, եղանակը և բախտը։ seasonMinutes՝ մեկ սեզոնի տևողությունը րոպեներով (15 → ամեն ժամ՝ գարուն :00-ից, ամառ :15-ից, աշուն :30-ից, ձմեռ :45-ից), weatherMinutes՝ որքան հաճախ է փոխվում եղանակը։ inSeason / outOfSeason՝ աճի արագությունը բույսի սիրած սեզոնին և մյուսներին (entities.X.seasons)։ Ձմռանը հողի ջուրը սառույց է և բույսերին չի արագացնում։ weather՝ եղանակների կշիռներն ամեն սեզոնին (Arev՝ Sunny, Andzrev՝ Rain, Amprop՝ Storm, Shog՝ Heat, Dzyun՝ Snow)։ Անձրևն ու ամպրոպը լցնում են բոլոր վանդակներն ու լճակները ջրով, heatEvaporation՝ շոգին ջուրը քանի անգամ արագ է գոլորշիանում, lightningSeconds՝ ամպրոպին կայծակը քանի վայրկյանը մեկ է խփում, lightningMultiplier՝ կայծակից լիցքավորված բույսի բերքը քանի անգամ է շատ։ luck՝ օրվա բախտերը (ամեն օր մեկը, երբեք նույնը երկու օր անընդմեջ)՝ yield՝ հավաքածի բազմապատկիչ (բերք, ձուկ, ոսկի, ոսկոր), fish՝ ձկան հավանականության բազմապատկիչ, growth՝ աճի արագություն, pumpkinDeath՝ դդումի փչանալու հավանականություն։ Ամբողջ բաժինը ջնջելով սեզոններն անջատվում են։",
+    "seasonMinutes": 15,
+    "weatherMinutes": 5,
+    "inSeason": 2,
+    "outOfSeason": 0.5,
+    "weather": {
+      "Spring": { "Sunny": 5, "Rain": 4, "Storm": 1 },
+      "Summer": { "Sunny": 5, "Heat": 4, "Storm": 1 },
+      "Autumn": { "Sunny": 4, "Rain": 5, "Storm": 1 },
+      "Winter": { "Sunny": 4, "Snow": 6 }
+    },
+    "heatEvaporation": 3,
+    "lightningSeconds": 15,
+    "lightningMultiplier": 3,
+    "luck": [
+      { "text": "🥕 Գազարի օր։ Գազարը տալիս է կրկնակի բերք։", "yield": { "Carrot": 2 } },
+      { "text": "🎃 Այսօր դդումները չեն փչանում։", "pumpkinDeath": 0 },
+      { "text": "✨ Ոսկե ձկան օր։ Ոսկե ձուկը բռնվում է 3 անգամ ավելի հաճախ։", "fish": { "Golden_Fish": 3 } },
+      { "text": "🌱 Արագ աճի օր։ Բոլոր բույսերն աճում են 1,5 անգամ արագ։", "growth": 1.5 },
+      { "text": "🌻 Արևոտ օր։ Արևածաղիկները տալիս են կրկնակի էներգիա։", "yield": { "Power": 2 } },
+      { "text": "🌵 Կակտուսի օր։ Կակտուսները տալիս են կրկնակի բերք։", "yield": { "Cactus": 2 } },
+      { "text": "🪵 Փայտահատի օր։ Թփերն ու ծառերը տալիս են կրկնակի փայտ։", "yield": { "Wood": 2 } },
+      { "text": "🌾 Խոտի օր։ Խոտը տալիս է եռակի բերք։", "yield": { "Hay": 3 } },
+      { "text": "🐟 Ձկան օր։ Ամեն ձուկ տալիս է կրկնակի։", "yield": { "Fish": 2 } },
+      { "text": "🍀 Հաջողակ լիճ։ Իշխանն ու ոսկե ձուկը բռնվում են 2 անգամ ավելի հաճախ։", "fish": { "Trout": 2, "Golden_Fish": 2 } },
+      { "text": "💰 Գանձի օր։ Լաբիրինթոսի ոսկին կրկնակի է։", "yield": { "Gold": 2 } },
+      { "text": "🦖 Դինոզավրի օր։ Ոսկորները կրկնակի են։", "yield": { "Bone": 2 } }
+    ]
   },
 
   "hats": {

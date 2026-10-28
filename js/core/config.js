@@ -2,6 +2,7 @@
 // (file, field, problem) instead of a broken game.
 import { GameApi, ENTITY_NAMES, ITEM_NAMES, GROUND_NAMES, FISH_NAMES } from '../engine/api.js';
 import { SYNTAX_FEATURES } from '../lang/gate.js';
+import { SEASON_NAMES, WEATHER_NAMES } from '../engine/calendar.js';
 
 export const CONFIG_FILES = ['settings', 'research', 'texts', 'bridgy', 'aliases', 'guide'];
 
@@ -136,6 +137,9 @@ export function validateConfig(config) {
     if (v < min) return err(S, path, `Պետք է լինի ${min} կամ ավելի`);
     if (int && !Number.isInteger(v)) err(S, path, 'Պետք է լինի ամբողջ թիվ');
   };
+  const needNames = (path, v, names) => {
+    if (v !== undefined && (!Array.isArray(v) || !v.every((x) => names.includes(x)))) err(S, path, `Պետք է լինի ցուցակ ${names.join(' / ')} արժեքներով`);
+  };
   if (needObj('game', settings.game)) {
     const g = settings.game;
     needNum('game.maxCallDepth', g.maxCallDepth, { min: 10, int: true, optional: true });
@@ -197,6 +201,7 @@ export function validateConfig(config) {
         err(S, `${p}.grounds`, `Պետք է լինի ցուցակ ${GROUND_NAMES.join(' / ')} արժեքներով`);
       }
       if (e.yieldResearch !== undefined && !ids.has(e.yieldResearch)) err(S, `${p}.yieldResearch`, `Անհայտ հետազոտություն «${e.yieldResearch}»`);
+      needNames(`${p}.seasons`, e.seasons, SEASON_NAMES);
     }
     for (const must of ['Grass', 'Bush']) if (!settings.entities[must]) err(S, `entities.${must}`, 'Պարտադիր բույս է');
   }
@@ -225,8 +230,45 @@ export function validateConfig(config) {
         else {
           needNum(`fishing.fish.${name}.chance`, fish.chance, { min: 0 });
           needNum(`fishing.fish.${name}.amount`, fish.amount, { min: 1 });
+          needNames(`fishing.fish.${name}.seasons`, fish.seasons, SEASON_NAMES);
+          needNames(`fishing.fish.${name}.weather`, fish.weather, WEATHER_NAMES);
         }
       }
+    }
+  }
+  if (settings.calendar !== undefined) {
+    const c = settings.calendar;
+    if (!isObj(c)) err(S, 'calendar', 'Պետք է լինի օբյեկտ');
+    else {
+      needNum('calendar.seasonMinutes', c.seasonMinutes, { min: 1 });
+      needNum('calendar.weatherMinutes', c.weatherMinutes, { min: 1 });
+      for (const key of ['inSeason', 'outOfSeason', 'heatEvaporation', 'lightningSeconds']) needNum(`calendar.${key}`, c[key], { min: 0.01, optional: true });
+      needNum('calendar.lightningMultiplier', c.lightningMultiplier, { min: 1, optional: true });
+      for (const season of SEASON_NAMES) {
+        const w = isObj(c.weather) ? c.weather[season] : null;
+        if (!isObj(w) || !Object.values(w).some((n) => n > 0)) err(S, `calendar.weather.${season}`, 'Պետք է լինի եղանակների կշիռներ, օրինակ՝ { "Sunny": 5, "Rain": 4 }');
+        else
+          for (const [name, n] of Object.entries(w)) {
+            if (!WEATHER_NAMES.includes(name)) err(S, `calendar.weather.${season}.${name}`, `Անհայտ եղանակ «${name}»։ Թույլատրված են՝ ${WEATHER_NAMES.join(', ')}`);
+            else needNum(`calendar.weather.${season}.${name}`, n, { min: 0 });
+          }
+      }
+      if (c.luck !== undefined && !Array.isArray(c.luck)) err(S, 'calendar.luck', 'Պետք է լինի բախտերի ցուցակ');
+      else
+        (c.luck || []).forEach((l, i) => {
+          const p = `calendar.luck[${i}]`;
+          if (!isObj(l) || typeof l.text !== 'string') return err(S, p, 'Պետք է լինի { "text": "…", "yield": { "Carrot": 2 } }');
+          for (const [key, names] of [['yield', ITEM_NAMES], ['fish', FISH_NAMES]]) {
+            if (l[key] !== undefined && !isObj(l[key])) err(S, `${p}.${key}`, 'Պետք է լինի օբյեկտ');
+            else
+              for (const [name, n] of Object.entries(l[key] || {})) {
+                if (!names.includes(name)) err(S, `${p}.${key}.${name}`, `Անհայտ անուն «${name}»`);
+                else needNum(`${p}.${key}.${name}`, n, key === 'yield' ? { min: 1, int: true } : { min: 0 });
+              }
+          }
+          needNum(`${p}.growth`, l.growth, { min: 0.01, optional: true });
+          if (l.pumpkinDeath !== undefined && !(isNum(l.pumpkinDeath) && l.pumpkinDeath >= 0 && l.pumpkinDeath <= 1)) err(S, `${p}.pumpkinDeath`, 'Պետք է լինի 0-ից 1 թիվ');
+        });
     }
   }
   if (settings.leaderboard !== undefined) {
