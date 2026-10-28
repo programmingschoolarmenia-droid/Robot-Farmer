@@ -1,6 +1,6 @@
 // Loads config/*.json and checks them, so a teacher's typo shows a clear message
 // (file, field, problem) instead of a broken game.
-import { GameApi, ENTITY_NAMES, ITEM_NAMES, GROUND_NAMES } from '../engine/api.js';
+import { GameApi, ENTITY_NAMES, ITEM_NAMES, GROUND_NAMES, FISH_NAMES } from '../engine/api.js';
 import { SYNTAX_FEATURES } from '../lang/gate.js';
 
 export const CONFIG_FILES = ['settings', 'research', 'texts', 'bridgy', 'aliases', 'guide'];
@@ -212,6 +212,23 @@ export function validateConfig(config) {
       needNum('online.leaderboardSize', o.leaderboardSize, { min: 1, int: true, optional: true });
     }
   }
+  if (settings.fishing !== undefined) {
+    const f = settings.fishing;
+    if (!isObj(f)) err(S, 'fishing', 'Պետք է լինի օբյեկտ');
+    else {
+      if (!ids.has(f.research)) err(S, 'fishing.research', `Անհայտ հետազոտություն «${f.research}»`);
+      needNum('fishing.castSeconds', f.castSeconds, { min: 0.1 });
+      if (f.hat !== undefined && !settingsHats.includes(f.hat)) err(S, 'fishing.hat', `Անհայտ գլխարկ «${f.hat}» (ավելացրու settings.json → hats)`);
+      for (const name of FISH_NAMES) {
+        const fish = isObj(f.fish) ? f.fish[name] : null;
+        if (!isObj(fish)) err(S, `fishing.fish.${name}`, 'Պետք է լինի { "chance": 70, "amount": 1 }');
+        else {
+          needNum(`fishing.fish.${name}.chance`, fish.chance, { min: 0 });
+          needNum(`fishing.fish.${name}.amount`, fish.amount, { min: 1 });
+        }
+      }
+    }
+  }
   if (settings.leaderboard !== undefined) {
     const lb = settings.leaderboard;
     if (!isObj(lb)) err(S, 'leaderboard', 'Պետք է լինի օբյեկտ');
@@ -261,11 +278,12 @@ export function validateConfig(config) {
       else
         q.goals.forEach((g, j) => {
           const gp = `${p}.goals[${j}]`;
-          const types = ['gain', 'have', 'research', 'harvest', 'code', 'visitAll', 'giant', 'plant', 'use', 'chain'];
+          const types = ['gain', 'have', 'research', 'harvest', 'code', 'visitAll', 'giant', 'plant', 'use', 'chain', 'pond', 'fish'];
           if (!isObj(g) || !types.includes(g.type)) return err(B, gp, `type-ը պետք է լինի՝ ${types.join(', ')}`);
           if ((g.type === 'gain' || g.type === 'have' || g.type === 'use') && !ITEM_NAMES.includes(g.item)) err(B, `${gp}.item`, `Անհայտ իր «${g.item}»`);
           if ((g.type === 'harvest' || g.type === 'plant') && !ENTITY_NAMES.includes(g.entity)) err(B, `${gp}.entity`, `Անհայտ բույս «${g.entity}»`);
           if (g.type === 'research' && !ids.has(g.id)) err(B, `${gp}.id`, `Անհայտ հետազոտություն «${g.id}»`);
+          if (g.type === 'fish' && !FISH_NAMES.includes(g.fish)) err(B, `${gp}.fish`, `Անհայտ ձուկ «${g.fish}»։ Թույլատրված են՝ ${FISH_NAMES.join(', ')}`);
           if (g.type === 'code' && g.feature && !SYNTAX_FEATURES.includes(g.feature)) err(B, `${gp}.feature`, `Անհայտ հնարավորություն «${g.feature}»`);
         });
       if (q.hints !== undefined && (!Array.isArray(q.hints) || !q.hints.every((h) => typeof h === 'string'))) {

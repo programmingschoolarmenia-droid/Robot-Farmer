@@ -4,7 +4,7 @@
 import { clamp } from '../core/util.js';
 import { Maze } from './maze.js';
 
-export const GROUNDS = ['Grassland', 'Soil'];
+export const GROUNDS = ['Grassland', 'Soil', 'Pond']; // saved as their index
 export const DIRECTIONS = {
   North: [0, 1],
   East: [1, 0],
@@ -166,7 +166,7 @@ export class World {
     tile.lastSync = t;
     let effective = dt;
     const w0 = tile.water;
-    if (w0 > 0) {
+    if (w0 > 0 && tile.ground !== 'Pond') {
       const water = this.settings.water || {};
       const k = water.evaporationPerSecond ?? 0.01;
       const boost = (water.maxGrowthMultiplier ?? 5) - 1;
@@ -308,6 +308,7 @@ export class World {
     const cfg = this.settings.entities[type];
     if (!cfg || cfg.plantable === false) return { ok: false, reason: 'notPlantable' };
     if (!this.game.research.hasEntity(type)) return { ok: false, reason: 'entityLocked' };
+    if (tile.ground === 'Pond') return { ok: false, reason: 'pond' };
     if (!(cfg.grounds || ['Grassland', 'Soil']).includes(tile.ground)) return { ok: false, reason: 'wrongGround' };
     const cur = tile.entity;
     if (cur && cur.type !== 'Grass' && cur.type !== 'Dead_Pumpkin') return { ok: false, reason: 'occupied' };
@@ -325,10 +326,30 @@ export class World {
     this.sync(tile, t);
     const g = tile.entity && tile.entity.data.giant;
     if (g) this.breakGiant(g);
+    if (tile.ground === 'Pond') tile.water = 0; // a pond is filled in with earth
     tile.ground = tile.ground === 'Grassland' ? 'Soil' : 'Grassland';
     tile.entity = null;
     this.spawnGrass(tile, t);
     return { ok: true, ground: tile.ground };
+  }
+
+  // Ponds (research Fishing): digPond() makes an empty pit, water from the tanks fills it (it does
+  // not dry out), and a full pond has fish.
+  digPond(tile, t) {
+    const e = tile.entity;
+    if (tile.ground === 'Pond' || (e && (e.type === 'Dinosaur' || e.type === 'Apple'))) return false;
+    if (this.maze && this.maze.contains(tile.x, tile.y)) this.removeMaze(t);
+    this.sync(tile, t);
+    const g = tile.entity && tile.entity.data.giant;
+    if (g) this.breakGiant(g);
+    tile.ground = 'Pond';
+    tile.entity = null;
+    tile.water = 0;
+    return true;
+  }
+
+  isFullPond(tile) {
+    return tile.ground === 'Pond' && tile.water >= 0.999;
   }
 
   // Harvests the tile. Returns { ok, removed, items, tiles, kind }
@@ -638,7 +659,7 @@ export class World {
   toSave() {
     const tiles = this.tiles.map((tl) => {
       const e = tl.entity;
-      const row = { g: tl.ground === 'Soil' ? 1 : 0 };
+      const row = { g: GROUNDS.indexOf(tl.ground) };
       if (tl.water > 0.001) row.w = Math.round(tl.water * 1000) / 1000;
       if (e) {
         row.e = e.type;
@@ -670,7 +691,7 @@ export class World {
     if (Array.isArray(data.tiles) && data.tiles.length === data.w * data.h) {
       data.tiles.forEach((row, i) => {
         const tile = world.tiles[i];
-        tile.ground = row.g === 1 ? 'Soil' : 'Grassland';
+        tile.ground = GROUNDS[row.g] || 'Grassland';
         tile.water = row.w || 0;
         tile.lastSync = t;
         if (row.e) {

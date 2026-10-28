@@ -100,6 +100,7 @@
 .login-card {
   position: relative;
   z-index: 1;
+  margin: auto; /* centred, but scrolls from the top when taller than the screen */
   width: min(760px, 100%);
   display: grid;
   grid-template-columns: 230px 1fr;
@@ -350,22 +351,6 @@
 .board-mine {
   margin-top: 4px;
 }
-.board-old {
-  margin-top: 10px;
-}
-.board-old .board-help {
-  margin: 0 0 6px;
-}
-.board-row.old {
-  cursor: default;
-  background: var(--paper-2);
-}
-.board-row.old:hover {
-  border-color: var(--line);
-}
-.board-row.old .board-value {
-  font-size: 0.85rem;
-}
 .board-who {
   display: flex;
   align-items: center;
@@ -393,10 +378,19 @@
   color: var(--gold-dark);
 }
 .board-help {
-  margin-top: 8px;
+  margin-bottom: 8px;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--ink-faint);
+}
+.question {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin-left: 4px;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 800;
 }
 .board-row.me {
   border-color: var(--gold-dark);

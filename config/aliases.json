@@ -34,7 +34,9 @@
     "waitFor": ["spasel", "սպասել"],
     "hasFinished": ["avartelE", "ավարտելէ"],
     "numDrones": ["dronneriQanak", "դրոններիքանակ"],
-    "maxDrones": ["maxDronner", "մաքսդրոններ"]
+    "maxDrones": ["maxDronner", "մաքսդրոններ"],
+    "digPond": ["porel", "փորել"],
+    "catchFish": ["dzknorsel", "ձկնորսել"]
   },
 
   "constants": {
@@ -49,7 +51,8 @@
     "Items": ["Irer", "Իրեր"],
     "Grounds": ["Hoxer", "Հողեր"],
     "Hats": ["Glxarkner", "Գլխարկներ"],
-    "Unlocks": ["Hetazotutyunner", "Հետազոտություններ"]
+    "Unlocks": ["Hetazotutyunner", "Հետազոտություններ"],
+    "Fishes": ["Dzkner", "Ձկներ"]
   },
 
   "members": {
@@ -78,11 +81,19 @@
       "Weird_Substance": ["TarorinakNyut", "ՏարօրինակՆյութ"],
       "Cactus": ["Kaktus", "Կակտուս"],
       "Bone": ["Voskor", "Ոսկոր"],
-      "Gold": ["Voski", "Ոսկի"]
+      "Gold": ["Voski", "Ոսկի"],
+      "Fish": ["Dzuk", "Ձուկ"]
     },
     "Grounds": {
       "Grassland": ["Margagetin", "Մարգագետին"],
-      "Soil": ["Hox", "Հող"]
+      "Soil": ["Hox", "Հող"],
+      "Pond": ["Lchak", "Լճակ"]
+    },
+    "Fishes": {
+      "Carp": ["Karas", "Կարաս"],
+      "Barbel": ["Kogak", "Կողակ"],
+      "Trout": ["Ishkhan", "Իշխան"],
+      "Golden_Fish": ["Voske", "Ոսկե"]
     },
     "Hats": {
       "Straw_Hat": ["Cxote", "Ծղոտե"],
@@ -92,7 +103,8 @@
       "Purple_Hat": ["Manushakaguyn", "Մանուշակագույն"],
       "Gold_Hat": ["Voske", "Ոսկե"],
       "Dinosaur_Hat": ["Dinozavr", "Դինոզավր"],
-      "Secret_Hat": ["Gaxtni", "Գաղտնի"]
+      "Secret_Hat": ["Gaxtni", "Գաղտնի"],
+      "Fisher_Hat": ["Dzknorsi", "Ձկնորսի"]
     },
     "Unlocks": {
       "Loops": ["Krknutyun", "Կրկնություն"],
@@ -108,6 +120,7 @@
       "Trees": ["Carer", "Ծառեր"],
       "Fertilizer": ["Parartanyut", "Պարարտանյութ"],
       "Sunflowers": ["Arevacaxikner", "Արևածաղիկներ"],
+      "Fishing": ["Dzknorsutyun", "Ձկնորսություն"],
       "Mazes": ["Labirintosner", "Լաբիրինթոսներ"],
       "Megafarm": ["Megaferma", "Մեգաֆերմա"],
       "GoldenHat": ["VoskeGlxark", "ՈսկեԳլխարկ"],

@@ -67,7 +67,7 @@ Each plant has:
 | `petals`, `minForBonus`, `bonusMultiplier` | (Sunflower) petals range and the big-sunflower bonus | |
 | `sizes` | (Cactus) size range | `[0, 9]` |
 
-### `water`, `fertilizer`, `power`, `megafarm`, `maze`, `dinosaur`, `polyculture`
+### `water`, `fertilizer`, `power`, `megafarm`, `maze`, `dinosaur`, `polyculture`, `fishing`
 | Section | Fields |
 |---|---|
 | `water` | `research`, `secondsPerItem` (one tank every N s, halves per level), `tankAmount` (0.25), `evaporationPerSecond`, `maxGrowthMultiplier` (5) |
@@ -77,6 +77,13 @@ Each plant has:
 | `maze` | `research`, `maxReuses` (how many times the treasure can be moved) |
 | `dinosaur` | `research`, `appleCost`, `moveTicks`, `speedupPerApple` |
 | `polyculture` | `research`, `entities`, `distance`, `baseMultiplier` |
+| `fishing` | `research`, `castSeconds` (one cast at the base speed; speed upgrades make it faster), `fish` (`Carp`, `Barbel`, `Trout`, `Golden_Fish`, each `{ "chance": 70, "amount": 1 }`: chance weight and how many fish it gives, doubled by every research level after the first), `hat` (unlocked by the first golden fish) |
+
+**Fishing:** `porel()` digs a pond under the drone (plants can't grow there; `herkel()` fills it
+in again). `ogtagorcel(Irer.Jur)` fills it with water (a pond does not dry out); when
+`jriQanak()` is 1 the pond is full and `dzknorsel()` catches a random fish: Karas, Kogak, Ishkhan
+or the golden fish. The fish (`Irer.Dzuk`) go to the storage, count for the leaderboard and pay
+for the next fishing levels.
 
 ### `hats`
 Hat colours: `{ "Red_Hat": { "color": "#ef4444", "band": "#7f1d1d" } }`. To add a hat, add it
@@ -101,10 +108,7 @@ here, give it a name in `texts.json → hats`, and unlock it from a research car
 The leaderboard has four tabs: **Այսօր** (points gathered today), **Այս ամիս** (this month),
 **Բոլոր ժամանակները** (all-time points) and **💻 Լավագույն կոդ** (code words). Next to each name:
 the drone hat, the tier icon, 🔥 days played in a row, 👑 yesterday's champion and 🏆 last
-month's champion. Clicking a name opens the player's card. Students who have not opened the
-new version yet are listed under **Բոլոր ժամանակները** with ⏳, their research and play time
-(nothing is lost: their farm stays, and their points are counted from everything they ever
-gathered as soon as they log in). In the Profile, students also see
+month's champion. Clicking a name opens the player's card. In the Profile, students also see
 where their points come from, how far the next tier is, and «🎯 Հաջորդը…», the player just
 above them.
 
@@ -150,7 +154,7 @@ Each card in `nodes`:
 }
 ```
 Icons available: `hat, goldhat, speed, grass, expand, carrot, water, tree, fertilizer,
-sunflower, maze, drones, pumpkin, cactus, polyculture, dinosaur, secret, debugger, trophy`.
+sunflower, maze, drones, pumpkin, cactus, polyculture, dinosaur, secret, debugger, trophy, fishing`.
 A function that is not listed in any card is available from the start (e.g. `harvest` = `havaqel()`).
 A `label` with code (`tnkel()`, `while`…) should use the Armenian command names.
 
@@ -185,6 +189,11 @@ A `label` with code (`tnkel()`, `while`…) should use the Armenian command name
   | `visitAll` | — | the drone visits every tile in one run |
   | `giant` | `size` | a giant pumpkin of that size is harvested |
   | `chain` | `size` | that many sorted cacti are harvested at once |
+  | `pond` | — | a full pond is on the farm |
+  | `fish` | `fish`, `amount` | that many fish of a kind (`Carp`, `Barbel`, `Trout`, `Golden_Fish`) are caught |
+
+  The game remembers each player's current quest by its `id`, so quests can be added anywhere in
+  the chain without moving anybody.
 * `reactions` — random short lines (`questDone`, `errorIntro`, `research`, …).
 * `credits` — pages shown after the final research.
 * `portraits` — Bridgy images per emotion (replace with your own pictures if you like).

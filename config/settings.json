@@ -134,7 +134,8 @@
       "Weird_Substance",
       "Cactus",
       "Bone",
-      "Gold"
+      "Gold",
+      "Fish"
     ]
   },
 
@@ -182,6 +183,19 @@
     "baseMultiplier": 5
   },
 
+  "fishing": {
+    "_readme": "Ձկնորսություն։ porel()-ը փորում է լճակ, ogtagorcel(Irer.Jur)-ը լցնում է այն (լիքը = 1), dzknorsel()-ը լիքը լճակում բռնում է պատահական ձուկ։ chance՝ հավանականության կշիռը, amount՝ քանի ձուկ է այն տալիս (հետազոտության ամեն նոր մակարդակ կրկնապատկում է)։ castSeconds՝ մեկ նետման տևողությունը։ hat՝ գլխարկը, որը բացվում է առաջին ոսկե ձկնից։",
+    "research": "Fishing",
+    "castSeconds": 3,
+    "fish": {
+      "Carp": { "chance": 70, "amount": 1 },
+      "Barbel": { "chance": 25, "amount": 3 },
+      "Trout": { "chance": 4, "amount": 10 },
+      "Golden_Fish": { "chance": 1, "amount": 50 }
+    },
+    "hat": "Fisher_Hat"
+  },
+
   "hats": {
     "Straw_Hat": { "color": "#f2c04d", "band": "#2b6fd6" },
     "Blue_Hat": { "color": "#3b82f6", "band": "#1e3a8a" },
@@ -190,7 +204,8 @@
     "Purple_Hat": { "color": "#a855f7", "band": "#4c1d95" },
     "Gold_Hat": { "color": "#facc15", "band": "#a16207" },
     "Dinosaur_Hat": { "color": "#65a30d", "band": "#365314" },
-    "Secret_Hat": { "color": "#111827", "band": "#f59e0b" }
+    "Secret_Hat": { "color": "#111827", "band": "#f59e0b" },
+    "Fisher_Hat": { "color": "#c9a46a", "band": "#285cc4" }
   },
 
   "online": {
@@ -205,7 +220,7 @@
   "leaderboard": {
     "_readme": "Լավագույնների ցուցակ։ points՝ քանի միավոր է տալիս յուրաքանչյուր հավաքած իրը (հազվագյուտ իրերն արժեն ավելի շատ, ջուրն ու պարարտանյութը 0 են, քանի որ գալիս են ինքնիրեն)։ tiers՝ աստիճաններն ըստ բոլոր ժամանակների միավորների (աճման կարգով)։ timeZone՝ օրը սկսվում է այս գոտու կեսգիշերին։",
     "timeZone": "Asia/Yerevan",
-    "points": { "Hay": 1, "Wood": 1, "Carrot": 2, "Pumpkin": 4, "Power": 3, "Water": 0, "Fertilizer": 0, "Weird_Substance": 3, "Cactus": 5, "Bone": 20, "Gold": 20 },
+    "points": { "Hay": 1, "Wood": 1, "Carrot": 2, "Pumpkin": 4, "Power": 3, "Water": 0, "Fertilizer": 0, "Weird_Substance": 3, "Cactus": 5, "Bone": 20, "Gold": 20, "Fish": 3 },
     "tiers": [
       { "name": "Սերմ", "icon": "🌱", "points": 0 },
       { "name": "Ծիլ", "icon": "🌿", "points": 200 },

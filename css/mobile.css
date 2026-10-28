@@ -9,6 +9,7 @@
   .login-card {
     grid-template-columns: minmax(0, 1fr);
     gap: 6px;
+    margin-top: 0;
   }
   .login-hero img {
     width: 110px;

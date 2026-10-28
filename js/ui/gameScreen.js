@@ -276,6 +276,15 @@ export class GameScreen {
     });
     on('plant', () => app.audio.play('plant'));
     on('till', () => app.audio.play('till'));
+    on('dig', () => app.audio.play('till'));
+    on('fish', (e) => {
+      app.audio.play(e.species === 'Golden_Fish' ? 'quest' : 'harvest');
+      if (e.species === 'Golden_Fish') {
+        if (this.prefs.animations !== false && !this.prefs.lowGraphics) app.confetti.burst(window.innerWidth / 2, window.innerHeight / 3, 80);
+        this.bridgy.toast(this.bridgy.pick('goldenFish'));
+      }
+      if (e.hat) setTimeout(() => !this.destroyed && this.bridgy.toast(t('ui.hatUnlocked', { hatName: app.i18n.hat(e.hat) }), 8000), 1200);
+    });
     on('flip', () => app.audio.play('flip'));
     on('pumpkinDied', () => {
       app.audio.play('died');

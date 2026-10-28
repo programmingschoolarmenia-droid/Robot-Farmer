@@ -1,11 +1,14 @@
 // Bridgy's quest chain (config/bridgy.json → quests): tracks goals and progress.
 import { walk } from '../lang/frontend-js.js';
 
+// Quests inserted after saves kept only the position (index) of the current quest.
+const ADDED_LATER = new Set(['buy_fishing', 'fill_pond', 'fish_20', 'golden_fish']);
+
 export class QuestTracker {
   constructor(game, saved = {}) {
     this.game = game;
     this.quests = (game.config.bridgy && game.config.bridgy.quests) || [];
-    this.index = Math.min(saved.index ?? 0, this.quests.length);
+    this.index = startIndex(this.quests, saved);
     this.baseline = saved.baseline || null;
     this.satisfied = saved.satisfied || {};
     this.hintTier = saved.hintTier || 0;
@@ -73,6 +76,14 @@ export class QuestTracker {
       }
       case 'use': {
         const v = (this.baseline && this.baseline.used && this.baseline.used[goal.item]) || 0;
+        return { done: v >= goal.amount, value: Math.min(v, goal.amount), target: goal.amount };
+      }
+      case 'pond': {
+        const v = g.world.tiles.some((tl) => g.world.isFullPond(tl)) ? 1 : 0;
+        return { done: v === 1, value: v, target: 1 };
+      }
+      case 'fish': {
+        const v = Math.max(0, this.harvestedSince(goal.fish));
         return { done: v >= goal.amount, value: Math.min(v, goal.amount), target: goal.amount };
       }
       default:
@@ -232,8 +243,19 @@ export class QuestTracker {
   }
 
   toSave() {
-    return { index: this.index, baseline: this.baseline, satisfied: this.satisfied, hintTier: this.hintTier };
+    const q = this.current();
+    return { index: this.index, id: q ? q.id : null, baseline: this.baseline, satisfied: this.satisfied, hintTier: this.hintTier };
   }
+}
+
+// The current quest of a save: found by its id; older saves counted the list without ADDED_LATER.
+function startIndex(quests, saved) {
+  const byId = quests.findIndex((q) => q.id === saved.id);
+  if (byId >= 0) return byId;
+  if (saved.id !== undefined) return Math.min(saved.index ?? 0, quests.length);
+  const old = quests.filter((q) => !ADDED_LATER.has(q.id));
+  const i = saved.index ?? 0;
+  return i < old.length ? quests.indexOf(old[i]) : quests.length;
 }
 
 function setTimeoutSafe(fn) {

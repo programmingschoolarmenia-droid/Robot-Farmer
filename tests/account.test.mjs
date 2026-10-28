@@ -174,7 +174,7 @@ test('firebase: accounts, farm sync between devices and the leaderboard over RES
   }
 });
 
-test('firebase: a student from the old version keeps everything and moves to the new board', async () => {
+test('firebase: a student from the old version keeps everything and gets points for their history', async () => {
   const fb = createFakeFirebase();
   const realFetch = globalThis.fetch;
   globalThis.fetch = fb.fetch;
@@ -187,8 +187,7 @@ test('firebase: a student from the old version keeps everything and moves to the
     fb.docs.set('saves/vahan', { data: { stringValue: JSON.stringify(old) } });
 
     const a = new Accounts(memory(), { apiKey: 'test-key', projectId: 'test-project' });
-    assert.deepEqual((await a.oldRows()).map((r) => [r.name, r.research, r.playSeconds]), [['Vahan', 4, 36000]]);
-    assert.deepEqual((await a.leaderboard('points')).rows, []);
+    assert.deepEqual((await a.leaderboard('points')).rows, []); // old rows have no points yet
 
     // The first login with the new version: the same farm, points for the whole history.
     await a.login('vahan', 'secret1');
@@ -196,7 +195,7 @@ test('firebase: a student from the old version keeps everything and moves to the
     await a.saveOnline({ v: 1, game: game.toSave() }, game.leaderStats());
     const row = (await a.leaderboard('points')).rows[0];
     assert.deepEqual([row.name, row.points, row.research, row.playSeconds], ['Vahan', 900 + 300 + 50 * 2 + 10 * 20, 4, 36000]);
-    assert.deepEqual(await a.oldRows(), []);
+    assert.equal(fb.docs.get('players/vahan').score, undefined); // the old row is fully replaced
     const saved = JSON.parse(fb.docs.get('saves/vahan').data.stringValue).game;
     assert.deepEqual([saved.playSeconds, saved.research.Expand, saved.stats.totals.Hay, saved.stats.runs], [36000, 2, 900, 40]);
   } finally {

@@ -102,6 +102,9 @@ export class Research {
       }
     }
     this.granted = g;
+    // The fisher's hat is not bought: the first golden fish gives it (game.flags.fisherHat).
+    this.fisherHat = (this.game.config.settings.fishing || {}).hat;
+    if (this.fisherHat) this.hatGate.set(this.fisherHat, null);
   }
 
   hasSyntax(feature) {
@@ -117,7 +120,7 @@ export class Research {
   }
 
   hasHat(name) {
-    return this.granted.hats.has(name) || !this.hatGate.has(name);
+    return this.granted.hats.has(name) || !this.hatGate.has(name) || (name === this.fisherHat && !!this.game.flags.fisherHat);
   }
 
   hasPanel(name) {

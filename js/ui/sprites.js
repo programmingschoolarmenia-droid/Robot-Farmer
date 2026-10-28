@@ -99,6 +99,8 @@ export class SpriteBook {
     // --- ground
     for (let v = 0; v < 4; v++) this.put(`grassland${v}`, grassTile(v + 1));
     for (let v = 0; v < 2; v++) this.put(`soil${v}`, soilTile(v + 7));
+    this.put('pondPit', pondPit());
+    this.put('pondWater', pondWater());
     for (let v = 0; v < 4; v++) this.put(`meadow${v}`, meadowTile(v + 13));
 
     // --- crops from the sheet
@@ -144,6 +146,11 @@ export class SpriteBook {
     this.put('item:Cactus', cactus(6, true));
     this.put('item:Bone', bone());
     this.put('item:Gold', coin());
+    this.put('item:Fish', fish(PAL.sky, PAL.pale, PAL.blue));
+    this.put('fish:Carp', fish('#8f9a5c', '#c2cc84', '#5d6638'));
+    this.put('fish:Barbel', fish('#a0694e', '#c08a68', '#71413b', 'whiskers'));
+    this.put('fish:Trout', fish('#9fb6c8', '#e3eef5', '#5c7a96', 'spots'));
+    this.put('fish:Golden_Fish', fish(PAL.yellow, PAL.brightYellow, PAL.amber, 'sparkles'));
 
     // --- research icons
     this.put('icon:hat', sideHat('#f2c04d', '#2b6fd6'));
@@ -165,6 +172,7 @@ export class SpriteBook {
     this.put('icon:secret', questionIcon());
     this.put('icon:debugger', magnifier());
     this.put('icon:trophy', trophy());
+    this.put('icon:fishing', fishingRod());
 
     // --- hats for the drone (seen from above) and for the leaderboard avatars (from the side)
     const hats = (settings && settings.hats) || {};
@@ -544,6 +552,50 @@ function coin() {
   p.set(5, 4, PAL.white).set(4, 5, PAL.white).set(8, 6, PAL.brightYellow);
   p.rect(7, 6, 2, 4, PAL.amber);
   p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// A pond: the empty pit dug into the ground, and its water (drawn over the pit as it fills).
+function pondPit() {
+  const p = new Pixels();
+  p.rect(0, 0, 16, 16, '#a0694e');
+  p.ellipse(8, 8.5, 7, 6.2, PAL.soilDark);
+  p.ellipse(8, 9.6, 5.4, 4.4, '#4a2a2f');
+  for (const [x, y] of [[4, 2], [8, 2], [12, 3], [2, 6], [14, 7]]) p.set(x, y, '#c08a68');
+  return p;
+}
+
+function pondWater() {
+  const p = new Pixels();
+  p.ellipse(8, 8.5, 6.6, 5.8, PAL.sky);
+  p.shade(PAL.sky, PAL.cyan, PAL.blue);
+  p.set(5, 6, PAL.pale).set(6, 6, PAL.pale).set(10, 10, PAL.pale).set(11, 10, PAL.pale);
+  return p;
+}
+
+// A fish facing left; `marks` adds a species' look (barbel whiskers, trout spots, golden sparkles).
+function fish(body, light, dark, marks = '') {
+  const p = new Pixels();
+  p.ellipse(6.5, 8.5, 5.5, 3.3, body);
+  p.polygon([[10.5, 8.5], [15.2, 4.6], [15.2, 12.4]], body);
+  p.polygon([[5, 5.6], [9, 3.6], [9.6, 6]], body);
+  p.shade(body, light, dark);
+  if (marks === 'spots') for (const [x, y] of [[5, 8], [7, 7], [8, 9], [10, 8]]) p.set(x, y, PAL.brightRed);
+  if (marks === 'whiskers') p.set(1, 10, PAL.darkBrown).set(2, 11, PAL.darkBrown);
+  p.set(3, 7, PAL.outline);
+  p.outline(PAL.outline);
+  if (marks === 'sparkles') for (const [x, y] of [[1, 3], [13, 1], [14, 14], [0, 13]]) p.set(x, y, PAL.white);
+  return p;
+}
+
+function fishingRod() {
+  const p = new Pixels();
+  p.line(2, 14, 12, 2, PAL.brown);
+  p.line(3, 14, 13, 2, PAL.lightBrown);
+  p.disc(13, 12, 1.7, PAL.brightRed);
+  p.set(13, 13, PAL.white);
+  p.outline(PAL.outlineBrown);
+  p.line(13, 3, 13, 10, PAL.lightGrey);
   return p;
 }
 

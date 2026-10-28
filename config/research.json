@@ -172,6 +172,15 @@
       "grants": { "functions": ["measure"], "entities": ["Sunflower"] }
     },
     {
+      "id": "Fishing",
+      "icon": "fishing",
+      "name": "Ձկնորսություն",
+      "description": "Փորիր լճակ porel()-ով, լցրու այն ջրով և ձկնորսիր dzknorsel()-ով։ Ամեն նոր մակարդակ կրկնապատկում է բռնված ձկները։",
+      "parents": ["Watering"],
+      "tiers": [{ "Wood": 300, "Carrot": 200 }, { "Fish": 200 }, { "Fish": 1000 }, { "Fish": 5000 }, { "Fish": 25000 }],
+      "grants": { "functions": ["digPond", "catchFish"] }
+    },
+    {
       "id": "Mazes",
       "icon": "maze",
       "name": "Լաբիրինթոսներ",

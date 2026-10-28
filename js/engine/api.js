@@ -9,8 +9,9 @@ import { suggestNames } from '../core/util.js';
 import { DIRECTIONS } from './world.js';
 
 export const ENTITY_NAMES = ['Grass', 'Bush', 'Tree', 'Carrot', 'Pumpkin', 'Dead_Pumpkin', 'Sunflower', 'Cactus', 'Hedge', 'Treasure', 'Apple', 'Dinosaur'];
-export const ITEM_NAMES = ['Hay', 'Wood', 'Carrot', 'Pumpkin', 'Power', 'Water', 'Fertilizer', 'Weird_Substance', 'Cactus', 'Bone', 'Gold'];
-export const GROUND_NAMES = ['Grassland', 'Soil'];
+export const ITEM_NAMES = ['Hay', 'Wood', 'Carrot', 'Pumpkin', 'Power', 'Water', 'Fertilizer', 'Weird_Substance', 'Cactus', 'Bone', 'Gold', 'Fish'];
+export const GROUND_NAMES = ['Grassland', 'Soil', 'Pond'];
+export const FISH_NAMES = ['Carp', 'Barbel', 'Trout', 'Golden_Fish'];
 
 // Python habits → JavaScript (shown in "not defined" errors).
 const PYTHON_HINTS = {
@@ -66,6 +67,7 @@ export class GameApi {
     mk('Entities', ENTITY_NAMES);
     mk('Items', ITEM_NAMES);
     mk('Grounds', GROUND_NAMES);
+    mk('Fishes', FISH_NAMES);
     mk('Hats', Object.keys(this.settings.hats || { Straw_Hat: {} }));
     mk('Unlocks', this.game.config.research.nodes.map((n) => n.id));
     this.directions = {};
@@ -544,6 +546,41 @@ export class GameApi {
       api.getter(I);
       return game.rng.next();
     });
+
+    // --- research: Fishing (dig a pond, fill it with water, fish)
+    this.def('digPond', (I) => {
+      const tile = api.droneTile(I);
+      const ok = world().digPond(tile, api.now(I));
+      api.act(I, ok);
+      if (ok) game.events.emit('dig', { x: tile.x, y: tile.y, drone: I.drone.id });
+      return ok;
+    });
+
+    this.def(
+      'catchFish',
+      function* catchFish(I, args, node) {
+        const tile = api.droneTile(I);
+        const problem = game.fishProblem(tile, api.now(I));
+        if (problem) {
+          game.warn(problem, { water: Math.round(tile.water * 100) }, node, I.drone);
+          api.act(I, false);
+          return null;
+        }
+        // castSeconds at the base speed, so speed upgrades make casting faster like every action
+        const d = I.drone;
+        const seconds = (api.settings.fishing && api.settings.fishing.castSeconds) ?? 3;
+        const ticks = Math.max(1, Math.round(seconds * ((api.settings.time && api.settings.time.ticksPerSecond) ?? 400)));
+        d.startAnim('fish', d.x, d.y, d.x, d.y, 0, 0, ticks / d.tickRate());
+        d.anim.start = api.now(I);
+        d.anim.end = d.anim.start + ticks / d.tickRate();
+        I.ticks += ticks; // the line is in the water…
+        yield 2; // Y.ACTION
+        game.afterAction(d);
+        if (game.fishProblem(tile, api.now(I))) return null; // the pond was filled in meanwhile
+        return api.enums.Fishes.get(game.catchFish(d, tile));
+      },
+      { gen: true },
+    );
 
     // --- farm reset helper
     this.def('clear', (I) => {

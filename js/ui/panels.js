@@ -194,6 +194,12 @@ export class QuestBar {
         case 'chain':
           chip.append(`🌵 ×${goal.size} ${done ? '✓' : ''}`);
           break;
+        case 'pond':
+          chip.append(`🌊 ${done ? '✓' : '…'}`);
+          break;
+        case 'fish':
+          chip.append(pixelImg(this.app.sprites.url(`fish:${goal.fish}`, 2)), `${p.value}/${p.target}`);
+          break;
         default:
           chip.append(done ? '✓' : '…');
       }

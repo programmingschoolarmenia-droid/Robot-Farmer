@@ -6,7 +6,7 @@ import { Research } from './research.js';
 import { World, DIRECTIONS } from './world.js';
 import { Drone } from './drone.js';
 import { Stats } from './stats.js';
-import { GameApi } from './api.js';
+import { GameApi, FISH_NAMES } from './api.js';
 import { Runner } from './runner.js';
 import { locOf } from '../lang/errors.js';
 import { DIR_BITS } from './maze.js';
@@ -384,6 +384,30 @@ export class Game {
     void count;
     if (any) this.events.emit('useItem', { item: 'Weird_Substance', x: tile.x, y: tile.y, drone: drone.id });
     return any;
+  }
+
+  // Why the drone can't fish here: 'pondNeeded' | 'pondNotFull' | null.
+  fishProblem(tile, t) {
+    this.world.sync(tile, t);
+    if (tile.ground !== 'Pond') return 'pondNeeded';
+    return this.world.isFullPond(tile) ? null : 'pondNotFull';
+  }
+
+  // A random fish from a full pond (settings.json → fishing). Its fish go to the storage; the first
+  // golden fish also unlocks the fisher's hat. Returns the species.
+  catchFish(drone, tile) {
+    const cfg = this.settings.fishing || {};
+    const chance = (f) => (cfg.fish && cfg.fish[f] && cfg.fish[f].chance) || 0;
+    let r = this.rng.next() * FISH_NAMES.reduce((sum, f) => sum + chance(f), 0);
+    const species = FISH_NAMES.find((f) => (r -= chance(f)) < 0) || FISH_NAMES[0];
+    const level = this.research.level(cfg.research || 'Fishing');
+    const amount = ((cfg.fish && cfg.fish[species] && cfg.fish[species].amount) || 1) * Math.pow(2, Math.max(0, level - 1));
+    this.inventory.add('Fish', amount, { x: tile.x, y: tile.y, drone: drone.id });
+    this.stats.recordHarvest(species);
+    const hat = species === 'Golden_Fish' && cfg.hat && !this.flags.fisherHat ? cfg.hat : null;
+    if (hat) this.flags.fisherHat = true;
+    this.events.emit('fish', { species, amount, hat, x: tile.x, y: tile.y, drone: drone.id });
+    return species;
   }
 
   measure(drone, tile) {

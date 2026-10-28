@@ -129,24 +129,17 @@ export class Accounts {
   // A list is reused for a minute (until my next save), so switching tabs costs nothing;
   // `fresh` asks again.
   async leaderboard(field, me = null, fresh = false) {
-    const rows = await this.cached(field, fresh, () => this.backend.query(field, 0, false, this.limit));
+    let c = this.cache.get(field);
+    if (fresh || !c || Date.now() - c.at > 60000) {
+      c = { at: Date.now(), rows: await this.backend.query(field, 0, false, this.limit) };
+      this.cache.set(field, c);
+    }
+    const rows = c.rows;
     if (!me) return { rows, place: 0, rival: null };
     const i = rows.findIndex((r) => r.id === me.id);
     if (i >= 0) return { rows, place: i + 1, rival: rows.slice(0, i).reverse().find((r) => r[field] > me.value) || null };
     const [above, rival] = await Promise.all([this.backend.count(field, me.value), this.backend.query(field, me.value, true, 1)]);
     return { rows, place: above + 1, rival: rival[0] || null };
-  }
-
-  // Rows still in the old format (research and play time only, written by the previous version),
-  // best research first. A player's row turns into the new one as soon as they open the new game.
-  oldRows(fresh = false) {
-    return this.cached('score', fresh, () => this.backend.query('score', -1e9, false, this.limit));
-  }
-
-  async cached(key, fresh, load) {
-    let c = this.cache.get(key);
-    if (fresh || !c || Date.now() - c.at > 60000) this.cache.set(key, (c = { at: Date.now(), rows: await load() }));
-    return c.rows;
   }
 
   // My place (1 = first) in the list of `field` with `value`.

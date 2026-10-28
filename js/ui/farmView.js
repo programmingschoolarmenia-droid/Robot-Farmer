@@ -97,6 +97,12 @@ export class FarmView {
         this.popup(e.x, e.y, `+${formatCount(e.gold)}`, 'item:Gold');
       }),
       ev.on('appleEaten', (e) => this.puff(e.x, e.y, ['#df3e23', '#59c135', '#ffffff'], 10)),
+      ev.on('dig', (e) => this.puff(e.x, e.y, ['#5b3138', '#8e5252', '#a0694e'], 10)),
+      ev.on('fish', (e) => {
+        this.puff(e.x, e.y, ['#249fde', '#a6fcdb', '#ffffff'], 12);
+        if (e.species === 'Golden_Fish') this.puff(e.x, e.y, ['#ffd541', '#fffc40', '#ffffff'], 24);
+        this.popup(e.x, e.y, `+${formatCount(e.amount)}`, `fish:${e.species}`);
+      }),
       ev.on('mazeCreated', (e) => {
         for (let y = e.y0; y < e.y0 + e.size; y++) for (let x = e.x0; x < e.x0 + e.size; x++) this.puff(x, y, ['#bc4a9b', '#1a7a3e'], 2);
       }),
@@ -214,7 +220,7 @@ export class FarmView {
       this.groundState[i] = t.ground;
       const sx = t.x * tile;
       const sy = (world.height - 1 - t.y) * tile;
-      const name = t.ground === 'Soil' ? `soil${hash(t.x, t.y) % 2}` : `grassland${hash(t.x, t.y) % 4}`;
+      const name = t.ground === 'Pond' ? 'pondPit' : t.ground === 'Soil' ? `soil${hash(t.x, t.y) % 2}` : `grassland${hash(t.x, t.y) % 4}`;
       ctx.drawImage(this.sprites.get(name), sx, sy, tile, tile);
     }
   }
@@ -272,9 +278,11 @@ export class FarmView {
     ctx.drawImage(this.bg, 0, 0);
     ctx.drawImage(this.groundCache, this.ox, this.oy);
 
-    // wet ground
+    // wet ground; pond water grows from the middle as the pond fills
     for (const tl of world.tiles) {
-      if (tl.water > 0.01) {
+      if (tl.ground === 'Pond') {
+        if (tl.water > 0.01) this.drawPondWater(ctx, tl, t);
+      } else if (tl.water > 0.01) {
         const r = this.tileRect(tl.x, tl.y);
         ctx.fillStyle = `rgba(30, 70, 150, ${Math.min(0.42, tl.water * 0.45)})`;
         ctx.fillRect(r.x, r.y, r.s, r.s);
@@ -406,6 +414,19 @@ export class FarmView {
     ctx.drawImage(this.sprites.get('pumpkinIcon'), x + size / 2 - w / 2, y + size / 2 - w / 2, w, w);
   }
 
+  drawPondWater(ctx, tl, t) {
+    const r = this.tileRect(tl.x, tl.y);
+    const s = r.s * (0.45 + 0.55 * tl.water);
+    ctx.drawImage(this.sprites.get('pondWater'), r.x + (r.s - s) / 2, r.y + (r.s - s) / 2, s, s);
+    if (this.fx && this.game.world.isFullPond(tl)) {
+      // a glint gliding over the full pond
+      const k = (t * 0.4 + hash(tl.x, tl.y) / 97) % 1;
+      const px = Math.max(2, r.s / 16);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.fillRect(r.x + r.s * (0.25 + 0.4 * k), r.y + r.s * (0.62 - 0.2 * k), px * 2, px);
+    }
+  }
+
   drawInfection(ctx, r, t) {
     const n = 3;
     for (let i = 0; i < n; i++) {
@@ -516,6 +537,26 @@ export class FarmView {
       ctx.fillText(String(d.id), dw * 0.42, -dh * 0.35);
     }
     ctx.restore();
+    if (a && a.kind === 'fish' && game.time >= a.start && game.time < a.end) {
+      // fishing: a line from the drone down to a float bobbing on the water, below the drone
+      const bx = cx + tile * 0.24;
+      const by = cy + tile * 0.4 + (fx ? Math.sin(t * 6) * tile * 0.03 : 0);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.lineWidth = Math.max(1.5, this.dpr * 1.5);
+      ctx.beginPath();
+      ctx.moveTo(cx + dw * 0.24, cy + dh * 0.1);
+      ctx.lineTo(bx, by);
+      ctx.stroke();
+      const rb = Math.max(3, tile * 0.07);
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(bx, by, rb, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#df3e23';
+      ctx.beginPath();
+      ctx.arc(bx, by, rb, Math.PI, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   // ------------------------------------------------------------------ effects
