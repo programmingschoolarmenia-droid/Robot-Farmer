@@ -350,6 +350,22 @@
 .board-mine {
   margin-top: 4px;
 }
+.board-old {
+  margin-top: 10px;
+}
+.board-old .board-help {
+  margin: 0 0 6px;
+}
+.board-row.old {
+  cursor: default;
+  background: var(--paper-2);
+}
+.board-row.old:hover {
+  border-color: var(--line);
+}
+.board-row.old .board-value {
+  font-size: 0.85rem;
+}
 .board-who {
   display: flex;
   align-items: center;

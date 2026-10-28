@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Accounts, playerRow, boardField } from '../js/storage/account.js';
+import { Game } from '../js/engine/game.js';
 import { createFakeFirebase } from './fakeFirebase.mjs';
+import { loadConfig } from './helpers.mjs';
 
 // In-memory stand-in for LocalStorageAdapter.
 function memory() {
@@ -167,6 +169,36 @@ test('firebase: accounts, farm sync between devices and the leaderboard over RES
     phone.session.expires = 0;
     assert.equal(await codeOf(phone.loadSave()), 'relogin');
     assert.equal(await codeOf(new Accounts(memory(), { ...cfg, apiKey: 'bad' }).register('newkid', 'secret1')), 'config');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test('firebase: a student from the old version keeps everything and moves to the new board', async () => {
+  const fb = createFakeFirebase();
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = fb.fetch;
+  try {
+    // As the previous version left it: a research-only row and a farm save with all gathered items.
+    const int = (n) => ({ integerValue: String(n) });
+    fb.users.set('vahan@bridgys-farm.app', { password: 'secret1', displayName: 'Vahan' });
+    fb.docs.set('players/vahan', { name: { stringValue: 'Vahan' }, research: int(4), playSeconds: int(36000), score: int(4e7 - 36000) });
+    const old = { v: 1, game: { playSeconds: 36000, research: { Loops: 1, Speed: 1, Expand: 2 }, stats: { totals: { Hay: 900, Wood: 300, Carrot: 50, Gold: 10 }, runs: 40 } } };
+    fb.docs.set('saves/vahan', { data: { stringValue: JSON.stringify(old) } });
+
+    const a = new Accounts(memory(), { apiKey: 'test-key', projectId: 'test-project' });
+    assert.deepEqual((await a.oldRows()).map((r) => [r.name, r.research, r.playSeconds]), [['Vahan', 4, 36000]]);
+    assert.deepEqual((await a.leaderboard('points')).rows, []);
+
+    // The first login with the new version: the same farm, points for the whole history.
+    await a.login('vahan', 'secret1');
+    const game = new Game(loadConfig(), (await a.loadSave()).game);
+    await a.saveOnline({ v: 1, game: game.toSave() }, game.leaderStats());
+    const row = (await a.leaderboard('points')).rows[0];
+    assert.deepEqual([row.name, row.points, row.research, row.playSeconds], ['Vahan', 900 + 300 + 50 * 2 + 10 * 20, 4, 36000]);
+    assert.deepEqual(await a.oldRows(), []);
+    const saved = JSON.parse(fb.docs.get('saves/vahan').data.stringValue).game;
+    assert.deepEqual([saved.playSeconds, saved.research.Expand, saved.stats.totals.Hay, saved.stats.runs], [36000, 2, 900, 40]);
   } finally {
     globalThis.fetch = realFetch;
   }

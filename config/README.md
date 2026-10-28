@@ -101,7 +101,10 @@ here, give it a name in `texts.json → hats`, and unlock it from a research car
 The leaderboard has four tabs: **Այսօր** (points gathered today), **Այս ամիս** (this month),
 **Բոլոր ժամանակները** (all-time points) and **💻 Լավագույն կոդ** (code words). Next to each name:
 the drone hat, the tier icon, 🔥 days played in a row, 👑 yesterday's champion and 🏆 last
-month's champion. Clicking a name opens the player's card. In the Profile, students also see
+month's champion. Clicking a name opens the player's card. Students who have not opened the
+new version yet are listed under **Բոլոր ժամանակները** with ⏳, their research and play time
+(nothing is lost: their farm stays, and their points are counted from everything they ever
+gathered as soon as they log in). In the Profile, students also see
 where their points come from, how far the next tier is, and «🎯 Հաջորդը…», the player just
 above them.
 

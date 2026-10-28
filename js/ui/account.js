@@ -174,14 +174,15 @@ export function leaderboardView(app, me = null, before = null) {
     try {
       await before;
       const meRow = me && { id: me.id, ...playerRow(app.account.user.name, me) };
-      const [board, champs] = await Promise.all([
+      const [board, champs, old] = await Promise.all([
         app.account.leaderboard(field, meRow && { id: meRow.id, value: meRow[field] || 0 }, refresh),
         app.account.champions(`d${prevDayKey(today)}`, `m${prevMonthKey(today.slice(0, 6))}`).catch((e) => {
           console.warn('Champions not loaded:', e);
           return null;
         }),
+        tab === 'all' ? app.account.oldRows(refresh) : [],
       ]);
-      if (mine === seq) body.replaceChildren(...boardContent(app, { ...board, tab, field, today, me: meRow, champs }));
+      if (mine === seq) body.replaceChildren(...boardContent(app, { ...board, tab, field, today, me: meRow, champs, old }));
     } catch (e) {
       if (mine === seq) body.replaceChildren(h('div', { class: 'board-note form-error' }, accountErrorText(app.i18n, e)));
     }
@@ -203,13 +204,26 @@ function boardContent(app, ctx) {
   const crowns = [champs && champs.day && t('ui.championDay', { name: champs.day.name }), champs && champs.month && t('ui.championMonth', { name: champs.month.name })];
   if (crowns.some(Boolean)) out.push(h('div', { class: 'board-champs' }, crowns.filter(Boolean).map((c) => h('span', {}, c))));
   if (rows.length) out.push(h('ol', { class: 'board' }, rows.map((r, i) => boardRow(app, r, i + 1, ctx))));
-  else out.push(h('div', { class: 'board-note' }, t({ day: 'ui.leadersEmptyDay', code: 'ui.leadersEmptyCode' }[tab] || 'ui.leadersEmpty')));
+  else if (!ctx.old.length) out.push(h('div', { class: 'board-note' }, t({ day: 'ui.leadersEmptyDay', code: 'ui.leadersEmptyCode' }[tab] || 'ui.leadersEmpty')));
   const myValue = me ? me[field] || 0 : 0;
   if (myValue > 0 && !rows.some((r) => r.id === me.id)) out.push(h('ol', { class: 'board board-mine' }, boardRow(app, me, place, ctx)));
   if (rival) out.push(h('div', { class: 'board-place' }, t(tab === 'code' ? 'ui.rivalCode' : 'ui.rivalPoints', { name: rival.name, n: formatCount(rival[field] - myValue) })));
   else if (myValue > 0) out.push(h('div', { class: 'board-place' }, t('ui.rivalFirst')));
+  if (ctx.old.length) out.push(h('div', { class: 'board-old' }, h('div', { class: 'board-help' }, t('ui.boardOld')), h('ol', { class: 'board' }, ctx.old.map((r) => oldRow(app, r)))));
   out.push(h('div', { class: 'board-help' }, t(tab === 'code' ? 'ui.boardCodeHelp' : 'ui.boardPointsHelp')));
   return out;
+}
+
+// A player who has not opened the new version yet: the research and play time of their old row.
+function oldRow(app, r) {
+  return h(
+    'li',
+    { class: 'board-row old' },
+    h('span', { class: 'board-rank' }, '⏳'),
+    avatar(app, r.name, r.hat, 'small'),
+    h('span', { class: 'board-who' }, h('span', { class: 'board-name' }, r.name)),
+    h('span', { class: 'board-value', title: `${app.i18n.t('ui.colResearch')} · ${app.i18n.t('ui.colTime')}` }, `🔬 ${r.research || 0} · ⏱ ${formatClock(r.playSeconds || 0)}`),
+  );
 }
 
 function boardRow(app, r, place, ctx) {
