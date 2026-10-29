@@ -142,7 +142,14 @@
       "Cactus",
       "Bone",
       "Gold",
-      "Fish"
+      "Fish",
+      "Flour",
+      "Jam",
+      "Lavash",
+      "Gata",
+      "Ghapama",
+      "Grilled_Fish",
+      "Star"
     ]
   },
 
@@ -245,7 +252,8 @@
     "Gold_Hat": { "color": "#facc15", "band": "#a16207" },
     "Dinosaur_Hat": { "color": "#65a30d", "band": "#365314" },
     "Secret_Hat": { "color": "#111827", "band": "#f59e0b" },
-    "Fisher_Hat": { "color": "#c9a46a", "band": "#285cc4" }
+    "Fisher_Hat": { "color": "#c9a46a", "band": "#285cc4" },
+    "Mayor_Hat": { "color": "#3b2a6b", "band": "#e8b04a" }
   },
 
   "online": {
@@ -260,7 +268,7 @@
   "leaderboard": {
     "_readme": "Լավագույնների ցուցակ։ points՝ քանի միավոր է տալիս յուրաքանչյուր հավաքած իրը (հազվագյուտ իրերն արժեն ավելի շատ, ջուրն ու պարարտանյութը 0 են, քանի որ գալիս են ինքնիրեն)։ tiers՝ աստիճաններն ըստ բոլոր ժամանակների միավորների (աճման կարգով)։ timeZone՝ օրը սկսվում է այս գոտու կեսգիշերին։",
     "timeZone": "Asia/Yerevan",
-    "points": { "Hay": 1, "Wood": 1, "Carrot": 2, "Pumpkin": 4, "Power": 3, "Water": 0, "Fertilizer": 0, "Weird_Substance": 3, "Cactus": 5, "Bone": 20, "Gold": 20, "Fish": 3 },
+    "points": { "Hay": 1, "Wood": 1, "Carrot": 2, "Pumpkin": 4, "Power": 3, "Water": 0, "Fertilizer": 0, "Weird_Substance": 3, "Cactus": 5, "Bone": 20, "Gold": 20, "Fish": 3, "Flour": 25, "Jam": 25, "Lavash": 60, "Gata": 150, "Ghapama": 200, "Grilled_Fish": 120, "Star": 100 },
     "tiers": [
       { "name": "Սերմ", "icon": "🌱", "points": 0 },
       { "name": "Ծիլ", "icon": "🌿", "points": 200 },

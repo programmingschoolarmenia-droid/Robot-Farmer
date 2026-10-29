@@ -164,14 +164,16 @@ export class World {
     const dt = t - tile.lastSync;
     if (!(dt > 0)) return;
     tile.lastSync = t;
-    const cal = this.game.calendar; // seasons and weather (constant during this interval)
-    if (cal.raining) tile.water = 1;
+    const cal = this.game.calendar; // seasons and weather (constant during this interval); glass keeps them out
+    const glass = !!tile.glass;
+    const raining = cal.raining && !glass;
+    if (raining) tile.water = 1;
     let effective = dt;
     const w0 = tile.water;
     if (w0 > 0 && tile.ground !== 'Pond') {
       const water = this.settings.water || {};
-      const k = cal.raining ? 0 : (water.evaporationPerSecond ?? 0.01) * cal.evaporation;
-      const boost = cal.frozen ? 0 : (water.maxGrowthMultiplier ?? 5) - 1;
+      const k = raining ? 0 : (water.evaporationPerSecond ?? 0.01) * (glass ? 1 : cal.evaporation);
+      const boost = cal.frozen && !glass ? 0 : (water.maxGrowthMultiplier ?? 5) - 1;
       const decay = Math.exp(-k * dt);
       tile.water = w0 * decay;
       if (tile.water < 0.0005) tile.water = 0;
@@ -179,8 +181,12 @@ export class World {
     }
     const e = tile.entity;
     if (e && e.progress < 1) {
+      if (this.machineConfig(e.type)) {
+        if (e.data.making) e.progress = Math.min(1, e.progress + dt / e.growTime); // fixed time, nothing speeds it up
+        return;
+      }
       const gt = e.growTime * this.growthSlowdown(tile, e);
-      e.progress = Math.min(1, e.progress + (effective * cal.growth(e.type)) / gt);
+      e.progress = Math.min(1, e.progress + (effective * cal.growth(e.type, glass) * this.game.boost('growth')) / gt);
       if (e.progress >= 1) this.onRipe(tile, e, t);
     }
   }
@@ -361,6 +367,7 @@ export class World {
     if (!e) return { ok: false, removed: false };
     if (this.maze && this.maze.contains(tile.x, tile.y)) return this.harvestMaze(tile, t);
     if (e.type === 'Dinosaur' || e.type === 'Apple') return { ok: false, removed: false };
+    if (this.machineConfig(e.type)) return this.collect(tile, e);
     const items = {};
     const add = (item, n) => {
       if (n > 0) items[item] = (items[item] || 0) + n * this.game.calendar.yieldOf(item); // × today's luck
@@ -636,6 +643,60 @@ export class World {
     return (cfg.baseMultiplier ?? 5) * Math.pow(2, lvl - 1);
   }
 
+  // ------------------------------------------------------------------ kitchen machines (village.json → machines)
+
+  machineConfig(type) {
+    const v = this.game.config.village;
+    return (v && v.machines && v.machines[type]) || null;
+  }
+
+  // Builds a machine on an empty or grassy square. Returns { ok, reason, cost }
+  build(tile, type, t) {
+    this.sync(tile, t);
+    const cfg = this.machineConfig(type);
+    if (!cfg || !this.game.research.hasMachine(type)) return { ok: false, reason: 'locked' };
+    const e = tile.entity;
+    if (tile.ground === 'Pond' || (this.maze && this.maze.contains(tile.x, tile.y)) || (e && e.type !== 'Grass')) return { ok: false, reason: 'occupied' };
+    if (!this.game.inventory.pay(cfg.cost || {}, 'build')) return { ok: false, reason: 'cost', cost: cfg.cost };
+    tile.entity = { type, progress: 0, growTime: 1, data: {} };
+    return { ok: true };
+  }
+
+  // Starts a recipe (its ingredients come from the storage). Returns { ok, reason, machine, cost }
+  make(tile, item, t) {
+    this.sync(tile, t);
+    const e = tile.entity;
+    const cfg = e && this.machineConfig(e.type);
+    if (!cfg) return { ok: false, reason: 'noMachine' };
+    if (e.data.making) return { ok: false, reason: e.progress >= 1 ? 'ready' : 'busy', machine: e.type };
+    const recipe = cfg.recipes && cfg.recipes[item];
+    if (!recipe) return { ok: false, reason: 'wrongMachine', machine: e.type };
+    if (!this.game.inventory.pay(recipe.in, 'make')) return { ok: false, reason: 'cost', machine: e.type, cost: recipe.in };
+    e.data.making = item;
+    e.progress = 0;
+    e.growTime = recipe.seconds;
+    return { ok: true, machine: e.type };
+  }
+
+  // havaqel() on a machine takes what is ready (× today's luck); an unfinished one is left alone.
+  collect(tile, e) {
+    if (!e.data.making || e.progress < 1) return { ok: false, removed: false };
+    const item = e.data.making;
+    e.data.making = null;
+    e.progress = 0;
+    return { ok: true, removed: true, items: { [item]: this.game.calendar.yieldOf(item) }, tiles: [tile], type: e.type };
+  }
+
+  // Greenhouse glass (village → Greenhouse): seasons and weather don't reach the square. Returns { ok, reason, cost }
+  glaze(tile, t) {
+    if (tile.glass) return { ok: false, reason: 'already' };
+    const cost = ((this.game.config.village || {}).greenhouse || {}).cost || {};
+    this.sync(tile, t);
+    if (!this.game.inventory.pay(cost, 'glass')) return { ok: false, reason: 'cost', cost };
+    tile.glass = true;
+    return { ok: true };
+  }
+
   // ------------------------------------------------------------------ water / fertilizer
 
   addWater(tile, amount, t) {
@@ -646,7 +707,7 @@ export class World {
   fertilize(tile, t) {
     this.sync(tile, t);
     const e = tile.entity;
-    if (!e || e.progress >= 1) return false;
+    if (!e || e.progress >= 1 || this.machineConfig(e.type)) return false;
     const f = this.settings.fertilizer || {};
     const seconds = f.secondsSaved ?? 2;
     const gt = e.growTime * this.growthSlowdown(tile, e);
@@ -663,6 +724,7 @@ export class World {
       const e = tl.entity;
       const row = { g: GROUNDS.indexOf(tl.ground) };
       if (tl.water > 0.001) row.w = Math.round(tl.water * 1000) / 1000;
+      if (tl.glass) row.gl = 1;
       if (e) {
         row.e = e.type;
         row.p = Math.round(e.progress * 10000) / 10000;
@@ -695,6 +757,7 @@ export class World {
         const tile = world.tiles[i];
         tile.ground = GROUNDS[row.g] || 'Grassland';
         tile.water = row.w || 0;
+        tile.glass = !!row.gl;
         tile.lastSync = t;
         if (row.e) {
           tile.entity = {

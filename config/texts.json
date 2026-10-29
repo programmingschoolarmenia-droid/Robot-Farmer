@@ -220,7 +220,43 @@
       "Heat": "Ջուրը գոլորշիանում է {n} անգամ արագ, ուստի հողը շուտ է չորանում։",
       "Snow": "Ֆերման սպիտակել է, իսկ ձմռանը բույսերը դանդաղ են աճում։"
     },
-    "lightningFirst": "⚡ Կայծակը խփեց բույսին։ Հավաքիր այն, և այն կտա {n} անգամ շատ բերք։"
+    "lightningFirst": "⚡ Կայծակը խփեց բույսին։ Հավաքիր այն, և այն կտա {n} անգամ շատ բերք։",
+
+    "villageButton": "Գյուղ",
+    "villageTitle": "Գյուղ",
+    "villageNew": "🏘 Գետի մյուս ափին հին գյուղ կա։ Բաց այն «Գյուղ» կոճակով։",
+    "villageGive": "Տալ",
+    "villageGiveTitle": "Տալ այն, ինչ կա պահեստում",
+    "villageNeeds": "Ինչ է պետք",
+    "villageHave": "պահեստում՝ {n}",
+    "villageUnlocks": "Կբացի",
+    "villageRepaired": "✅ Վերանորոգված է",
+    "villageLocked": "🔒 Նախ վերանորոգիր՝ {names}",
+    "villageSoon": "🚧 Շուտով",
+    "villageStory": "📖 Պատմությունը",
+    "villageRecipes": "Բաղադրատոմսեր",
+    "villageRecipe": "{inputs} → {item} ({seconds} վրկ)",
+    "villageNothing": "Պահեստում դրանցից դեռ ոչինչ չկա։",
+    "villageRepairedToast": "🎉 «{name}»-ը վերանորոգված է։",
+    "villageBoard": "Խնդրանքներ",
+    "requestsTitle": "📜 Խնդրանքների տախտակ",
+    "requestsEmpty": "Այսօր խնդրանքներ չկան։ Հավաքիր բերք, և գյուղացիները կսկսեն խնդրել։",
+    "requestsDone": "✓ Կատարված է",
+    "requestsBonus": "Բոլոր {n}-ը կատարելու համար՝ ևս ⭐ {bonus}",
+    "requestsBonusDone": "🎉 Այսօրվա բոլոր խնդրանքները կատարված են",
+    "requestsNew": "Նոր խնդրանքները՝ վաղը",
+    "requestThanks": "«Շնորհակալություն», — ասաց {name}։ ⭐ +{n}",
+    "boostStart": "😋 Համեղ է։ {effect}՝ {seconds} վայրկյան։",
+    "boostEffects": {
+      "speed": "Դրոնը {n} անգամ արագ է",
+      "growth": "Բույսերը {n} անգամ արագ են աճում",
+      "goldenFish": "Ոսկե ձուկը {n} անգամ հաճախ է բռնվում"
+    },
+    "tvRecipe": "🍳 Շաբաթվա բաղադրատոմսը",
+    "machineIdle": "պարապ է",
+    "machineMaking": "պատրաստում է՝ {item}",
+    "machineReady": "պատրաստ է՝ {item} ✓",
+    "glassTip": "🪟 Ապակի (ջերմատուն)"
   },
 
   "accountErrors": {
@@ -247,7 +283,20 @@
     "Cactus": "Կակտուս",
     "Bone": "Ոսկոր",
     "Gold": "Ոսկի",
-    "Fish": "Ձուկ"
+    "Fish": "Ձուկ",
+    "Flour": "Ալյուր",
+    "Jam": "Մուրաբա",
+    "Lavash": "Լավաշ",
+    "Gata": "Գաթա",
+    "Ghapama": "Ղափամա",
+    "Grilled_Fish": "Խորոված ձուկ",
+    "Star": "Աստղ"
+  },
+
+  "machines": {
+    "Mill": "Ջրաղաց",
+    "JamPot": "Մուրաբայի կաթսա",
+    "Tonir": "Թոնիր"
   },
 
   "entities": {
@@ -295,7 +344,8 @@
     "Gold_Hat": "Ոսկե գլխարկ",
     "Dinosaur_Hat": "Դինոզավրի գլխարկ",
     "Secret_Hat": "Գաղտնի գլխարկ",
-    "Fisher_Hat": "Ձկնորսի գլխարկ"
+    "Fisher_Hat": "Ձկնորսի գլխարկ",
+    "Mayor_Hat": "Գյուղապետի գլխարկ"
   },
 
   "features": {
@@ -368,6 +418,7 @@
 
     "lockedSyntax": "Դու դեռ չես բացել {featureName}։ Բացիր «{nodeName}» հետազոտությունը։",
     "lockedFunction": "{name}() ֆունկցիան դեռ բացված չէ։ Բացիր «{nodeName}» հետազոտությունը։",
+    "lockedFunctionVillage": "{name}() ֆունկցիան դեռ բացված չէ։ Վերանորոգիր «{nodeName}»-ը գյուղում (🏘 կոճակ)։",
     "unsupported": "«{what}» այս խաղում չի աշխատում։ Փորձիր լուծել ուրիշ ձևով։",
 
     "notDefined": "«{name}» անունով փոփոխական կամ ֆունկցիա չկա։",
@@ -422,6 +473,18 @@
     "mazeReuse": "Գանձը տեղափոխելու համար պետք է առնվազն {need} տարօրինակ նյութ (նույնքան, որքան լաբիրինթոսը ստեղծելիս)։",
     "plant_pond": "Լճակում բույս չի աճում։ Լճակը հողով լցնելու համար օգտագործիր herkel()։",
     "pondNeeded": "Այստեղ լճակ չկա։ Նախ փորիր այն porel()-ով և լցրու ջրով։",
-    "pondNotFull": "Լճակը դեռ լիքը չէ ({water}%)։ Լցրու այն ջրով՝ ogtagorcel(Irer.Jur)։"
+    "pondNotFull": "Լճակը դեռ լիքը չէ ({water}%)։ Լցրու այն ջրով՝ ogtagorcel(Irer.Jur)։",
+    "build_locked": "Այս սարքը ({machineName}) դեռ բացված չէ։ Վերանորոգիր գյուղի շենքերը (🏘 կոճակ)։",
+    "build_occupied": "Այստեղ սարք կառուցել չի կարելի։ Ընտրիր դատարկ կամ խոտով վանդակ (ոչ լճակ)։",
+    "build_cost": "Չունես բավարար պաշար՝ {machineName} կառուցելու համար։ Պետք է՝ {costText}։",
+    "make_noMachine": "Դրոնի տակ սարք չկա։ Նախ կառուցիր այն karucel()-ով։",
+    "make_busy": "Սարքը ({machineName}) դեռ աշխատում է։ Սպասիր, մինչև hasunE()-ը true դառնա։",
+    "make_ready": "Սարքում ({machineName}) արդեն պատրաստ բան կա։ Նախ վերցրու այն havaqel()-ով։",
+    "make_wrongMachine": "Այս սարքը ({machineName}) չի կարող պատրաստել «{itemName}»։ Բաղադրատոմսերը տես գյուղում։",
+    "make_cost": "Բաղադրիչները չեն բավականացնում։ Պետք է՝ {costText}։",
+    "eat_notDish": "«{itemName}» ուտել չի կարելի։ Ուտելիքները թխվում են թոնիրում։",
+    "eat_none": "Պահեստում «{itemName}» չկա։ Նախ պատրաստիր այն թոնիրում։",
+    "glass_already": "Այս վանդակն արդեն ապակով է ծածկված։",
+    "glass_cost": "Չունես բավարար պաշար ապակու համար։ Պետք է՝ {costText}։"
   }
 }

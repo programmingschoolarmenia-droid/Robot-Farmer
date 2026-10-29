@@ -12,6 +12,7 @@ export function loadConfig() {
     texts: read('texts.json'),
     bridgy: read('bridgy.json'),
     guide: read('guide.json'),
+    village: read('village.json'),
   };
 }
 

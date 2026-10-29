@@ -200,7 +200,7 @@ test('calendar: the season quest and old saves', () => {
   assert.equal(at({ index: 19 }), 'buy_trees', 'older saves skip the quests added later');
   const quests = new QuestTracker(game, { id: 'season_code' });
   runCode(game, 'if (sezon() === Sezonner.Garun) {\n  tpel(1);\n}');
-  assert.equal(quests.current().id, 'buy_trees');
+  assert.equal(quests.current().id, 'repair_bridge', 'the village quests come next');
   quests.destroy();
 });
 

@@ -28,6 +28,11 @@ step is needed.
 * **Change the game** (prices, speeds, plants, texts, Bridgy's lessons and quests): see
   [`config/README.md`](config/README.md).
 * **Prepare a lesson quickly:** set `"unlockAll": true` in `config/settings.json → dev`.
+* **The village** («🏘 Գյուղ», after the «Plant» research): students rebuild a ruined village
+  building by building with the items they gather, villagers post 3 requests a day that pay
+  ⭐ stars, and the repaired buildings unlock kitchen machines on the farm (mill, jam pot,
+  tonir: flour, jam, lavash, gata, ghapama…), dishes that boost the drone, and greenhouse glass.
+  Everything is in [`config/village.json`](config/README.md).
 * **Seasons, weather and the luck of the day** follow the real clock, the same for every
   student: with the default 15-minute seasons, each hour is spring (:00), summer (:15), autumn
   (:30) and winter (:45). Plants grow faster in their favourite season, rain waters the whole

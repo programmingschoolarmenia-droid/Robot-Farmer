@@ -10,9 +10,13 @@ import { DIRECTIONS } from './world.js';
 import { SEASON_NAMES, WEATHER_NAMES } from './calendar.js';
 
 export const ENTITY_NAMES = ['Grass', 'Bush', 'Tree', 'Carrot', 'Pumpkin', 'Dead_Pumpkin', 'Sunflower', 'Cactus', 'Hedge', 'Treasure', 'Apple', 'Dinosaur'];
-export const ITEM_NAMES = ['Hay', 'Wood', 'Carrot', 'Pumpkin', 'Power', 'Water', 'Fertilizer', 'Weird_Substance', 'Cactus', 'Bone', 'Gold', 'Fish'];
+export const ITEM_NAMES = [
+  'Hay', 'Wood', 'Carrot', 'Pumpkin', 'Power', 'Water', 'Fertilizer', 'Weird_Substance', 'Cactus', 'Bone', 'Gold', 'Fish',
+  'Flour', 'Jam', 'Lavash', 'Gata', 'Ghapama', 'Grilled_Fish', 'Star',
+];
 export const GROUND_NAMES = ['Grassland', 'Soil', 'Pond'];
 export const FISH_NAMES = ['Carp', 'Barbel', 'Trout', 'Golden_Fish', 'Whitefish', 'Catfish'];
+export const MACHINE_NAMES = ['Mill', 'JamPot', 'Tonir']; // the village kitchen (config/village.json → machines)
 
 // Python habits → JavaScript (shown in "not defined" errors).
 const PYTHON_HINTS = {
@@ -71,6 +75,7 @@ export class GameApi {
     mk('Fishes', FISH_NAMES);
     mk('Seasons', SEASON_NAMES);
     mk('Weathers', WEATHER_NAMES);
+    mk('Machines', MACHINE_NAMES);
     mk('Hats', Object.keys(this.settings.hats || { Straw_Hat: {} }));
     mk('Unlocks', this.game.config.research.nodes.map((n) => n.id));
     this.directions = {};
@@ -311,7 +316,7 @@ export class GameApi {
   }
 
   entityValue(type) {
-    return type ? this.enums.Entities.get(type) || null : null;
+    return type ? this.enums.Entities.get(type) || this.enums.Machines.get(type) || null : null;
   }
 
   // { Hay: 20 } -> player object with shown item names: { ChorXot: 20 }
@@ -594,6 +599,47 @@ export class GameApi {
     this.def('getSeason', (I) => calendar(I, 'Seasons', 'season'));
     this.def('getWeather', (I) => calendar(I, 'Weathers', 'weather'));
     this.def('getNextWeather', (I) => calendar(I, 'Weathers', 'next'));
+
+    // --- village: kitchen machines (Mill), eating (Bakery), greenhouse glass (Greenhouse)
+    this.def('build', (I, args, node) => {
+      api.needArgs(args, 1, 'build', node);
+      const type = api.needEnum(args[0], 'Machines', 'build', 1, node);
+      const tile = api.droneTile(I);
+      const r = world().build(tile, type, api.now(I));
+      api.act(I, r.ok);
+      if (r.ok) game.events.emit('build', { type, x: tile.x, y: tile.y, drone: I.drone.id });
+      else game.warn(`build_${r.reason}`, { machine: type, cost: r.cost }, node, I.drone);
+      return r.ok;
+    });
+
+    this.def('make', (I, args, node) => {
+      api.needArgs(args, 1, 'make', node);
+      const item = api.needEnum(args[0], 'Items', 'make', 1, node);
+      const tile = api.droneTile(I);
+      const r = world().make(tile, item, api.now(I));
+      api.act(I, r.ok);
+      if (r.ok) game.events.emit('make', { item, machine: r.machine, x: tile.x, y: tile.y, drone: I.drone.id });
+      else game.warn(`make_${r.reason}`, { item, machine: r.machine, cost: r.cost }, node, I.drone);
+      return r.ok;
+    });
+
+    this.def('eat', (I, args, node) => {
+      api.needArgs(args, 1, 'eat', node);
+      const item = api.needEnum(args[0], 'Items', 'eat', 1, node);
+      const r = game.eat(item, api.now(I));
+      api.act(I, r.ok);
+      if (!r.ok) game.warn(`eat_${r.reason}`, { item }, node, I.drone);
+      return r.ok;
+    });
+
+    this.def('buildGreenhouse', (I, args, node) => {
+      const tile = api.droneTile(I);
+      const r = world().glaze(tile, api.now(I));
+      api.act(I, r.ok);
+      if (r.ok) game.events.emit('glass', { x: tile.x, y: tile.y, drone: I.drone.id });
+      else game.warn(`glass_${r.reason}`, { cost: r.cost }, node, I.drone);
+      return r.ok;
+    });
 
     // --- farm reset helper
     this.def('clear', (I) => {

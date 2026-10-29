@@ -94,6 +94,6 @@ test('quests: a full pond and a golden fish complete the fishing goals', () => {
   quests.captureBaseline();
   game.settings.fishing.fish = GOLDEN_ONLY;
   runCode(game, 'dzknorsel();');
-  assert.equal(quests.current().id, 'buy_sunflowers');
+  assert.equal(quests.current().id, 'repair_mill', 'the mill quest comes next');
   quests.destroy();
 });

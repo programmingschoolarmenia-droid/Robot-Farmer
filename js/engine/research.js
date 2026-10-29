@@ -81,22 +81,27 @@ export class Research {
     return { ok: true, level };
   }
 
-  // Sets of everything unlocked: syntax features, functions, entities, hats, panels.
+  // Sets of everything unlocked: syntax features, functions, entities, hats, panels, machines.
+  // Repaired village buildings unlock things too (config/village.json → buildings[].grants).
   rebuildGrants() {
-    const g = { syntax: new Set(), functions: new Set(), entities: new Set(), hats: new Set(), panels: new Set() };
-    this.functionGate = new Map(); // fn name -> node id that unlocks it
+    const g = { syntax: new Set(), functions: new Set(), entities: new Set(), hats: new Set(), panels: new Set(), machines: new Set() };
+    this.functionGate = new Map(); // fn name -> node (or building) id that unlocks it
     this.syntaxGate = new Map();
     this.entityGate = new Map();
     this.hatGate = new Map();
-    for (const n of this.nodes) {
+    this.machineGate = new Map();
+    const village = this.game.village;
+    const sources = this.nodes.map((n) => [n, this.level(n.id) > 0]);
+    if (village) for (const b of village.buildings) sources.push([b, village.isRepaired(b.id)]);
+    for (const [n, unlocked] of sources) {
       const grants = n.grants || {};
-      const unlocked = this.level(n.id) > 0;
-      for (const key of ['syntax', 'functions', 'entities', 'hats', 'panels']) {
+      for (const key of ['syntax', 'functions', 'entities', 'hats', 'panels', 'machines']) {
         for (const item of grants[key] || []) {
           if (key === 'functions' && !this.functionGate.has(item)) this.functionGate.set(item, n.id);
           if (key === 'syntax' && !this.syntaxGate.has(item)) this.syntaxGate.set(item, n.id);
           if (key === 'entities' && !this.entityGate.has(item)) this.entityGate.set(item, n.id);
           if (key === 'hats' && !this.hatGate.has(item)) this.hatGate.set(item, n.id);
+          if (key === 'machines' && !this.machineGate.has(item)) this.machineGate.set(item, n.id);
           if (unlocked) g[key].add(item);
         }
       }
@@ -125,6 +130,10 @@ export class Research {
 
   hasPanel(name) {
     return this.granted.panels.has(name);
+  }
+
+  hasMachine(type) {
+    return this.granted.machines.has(type) || !this.machineGate.has(type);
   }
 
   // Research node that unlocks a function / syntax feature / entity (for help messages).

@@ -7,6 +7,7 @@ import { World, DIRECTIONS } from './world.js';
 import { Drone } from './drone.js';
 import { Stats } from './stats.js';
 import { Calendar } from './calendar.js';
+import { Village } from './village.js';
 import { GameApi, FISH_NAMES } from './api.js';
 import { Runner } from './runner.js';
 import { locOf } from '../lang/errors.js';
@@ -23,6 +24,8 @@ export class Game {
     this.playSeconds = save.playSeconds ?? 0;
     this.stats = new Stats(this, save.stats);
     this.calendar = new Calendar(this); // before the world: World.sync reads its rules
+    this.village = new Village(this, save.village); // before research: repaired buildings unlock commands
+    this.boosts = { ...(save.boosts || {}) }; // eaten dishes: { speed: { item, multiplier, until } }
     this.inventory = new Inventory(this, save.inventory ?? (this.settings.game && this.settings.game.startItems) ?? {});
     const extra = this.settings.dev && this.settings.dev.extraItems;
     if (extra && !save.inventory) for (const [k, v] of Object.entries(extra)) this.inventory.items.set(k, v);
@@ -90,6 +93,7 @@ export class Game {
   update(realDt) {
     const g = this.settings.game || {};
     this.calendar.update(this.time);
+    this.updateBoosts();
     const dt = Math.min(realDt, g.maxFrameSeconds ?? 0.1) * this.speed;
     this.playSeconds += Math.min(realDt, 0.25);
     const runner = this.runner;
@@ -381,7 +385,7 @@ export class Game {
     let any = false;
     for (const tl of tiles) {
       this.world.sync(tl, t);
-      if (tl.entity) {
+      if (tl.entity && !this.world.machineConfig(tl.entity.type)) {
         tl.entity.data.infected = !tl.entity.data.infected;
         any = true;
       }
@@ -403,7 +407,7 @@ export class Game {
   // Returns the species.
   catchFish(drone, tile) {
     const cfg = this.settings.fishing || {};
-    const chance = (f) => this.calendar.fishChance(f, cfg.fish && cfg.fish[f]);
+    const chance = (f) => this.calendar.fishChance(f, cfg.fish && cfg.fish[f]) * (f === 'Golden_Fish' ? this.boost('goldenFish') : 1);
     let r = this.rng.next() * FISH_NAMES.reduce((sum, f) => sum + chance(f), 0);
     const species = FISH_NAMES.find((f) => (r -= chance(f)) < 0) || FISH_NAMES[0];
     const level = this.research.level(cfg.research || 'Fishing');
@@ -414,6 +418,35 @@ export class Game {
     if (hat) this.flags.fisherHat = true;
     this.events.emit('fish', { species, amount, hat, x: tile.x, y: tile.y, drone: drone.id });
     return species;
+  }
+
+  // Eats a dish (village.json → boosts); its boost lasts `seconds` of game time, eating again adds more.
+  eat(item, t) {
+    const cfg = ((this.config.village || {}).boosts || {})[item];
+    if (!cfg) return { ok: false, reason: 'notDish' };
+    if (this.inventory.get(item) < 1) return { ok: false, reason: 'none' };
+    if (cfg.kind === 'growth') this.world.syncAll(t); // plants grew at the old speed up to now
+    this.inventory.add(item, -1, 'eat');
+    const b = this.boosts[cfg.kind];
+    this.boosts[cfg.kind] = { item, multiplier: cfg.multiplier, until: Math.max(b ? b.until : 0, t) + cfg.seconds };
+    this.events.emit('boost', { kind: cfg.kind, item, until: this.boosts[cfg.kind].until });
+    return { ok: true };
+  }
+
+  // Multiplier of an eaten dish's boost: 'speed' | 'growth' | 'goldenFish' (1 without one).
+  boost(kind) {
+    const b = this.boosts[kind];
+    return b ? b.multiplier : 1;
+  }
+
+  // At the start of a frame, boosts that ran out end (the farm grows by the old rules up to here).
+  updateBoosts() {
+    for (const [kind, b] of Object.entries(this.boosts)) {
+      if (this.time < b.until) continue;
+      if (kind === 'growth') this.world.syncAll(this.time);
+      delete this.boosts[kind];
+      this.events.emit('boost', { kind, item: b.item, until: 0 });
+    }
   }
 
   measure(drone, tile) {
@@ -502,6 +535,8 @@ export class Game {
       production: this.production,
       powerUse: this.powerUse,
       flags: this.flags,
+      village: this.village.toSave(),
+      boosts: this.boosts,
       dino: this.dino ? { tail: this.dino.tail, apple: this.dino.apple, eaten: this.dino.eaten } : null,
     };
   }

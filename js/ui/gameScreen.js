@@ -13,6 +13,7 @@ import { describeError, describeWarning } from './errorText.js';
 import { openProfile, accountErrorText, tierOf } from './account.js';
 import { openBook } from './book.js';
 import { openModal } from './modal.js';
+import { VillageView, recipeText } from './village.js';
 import { formatClock, dayKey } from '../core/util.js';
 import { SEASON_NAMES } from '../engine/calendar.js';
 
@@ -103,6 +104,9 @@ export class GameScreen {
     );
     this.farmSizeLabel = h('span', { class: 'muted' });
     this.calendarChip = h('button', { class: 'btn btn-sm calendar-chip', title: t('ui.tvButton'), hidden: true, onclick: () => this.openTv() });
+    this.boostChips = h('span', { class: 'boost-chips' });
+    this.villageBadge = h('span', { class: 'badge', hidden: true });
+    this.villageBtn = h('button', { class: 'btn village-button', hidden: true, onclick: () => this.openVillage() }, '🏘 ', t('ui.villageButton'), this.villageBadge);
     this.farmStage = h('div', { class: 'farm-stage' });
     this.codePanel = h('section', { class: 'panel code-panel' });
     this.inventoryList = h('ul', { class: 'inventory-list' });
@@ -128,12 +132,13 @@ export class GameScreen {
       h(
         'main',
         { class: 'game-main' },
-        h('section', { class: 'panel farm-panel' }, h('div', { class: 'panel-head' }, '🌾 ', t('ui.farm'), h('span', { class: 'spacer' }), this.calendarChip, this.farmSizeLabel), this.farmStage),
+        h('section', { class: 'panel farm-panel' }, h('div', { class: 'panel-head' }, '🌾 ', t('ui.farm'), h('span', { class: 'spacer' }), this.boostChips, this.calendarChip, this.farmSizeLabel), this.farmStage),
         this.codePanel,
         (this.sidePanel = h(
           'aside',
           { class: 'side-panel' },
           h('section', { class: 'panel grow' }, h('div', { class: 'panel-head' }, '🧺 ', t('ui.inventory')), this.inventoryList),
+          this.villageBtn,
           this.researchBtn,
         )),
       ),
@@ -166,7 +171,7 @@ export class GameScreen {
     });
     this.inventory = new InventoryPanel({ app, game, list: this.inventoryList });
     this.debugPanel = new DebugPanel({ app, game, container: this.sidePanel });
-    this.sidePanel.insertBefore(this.debugPanel.el, this.researchBtn);
+    this.sidePanel.insertBefore(this.debugPanel.el, this.villageBtn);
     this.questBar = new QuestBar({
       app,
       game,
@@ -179,6 +184,7 @@ export class GameScreen {
       },
     });
     this.research = new ResearchTree({ app, game, onBuy: (id, card) => this.onResearchBought(id, card) });
+    this.villageView = new VillageView({ app, game, onStory: (b) => this.bridgy.say(b.story, { key: `story:${b.id}`, interrupt: true }) });
     this.bridgy = new Bridgy({
       app,
       codeKind: (w) => game.api.codeKind(w),
@@ -197,6 +203,7 @@ export class GameScreen {
     });
     this.updateFarmLabel();
     this.updateCalendarChip();
+    this.updateVillageButton();
   }
 
   // Wide screens: the farm panel is a square as tall as the main area (leaving room for the
@@ -310,6 +317,20 @@ export class GameScreen {
     on('useItem', (e) => {
       if (e.item === 'Water' && this.game.calendar.frozen && this.game.world.tile(e.x, e.y).ground !== 'Pond' && this.first('winterWater')) this.bridgy.toast(t('ui.winterWater'), 7000);
     });
+    on('village', (e) => this.onVillage(e));
+    on('request', (e) => {
+      const board = this.game.village.board;
+      const v = this.game.village.cfg.requests.villagers[board.list[e.index].who];
+      app.audio.play('quest');
+      this.bridgy.toast(t('ui.requestThanks', { name: v.name, n: e.stars }), 5000);
+      this.villageDirty = true;
+    });
+    on('boost', (e) => {
+      this.updateBoostChips();
+      if (!e.until) return;
+      const b = this.game.boosts[e.kind];
+      this.bridgy.toast(t('ui.boostStart', { effect: t(`ui.boostEffects.${e.kind}`, { n: b.multiplier }), seconds: Math.round(b.until - this.game.time) }), 5000);
+    });
     on('items', () => {
       this.itemsDirty = true;
     });
@@ -319,6 +340,54 @@ export class GameScreen {
     if (this.ui.firsts.includes(key)) return false;
     this.ui.firsts.push(key);
     return true;
+  }
+
+  // ------------------------------------------------------------------ village
+
+  // «🏘 Գյուղ» appears after its research (village.json → research); the badge counts requests that
+  // can be done now (or shows ! when a building can get everything it still needs).
+  updateVillageButton() {
+    const game = this.game;
+    const v = game.village;
+    const shown = !v.cfg.research || game.research.level(v.cfg.research) > 0;
+    if (shown && this.villageBtn.hidden && this.first('villageNew')) this.bridgy.toast(this.app.i18n.t('ui.villageNew'), 7000);
+    this.villageBtn.hidden = !shown;
+    if (!shown) return;
+    const board = v.requests();
+    const ready = board ? board.list.filter((q) => !q.done && game.inventory.get(q.item) >= q.amount).length : 0;
+    const complete = v.buildings.some((b) => v.state(b.id) === 'open' && game.inventory.canAfford(v.missing(b.id)));
+    this.villageBadge.hidden = !ready && !complete;
+    this.villageBadge.textContent = ready ? String(ready) : '!';
+    if (this.villageView.isOpen) this.villageView.refresh();
+  }
+
+  openVillage() {
+    this.villageView.open();
+    if (this.first('villageIntro')) this.bridgy.say(this.game.village.cfg.intro || [], { key: 'villageIntro', interrupt: true });
+  }
+
+  // A repaired building: confetti, Bridgy's story chapter (and the finale with the last one).
+  onVillage(e) {
+    this.villageDirty = true;
+    if (!e.repaired) return;
+    const app = this.app;
+    const b = this.game.village.building(e.id);
+    app.audio.play('unlock');
+    if (this.prefs.animations !== false && !this.prefs.lowGraphics) app.confetti.burst(window.innerWidth / 2, window.innerHeight / 3, 90);
+    this.bridgy.toast(app.i18n.t('ui.villageRepairedToast', { name: b.name }), 6000);
+    const pages = [...(b.story || []), ...(e.all ? this.game.village.cfg.finale || [] : [])];
+    if (pages.length) this.bridgy.say(pages, { key: `story:${b.id}`, interrupt: true });
+    this.save();
+  }
+
+  // Chips with the eaten dishes' boosts and their seconds left, next to 📺.
+  updateBoostChips() {
+    const game = this.game;
+    this.boostChips.replaceChildren(
+      ...Object.values(game.boosts).map((b) =>
+        h('span', { class: 'chip boost-chip', title: this.app.i18n.item(b.item) }, pixelImg(this.app.sprites.url(`item:${b.item}`, 2), '', ''), formatClock(Math.max(0, b.until - game.time))),
+      ),
+    );
   }
 
   // ------------------------------------------------------------------ calendar (seasons, weather, luck)
@@ -395,6 +464,7 @@ export class GameScreen {
       const next = (ends, label) => h('span', { class: 'muted' }, ` · ${t('ui.tvNext', { time: formatClock((ends - now) / 1000), next: label })}`);
       const nextSeason = SEASON_NAMES[(SEASON_NAMES.indexOf(s.season) + 1) % SEASON_NAMES.length];
       const crops = this.fastCrops(s.season);
+      const recipe = this.game.village.weeklyRecipe();
       body.replaceChildren(
         s.luck ? h('div', { class: 'tv-row' }, h('b', {}, t('ui.tvLuck')), h('div', {}, s.luck.text)) : '',
         h(
@@ -412,6 +482,7 @@ export class GameScreen {
           next(s.weatherEnds, `${CALENDAR_ICONS[s.next]} ${t(`weathers.${s.next}`)}`),
           h('div', {}, this.weatherInfo(s.weather)),
         ),
+        recipe ? h('div', { class: 'tv-row' }, h('b', {}, t('ui.tvRecipe')), h('div', {}, `${t(`machines.${recipe.machine}`)}՝ ${recipeText(this.app.i18n, recipe.item, recipe)}`)) : '',
         h('p', { class: 'muted tv-note' }, t('ui.tvSame')),
       );
     };
@@ -597,13 +668,16 @@ export class GameScreen {
     this.slowTimer += dt;
     if (this.slowTimer > 0.2) {
       this.slowTimer = 0;
-      if (this.itemsDirty) {
+      if (this.itemsDirty || this.villageDirty) {
         this.itemsDirty = false;
+        this.villageDirty = false;
         this.inventory.update();
         this.updateResearchBadge();
+        this.updateVillageButton();
         if (this.research.isOpen) this.research.refresh();
         this.checkTier();
       } else this.inventory.update();
+      if (Object.keys(this.game.boosts).length) this.updateBoostChips();
       this.debugPanel.update();
       if (this.questDirty) {
         this.questDirty = false;

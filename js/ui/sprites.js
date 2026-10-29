@@ -153,6 +153,22 @@ export class SpriteBook {
     this.put('fish:Golden_Fish', fish(PAL.yellow, PAL.brightYellow, PAL.amber, 'sparkles'));
     this.put('fish:Whitefish', fish('#c7d3dd', '#ffffff', '#8796a5'));
     this.put('fish:Catfish', fish('#6b6a5e', '#9a9886', '#3f3e36', 'whiskers'));
+    // --- the village kitchen: products, machines on farm squares, the village buildings (and their ruins)
+    this.put('item:Flour', flour());
+    this.put('item:Jam', jam());
+    this.put('item:Lavash', lavash());
+    this.put('item:Gata', gata());
+    this.put('item:Ghapama', ghapama());
+    this.put('item:Grilled_Fish', grilledFish());
+    this.put('item:Star', star());
+    this.put('machine:Mill', millMachine());
+    this.put('machine:JamPot', jamPot());
+    this.put('machine:Tonir', tonir());
+    for (const [name, draw] of Object.entries(BUILDINGS)) {
+      const art = draw();
+      this.put(`building:${name}`, art);
+      this.put(`ruin:${name}`, ruin(art, name === 'bridge'));
+    }
 
     // --- research icons
     this.put('icon:hat', sideHat('#f2c04d', '#2b6fd6'));
@@ -599,6 +615,216 @@ function fishingRod() {
   p.set(13, 13, PAL.white);
   p.outline(PAL.outlineBrown);
   p.line(13, 3, 13, 10, PAL.lightGrey);
+  return p;
+}
+
+// --- the village kitchen -------------------------------------------------------------
+
+function flour() {
+  const p = new Pixels();
+  p.ellipse(8, 10.5, 5.5, 4.8, '#f4efe2');
+  p.rect(6, 3, 4, 4, '#f4efe2');
+  p.shade('#f4efe2', PAL.white, '#cfc6b0');
+  p.rect(5, 6, 6, 1, PAL.lightBrown);
+  p.set(7, 10, PAL.amber).set(8, 9, PAL.yellow).set(9, 10, PAL.amber);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function jam() {
+  const p = new Pixels();
+  p.rect(4, 5, 8, 9, '#d6402b');
+  p.shade('#d6402b', '#f06a4d', PAL.red);
+  p.rect(5, 7, 2, 4, '#ffb38a');
+  p.rect(3, 3, 10, 2, PAL.white);
+  p.set(4, 4, PAL.brightRed).set(7, 4, PAL.brightRed).set(10, 4, PAL.brightRed);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function lavash() {
+  const p = new Pixels();
+  p.ellipse(8, 9, 7.5, 4.5, '#ecd29a');
+  p.shade('#ecd29a', '#f8e8c2', PAL.tan);
+  for (const [x, y] of [[4, 8], [7, 7], [10, 9], [12, 8], [6, 10], [9, 11]]) p.set(x, y, PAL.lightBrown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function gata() {
+  const p = new Pixels();
+  p.disc(8, 8.5, 6.5, '#e2a948');
+  p.shade('#e2a948', '#f4cd7a', '#b9782b');
+  for (let i = 0; i < 8; i++) p.set(8 + Math.round(3.6 * Math.cos((i * Math.PI) / 4)), 8.5 + Math.round(3.6 * Math.sin((i * Math.PI) / 4)), PAL.brown);
+  p.set(8, 8, PAL.brown).set(7, 9, PAL.brown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function ghapama() {
+  const p = new Pixels();
+  p.ellipse(8, 10, 6.5, 5, PAL.orange);
+  p.shade(PAL.orange, PAL.amber, '#c4500a');
+  p.line(5, 7, 5, 14, '#c4500a').line(11, 7, 11, 14, '#c4500a');
+  p.ellipse(8, 6.5, 4.5, 1.6, PAL.yellow);
+  p.set(7, 6, PAL.white).set(9, 7, PAL.white).set(10, 6, PAL.red);
+  p.ellipse(12, 3.5, 2.5, 1.5, PAL.orange).rect(12, 1, 1, 2, PAL.green);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function grilledFish() {
+  const p = fish('#a0562c', '#d08a4e', '#6b3a1e');
+  p.line(0, 13, 15, 4, PAL.tan);
+  for (const [x, y] of [[5, 8], [8, 8], [11, 8]]) p.set(x, y, '#3b1725');
+  return p;
+}
+
+function star() {
+  const p = new Pixels();
+  const pts = [];
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    const r = i % 2 ? 3 : 7.2;
+    pts.push([8 + r * Math.cos(a), 8.6 + r * Math.sin(a)]);
+  }
+  p.polygon(pts, PAL.yellow);
+  p.shade(PAL.yellow, PAL.brightYellow, PAL.amber);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// Machines on farm squares (the farm view adds their fire, steam and progress).
+function millMachine() {
+  const p = new Pixels();
+  p.rect(4, 9, 8, 6, PAL.lightBrown);
+  p.polygon([[3, 9.5], [8, 5], [13, 9.5]], PAL.red);
+  p.disc(8, 6, 4.6, PAL.tan);
+  p.line(4, 6, 12, 6, PAL.brown).line(8, 2, 8, 10, PAL.brown).line(5, 3, 11, 9, PAL.brown).line(11, 3, 5, 9, PAL.brown);
+  p.disc(8, 6, 1.2, PAL.darkBrown);
+  p.rect(7, 12, 2, 3, PAL.darkBrown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function jamPot() {
+  const p = new Pixels();
+  p.rect(4, 13, 8, 2, PAL.brown);
+  p.ellipse(8, 9, 5.5, 4, '#c8743a');
+  p.shade('#c8743a', '#e8a066', '#8a4a22');
+  p.rect(2, 6, 12, 2, '#8a4a22');
+  p.ellipse(8, 6.5, 4, 1, '#d6402b');
+  p.set(1, 7, PAL.darkGrey).set(14, 7, PAL.darkGrey);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function tonir() {
+  const p = new Pixels();
+  p.ellipse(8, 11, 7, 6.5, '#c47a4a');
+  p.rect(1, 11, 14, 4, '#c47a4a');
+  p.shade('#c47a4a', '#e09a68', '#8e5232');
+  p.ellipse(8, 11.5, 3, 2.5, PAL.darkBrown);
+  p.rect(5, 12, 6, 3, PAL.darkBrown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// Village buildings (32×32, the bridge 32×16); ruin() makes the broken grey version of each.
+function house(wall, roof, { door = PAL.brown, windowColor = '#7ec8f0' } = {}) {
+  const p = new Pixels(32, 32);
+  p.rect(6, 15, 20, 14, wall);
+  p.polygon([[3, 16], [16, 4], [29, 16]], roof);
+  p.rect(14, 21, 5, 8, door);
+  p.rect(8, 19, 4, 4, windowColor).rect(21, 19, 4, 4, windowColor);
+  return p;
+}
+
+const BUILDINGS = {
+  bridge() {
+    const p = new Pixels(32, 16);
+    p.rect(0, 8, 32, 4, PAL.lightBrown);
+    for (let x = 0; x < 32; x += 4) p.rect(x, 8, 1, 4, PAL.brown);
+    p.rect(0, 4, 32, 1, PAL.brown);
+    for (const x of [1, 10, 21, 30]) p.rect(x, 4, 1, 5, PAL.darkBrown);
+    p.outline(PAL.outlineBrown);
+    return p;
+  },
+  mill() {
+    const p = house(PAL.lightBrown, PAL.red);
+    p.disc(6, 22, 6, PAL.tan);
+    p.line(0, 22, 12, 22, PAL.brown).line(6, 16, 6, 28, PAL.brown).line(2, 18, 10, 26, PAL.brown).line(10, 18, 2, 26, PAL.brown);
+    p.disc(6, 22, 1.5, PAL.darkBrown);
+    p.rect(0, 28, 12, 3, PAL.sky);
+    p.outline(PAL.outlineBrown);
+    return p;
+  },
+  jamhouse() {
+    const p = house(PAL.sand, PAL.orange);
+    p.rect(14, 10, 5, 5, '#d6402b');
+    p.rect(13, 9, 7, 1, PAL.white);
+    p.outline(PAL.outlineBrown);
+    return p;
+  },
+  bakery() {
+    const p = house(PAL.lightGrey, PAL.brown, { door: PAL.amber });
+    p.rect(21, 3, 4, 9, PAL.grey);
+    p.disc(23, 1.5, 1.5, PAL.white);
+    p.rect(15, 23, 3, 3, PAL.yellow);
+    p.outline(PAL.outlineBrown);
+    return p;
+  },
+  greenhouse() {
+    const p = house('#bfe9f2', '#d8f6fb', { door: '#9fd8e6', windowColor: '#bfe9f2' });
+    for (const x of [10, 16, 22]) p.line(x, 10, x, 28, PAL.white);
+    p.line(6, 21, 26, 21, PAL.white);
+    for (const [x, y] of [[8, 26], [12, 25], [20, 26], [24, 25], [9, 18], [23, 18]]) p.disc(x, y, 1.6, PAL.green);
+    p.outline(PAL.blue);
+    return p;
+  },
+  school() {
+    const p = house('#f6e3a1', PAL.blue);
+    p.rect(14, 0, 5, 6, PAL.lightBrown);
+    p.disc(16.5, 3.5, 1.6, PAL.yellow);
+    p.outline(PAL.outlineBrown);
+    return p;
+  },
+  square() {
+    const p = new Pixels(32, 32);
+    p.ellipse(16, 22, 14, 8, PAL.lightGrey);
+    p.ellipse(16, 21, 11, 5.5, PAL.sky);
+    p.rect(15, 10, 3, 11, PAL.grey);
+    p.disc(16.5, 9, 2.5, PAL.pale);
+    for (const [x, c] of [[3, PAL.brightRed], [28, PAL.blue]]) p.rect(x, 4, 1, 14, PAL.brown).rect(x + 1, 4, 3, 3, c);
+    p.outline(PAL.outlineBrown);
+    return p;
+  },
+  board() {
+    const p = new Pixels(16, 16);
+    p.rect(3, 9, 1, 7, PAL.brown).rect(12, 9, 1, 7, PAL.brown);
+    p.rect(1, 2, 14, 9, PAL.tan);
+    p.rect(3, 4, 4, 5, PAL.white).rect(9, 3, 4, 4, '#fff1b8');
+    p.set(4, 5, PAL.grey).set(5, 6, PAL.grey).set(10, 4, PAL.grey);
+    p.outline(PAL.outlineBrown);
+    return p;
+  },
+};
+
+// The ruin of a building: grey, darker, with holes in its upper part (the bridge: a gap in the middle).
+function ruin(art, bridge) {
+  const p = new Pixels(art.w, art.h);
+  const rand = seeded(art.w * 31 + art.h);
+  for (let y = 0; y < art.h; y++) {
+    for (let x = 0; x < art.w; x++) {
+      const c = art.get(x, y);
+      if (!c) continue;
+      if (bridge ? x >= 12 && x <= 19 && rand() < 0.9 : y < art.h * 0.5 && rand() < 0.3) continue;
+      const n = parseInt(c.slice(1), 16);
+      const v = Math.round((0.3 * (n >> 16) + 0.59 * ((n >> 8) & 255) + 0.11 * (n & 255)) * 0.72);
+      p.set(x, y, `#${v.toString(16).padStart(2, '0').repeat(3)}`);
+    }
+  }
+  if (!bridge) p.line(8, art.h - 4, art.w - 10, art.h * 0.45, PAL.brown).line(10, art.h - 6, art.w - 6, art.h - 9, PAL.lightBrown);
   return p;
 }
 

@@ -40,7 +40,7 @@ async function boot() {
     return;
   }
 
-  const i18n = createI18n(config.texts, config.research.nodes, config.guide);
+  const i18n = createI18n(config.texts, [...config.research.nodes, ...config.village.buildings], config.guide); // names of research cards and village buildings
   document.title = i18n.t('ui.title');
   const sprites = await new SpriteBook().load(config.settings);
   const account = new Accounts(new LocalStorageAdapter(), config.settings.online);

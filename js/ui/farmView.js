@@ -105,6 +105,9 @@ export class FarmView {
         if (e.species === 'Golden_Fish') this.puff(e.x, e.y, ['#ffd541', '#fffc40', '#ffffff'], 24);
         this.popup(e.x, e.y, `+${formatCount(e.amount)}`, `fish:${e.species}`);
       }),
+      ev.on('build', (e) => this.puff(e.x, e.y, ['#bb7547', '#dba463', '#71413b'], 12)),
+      ev.on('make', (e) => this.puff(e.x, e.y, ['#ffffff', '#f4efe2'], 8)),
+      ev.on('glass', (e) => this.puff(e.x, e.y, ['#ffffff', '#bfe9f2', '#a6fcdb'], 14)),
       ev.on('lightning', (e) => {
         this.bolt = { x: e.x, y: e.y, at: performance.now() };
         this.puff(e.x, e.y, ['#ffd541', '#fffc40', '#ffffff'], 14);
@@ -264,6 +267,10 @@ export class FarmView {
         return 'apple';
       case 'Dinosaur':
         return 'dinoTail';
+      case 'Mill':
+      case 'JamPot':
+      case 'Tonir':
+        return `machine:${e.type}`;
       default:
         return 'missing';
     }
@@ -356,9 +363,11 @@ export class FarmView {
       }
       if (e.data.infected) this.drawInfection(ctx, r, t);
       if (e.data.charged) this.drawCharge(ctx, r, t);
+      if (e.data.making) this.drawMachine(ctx, r, e, t);
       if (fx && e.progress >= 1 && e.type !== 'Dead_Pumpkin') this.drawSparkle(ctx, r, t, hash(tl.x, tl.y));
     }
     for (const g of giants) this.drawGiant(ctx, g, now);
+    for (const tl of world.tiles) if (tl.glass) this.drawGlass(ctx, this.tileRect(tl.x, tl.y));
 
     // drones
     ctx.save();
@@ -457,6 +466,36 @@ export class FarmView {
       const s = Math.max(2, r.s / 12);
       ctx.fillRect(px, py, s, s);
     }
+  }
+
+  // A working machine: fire (tonir, jam pot) and a progress bar; when ready, its product above it.
+  drawMachine(ctx, r, e, t) {
+    const p = Math.max(1, r.s / 16);
+    if (e.progress >= 1) {
+      const bob = this.fx ? Math.sin(t * 3) * p : 0;
+      ctx.drawImage(this.sprites.get(`item:${e.data.making}`), r.x + r.s * 0.3, r.y - r.s * 0.22 + bob, r.s * 0.4, r.s * 0.4);
+      return;
+    }
+    if (e.type !== 'Mill' && this.fx) {
+      ctx.fillStyle = Math.sin(t * 14 + r.x) > 0 ? '#f9a31b' : '#ffd541';
+      ctx.fillRect(r.x + r.s * 0.4, r.y + r.s * (e.type === 'Tonir' ? 0.68 : 0.8), r.s * 0.2, p * 2);
+    }
+    ctx.fillStyle = 'rgba(18, 32, 32, 0.6)';
+    ctx.fillRect(r.x + p * 2, r.y + r.s - p * 3, r.s - p * 4, p * 2);
+    ctx.fillStyle = '#9cdb43';
+    ctx.fillRect(r.x + p * 2, r.y + r.s - p * 3, (r.s - p * 4) * e.progress, p * 2);
+  }
+
+  // A greenhouse glass roof (seasons and weather stay outside).
+  drawGlass(ctx, r) {
+    const p = Math.max(1, r.s / 16);
+    ctx.fillStyle = 'rgba(200, 235, 255, 0.22)';
+    ctx.fillRect(r.x, r.y, r.s, r.s);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.fillRect(r.x, r.y, r.s, p);
+    ctx.fillRect(r.x, r.y, p, r.s);
+    ctx.fillRect(r.x + r.s / 2, r.y, p, r.s);
+    ctx.fillRect(r.x + p * 3, r.y + p * 3, p * 3, p);
   }
 
   // ⚡ on a plant charged by lightning (its harvest is bigger).
@@ -743,7 +782,13 @@ export class FarmView {
     const e = tile.entity;
     const parts = [h('span', { class: 'coord' }, `(${hv.x}, ${hv.y})`), ' ', i18n.ground(tile.ground)];
     const lines = [h('div', {}, parts)];
-    if (e) {
+    const machine = e && this.game.world.machineConfig(e.type);
+    if (machine) {
+      const t = i18n.t;
+      const item = e.data.making && i18n.item(e.data.making);
+      lines.push(h('div', {}, t(`machines.${e.type}`), ' · ', !item ? t('ui.machineIdle') : e.progress >= 1 ? t('ui.machineReady', { item }) : t('ui.machineMaking', { item })));
+      if (item && e.progress < 1) lines.push(h('div', { class: 'bar' }, h('span', { style: { width: `${Math.floor(e.progress * 100)}%` } })));
+    } else if (e) {
       let name = i18n.entity(e.type);
       if (e.type === 'Sunflower') name += ` · ${e.data.petals} 🌼`;
       if (e.type === 'Cactus') name += ` · ${e.data.size}`;
@@ -752,6 +797,7 @@ export class FarmView {
       if (e.type !== 'Dead_Pumpkin') lines.push(h('div', { class: 'bar' }, h('span', { style: { width: `${Math.floor(e.progress * 100)}%` } })));
     }
     if (tile.water > 0.01) lines.push(h('div', {}, `💧 ${Math.round(tile.water * 100)}%`));
+    if (tile.glass) lines.push(h('div', {}, i18n.t('ui.glassTip')));
     const world = this.game.world;
     if (e && world.polycultureLevel() > 0) {
       const c = world.companionOf(tile);

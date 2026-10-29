@@ -74,7 +74,7 @@ function commandCard(app, game, name, c) {
     h('summary', {}, h('code', { class: 'book-sig' }, c.sig), h('span', { class: 'book-short' }, c.doc)),
     c.example ? section(t('ui.bookExample'), code(game, c.example)) : null,
     c.notes ? h('p', { class: 'book-note' }, `💡 ${c.notes}`) : null,
-    node ? h('p', { class: 'book-from' }, `🔬 ${t('ui.bookFrom', { name: app.i18n.nodeName(node) })}`) : null,
+    node ? h('p', { class: 'book-from' }, `${game.village.building(node) ? '🏘' : '🔬'} ${t('ui.bookFrom', { name: app.i18n.nodeName(node) })}`) : null,
   );
 }
 

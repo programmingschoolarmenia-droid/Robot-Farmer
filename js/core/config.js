@@ -1,10 +1,10 @@
 // Loads config/*.json and checks them, so a teacher's typo shows a clear message
 // (file, field, problem) instead of a broken game.
-import { GameApi, ENTITY_NAMES, ITEM_NAMES, GROUND_NAMES, FISH_NAMES } from '../engine/api.js';
+import { GameApi, ENTITY_NAMES, ITEM_NAMES, GROUND_NAMES, FISH_NAMES, MACHINE_NAMES } from '../engine/api.js';
 import { SYNTAX_FEATURES } from '../lang/gate.js';
 import { SEASON_NAMES, WEATHER_NAMES } from '../engine/calendar.js';
 
-export const CONFIG_FILES = ['settings', 'research', 'texts', 'bridgy', 'aliases', 'guide'];
+export const CONFIG_FILES = ['settings', 'research', 'texts', 'bridgy', 'aliases', 'guide', 'village'];
 
 export async function loadConfig(base = 'config/') {
   const config = {};
@@ -55,9 +55,10 @@ export function validateConfig(config) {
   const A = 'aliases.json';
   const T = 'texts.json';
   const G = 'guide.json';
-  const { settings, research, texts, bridgy, aliases, guide } = config;
+  const V = 'village.json';
+  const { settings, research, texts, bridgy, aliases, guide, village } = config;
 
-  for (const [name, v] of Object.entries({ settings, research, texts, bridgy, aliases, guide })) {
+  for (const [name, v] of Object.entries({ settings, research, texts, bridgy, aliases, guide, village })) {
     if (!isObj(v)) err(`${name}.json`, '', 'Ֆայլը պետք է պարունակի JSON օբյեկտ { … }');
   }
   if (errors.length) return errors;
@@ -320,13 +321,15 @@ export function validateConfig(config) {
       else
         q.goals.forEach((g, j) => {
           const gp = `${p}.goals[${j}]`;
-          const types = ['gain', 'have', 'research', 'harvest', 'code', 'visitAll', 'giant', 'plant', 'use', 'chain', 'pond', 'fish'];
+          const types = ['gain', 'have', 'research', 'harvest', 'code', 'visitAll', 'giant', 'plant', 'use', 'chain', 'pond', 'fish', 'repair', 'request'];
           if (!isObj(g) || !types.includes(g.type)) return err(B, gp, `type-ը պետք է լինի՝ ${types.join(', ')}`);
           if ((g.type === 'gain' || g.type === 'have' || g.type === 'use') && !ITEM_NAMES.includes(g.item)) err(B, `${gp}.item`, `Անհայտ իր «${g.item}»`);
           if ((g.type === 'harvest' || g.type === 'plant') && !ENTITY_NAMES.includes(g.entity)) err(B, `${gp}.entity`, `Անհայտ բույս «${g.entity}»`);
           if (g.type === 'research' && !ids.has(g.id)) err(B, `${gp}.id`, `Անհայտ հետազոտություն «${g.id}»`);
           if (g.type === 'fish' && !FISH_NAMES.includes(g.fish)) err(B, `${gp}.fish`, `Անհայտ ձուկ «${g.fish}»։ Թույլատրված են՝ ${FISH_NAMES.join(', ')}`);
           if (g.type === 'code' && g.feature && !SYNTAX_FEATURES.includes(g.feature)) err(B, `${gp}.feature`, `Անհայտ հնարավորություն «${g.feature}»`);
+          if (g.type === 'repair' && !(village.buildings || []).some((b) => isObj(b) && b.id === g.id)) err(B, `${gp}.id`, `Անհայտ շենք «${g.id}» (տես village.json)`);
+          if (g.type === 'request' && !(Number.isInteger(g.amount) && g.amount >= 1)) err(B, `${gp}.amount`, 'Պետք է լինի 1 կամ ավելի ամբողջ թիվ');
         });
       if (q.hints !== undefined && (!Array.isArray(q.hints) || !q.hints.every((h) => typeof h === 'string'))) {
         err(B, `${p}.hints`, 'Պետք է լինի տեքստերի ցուցակ');
@@ -341,16 +344,21 @@ export function validateConfig(config) {
           err(B, `lessons.${id}`, 'Պետք է լինի էջերի ցուցակ՝ [{ "text": "…" }]');
           continue;
         }
-        pages.forEach((pg, j) => {
-          const q = pg.quiz;
-          const ok =
-            isObj(q) && Array.isArray(q.answers) && q.answers.length >= 2 && q.answers.every((a) => typeof a === 'string') &&
-            Number.isInteger(q.correct) && q.correct >= 0 && q.correct < q.answers.length && typeof q.right === 'string' && typeof q.wrong === 'string';
-          if (q !== undefined && !ok) err(B, `lessons.${id}[${j}].quiz`, 'Պետք է լինի { "answers": ["…", "…"], "correct": 0, "right": "…", "wrong": "…" }');
-        });
+        checkPages(B, `lessons.${id}`, pages);
       }
   }
   if (!Array.isArray(bridgy.intro)) err(B, 'intro', 'Պետք է լինի էջերի ցուցակ');
+  // Bridgy's pages ({ text, code?, quiz? }) in lessons and in the village stories.
+  function checkPages(file, path, pages) {
+    if (!Array.isArray(pages) || !pages.every((pg) => isObj(pg) && typeof pg.text === 'string')) return err(file, path, 'Պետք է լինի էջերի ցուցակ՝ [{ "text": "…" }]');
+    pages.forEach((pg, j) => {
+      const q = pg.quiz;
+      const ok =
+        isObj(q) && Array.isArray(q.answers) && q.answers.length >= 2 && q.answers.every((a) => typeof a === 'string') &&
+        Number.isInteger(q.correct) && q.correct >= 0 && q.correct < q.answers.length && typeof q.right === 'string' && typeof q.wrong === 'string';
+      if (q !== undefined && !ok) err(file, `${path}[${j}].quiz`, 'Պետք է լինի { "answers": ["…", "…"], "correct": 0, "right": "…", "wrong": "…" }');
+    });
+  }
   for (const [id, f] of Object.entries(bridgy.friends || {})) {
     if (id === '_readme') continue;
     if (!isObj(f) || typeof f.name !== 'string' || typeof f.portrait !== 'string') err(B, `friends.${id}`, 'Պետք է լինի { "name": "…", "portrait": "assets/…png", "lines": ["…"] }');
@@ -376,6 +384,77 @@ export function validateConfig(config) {
       if (!isObj(pl) || typeof pl.about !== 'string') return err(G, `plants[${i}]`, 'Պետք է լինի { "entity": "…", "about": "…" }');
       if (pl.entity ? !ENTITY_NAMES.includes(pl.entity) : !ids.has(pl.research)) err(G, `plants[${i}]`, `Անհայտ «${pl.entity || pl.research}»`);
     });
+
+  // ---------------------------------------------------------------- village
+  const items = (path, v, { min = 0, int = false } = {}) => {
+    if (!isObj(v)) return err(V, path, 'Պետք է լինի օբյեկտ, օրինակ՝ { "Wood": 300 }');
+    for (const [item, n] of Object.entries(v)) {
+      if (!ITEM_NAMES.includes(item)) err(V, `${path}.${item}`, `Անհայտ իր «${item}»`);
+      else if (!isNum(n) || n < min || (int && !Number.isInteger(n))) err(V, `${path}.${item}`, `Պետք է լինի ${min} կամ ավելի${int ? ' ամբողջ' : ''} թիվ`);
+    }
+  };
+  if (village.research !== undefined && !ids.has(village.research)) err(V, 'research', `Անհայտ հետազոտություն «${village.research}»`);
+  const buildingIds = new Set();
+  if (!Array.isArray(village.buildings)) err(V, 'buildings', 'Պետք է լինի շենքերի ցուցակ');
+  else {
+    for (const b of village.buildings) if (isObj(b) && typeof b.id === 'string') buildingIds.add(b.id);
+    village.buildings.forEach((b, i) => {
+      const p = `buildings[${i}]`;
+      if (!isObj(b) || typeof b.id !== 'string' || typeof b.name !== 'string') return err(V, p, 'Պետք է լինի { "id": "Mill", "name": "…", "cost": { … } }');
+      if (village.buildings.findIndex((x) => isObj(x) && x.id === b.id) !== i) err(V, `${p}.id`, `«${b.id}» id-ն կրկնվում է`);
+      if (ids.has(b.id)) err(V, `${p}.id`, `«${b.id}» id-ն արդեն հետազոտություն է, ընտրիր ուրիշ անուն`);
+      for (const a of b.after || []) if (!buildingIds.has(a)) err(V, `${p}.after`, `Անհայտ շենք «${a}»`);
+      for (const key of ['x', 'y']) if (!isNum(b[key]) || b[key] < 0 || b[key] > 100) err(V, `${p}.${key}`, 'Պետք է լինի 0-ից 100 թիվ (տոկոս)');
+      if (b.available === false) return;
+      items(`${p}.cost`, b.cost, { min: 0 });
+      const gr = b.grants || {};
+      for (const f of gr.functions || []) if (knownFunctions.size && !knownFunctions.has(f)) err(V, `${p}.grants.functions`, `Անհայտ ֆունկցիա «${f}»`);
+      for (const m of gr.machines || []) if (!MACHINE_NAMES.includes(m)) err(V, `${p}.grants.machines`, `Անհայտ սարք «${m}»։ Թույլատրված են՝ ${MACHINE_NAMES.join(', ')}`);
+      for (const h of gr.hats || []) if (!settingsHats.includes(h)) err(V, `${p}.grants.hats`, `Անհայտ գլխարկ «${h}» (ավելացրու settings.json → hats)`);
+      checkPages(V, `${p}.story`, b.story || []);
+    });
+  }
+  for (const key of ['intro', 'finale']) checkPages(V, key, village[key] || []);
+  if (!isObj(village.machines)) err(V, 'machines', 'Պարտադիր բաժին է');
+  else
+    for (const [m, cfg] of Object.entries(village.machines)) {
+      const p = `machines.${m}`;
+      if (!MACHINE_NAMES.includes(m)) err(V, p, `Անհայտ սարք «${m}»։ Թույլատրված են՝ ${MACHINE_NAMES.join(', ')}`);
+      if (!isObj(cfg)) {
+        err(V, p, 'Պետք է լինի { "cost": { … }, "recipes": { … } }');
+        continue;
+      }
+      items(`${p}.cost`, cfg.cost || {});
+      for (const [item, r] of Object.entries(cfg.recipes || {})) {
+        if (!ITEM_NAMES.includes(item)) err(V, `${p}.recipes.${item}`, `Անհայտ իր «${item}»`);
+        if (!isObj(r) || !isNum(r.seconds) || r.seconds <= 0) err(V, `${p}.recipes.${item}`, 'Պետք է լինի { "in": { "Hay": 20 }, "seconds": 5 }');
+        else items(`${p}.recipes.${item}.in`, r.in, { min: 1 });
+      }
+    }
+  for (const [item, b] of Object.entries(village.boosts || {})) {
+    const p = `boosts.${item}`;
+    if (!ITEM_NAMES.includes(item)) err(V, p, `Անհայտ իր «${item}»`);
+    if (!isObj(b) || !['speed', 'growth', 'goldenFish'].includes(b.kind) || !isNum(b.multiplier) || b.multiplier <= 0 || !isNum(b.seconds) || b.seconds <= 0) {
+      err(V, p, 'Պետք է լինի { "kind": "speed" | "growth" | "goldenFish", "multiplier": 2, "seconds": 30 }');
+    }
+  }
+  const rq = village.requests;
+  if (!isObj(rq)) err(V, 'requests', 'Պարտադիր բաժին է');
+  else {
+    if (!buildingIds.has(rq.building)) err(V, 'requests.building', `Անհայտ շենք «${rq.building}»`);
+    if (!Number.isInteger(rq.perDay) || rq.perDay < 1) err(V, 'requests.perDay', 'Պետք է լինի 1 կամ ավելի ամբողջ թիվ');
+    for (const key of ['stars', 'bonus', 'share']) if (rq[key] !== undefined && (!isNum(rq[key]) || rq[key] < 0)) err(V, `requests.${key}`, 'Պետք է լինի 0 կամ դրական թիվ');
+    items('requests.items', rq.items, { min: 1 });
+    if (!Array.isArray(rq.villagers) || !rq.villagers.length) err(V, 'requests.villagers', 'Պետք է լինի գյուղացիների ցուցակ');
+    else
+      rq.villagers.forEach((v, i) => {
+        const ok = isObj(v) && typeof v.name === 'string' && (typeof v.face === 'string' || typeof v.portrait === 'string');
+        if (!ok || !Array.isArray(v.lines) || !v.lines.length || !v.lines.every((l) => typeof l === 'string')) {
+          err(V, `requests.villagers[${i}]`, 'Պետք է լինի { "name": "…", "face": "👵" կամ "portrait": "assets/…png", "lines": ["… {amount} {item} …"] }');
+        }
+      });
+  }
+  if (village.greenhouse !== undefined) items('greenhouse.cost', (village.greenhouse || {}).cost || {});
 
   // ---------------------------------------------------------------- aliases
   // Format: { canonical: [shownName, ...otherNames] }

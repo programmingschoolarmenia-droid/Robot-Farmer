@@ -267,6 +267,20 @@
     top: 12px;
     bottom: auto;
   }
+
+  /* ---------- village: the map above (as tall as the screen at most), the panel below; it scrolls */
+  .village-body {
+    display: block;
+    padding: 10px;
+    overflow: auto;
+  }
+  .village-map {
+    max-width: min(100%, calc((100vh - 70px) * 1.6));
+    margin: 0 auto 10px;
+  }
+  .village-panel {
+    overflow: visible;
+  }
 }
 
 /* Narrow phones: the leaderboard tabs in the profile window go 2×2. */

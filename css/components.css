@@ -370,6 +370,23 @@
 .research-button.has-new {
   animation: pulse 1.6s ease-in-out infinite;
 }
+.village-button {
+  position: relative;
+  width: 100%;
+  justify-content: flex-start;
+  padding: 10px 12px;
+  background: var(--green-soft);
+  font-size: 1rem;
+}
+.village-button .badge {
+  position: absolute;
+  right: -8px;
+  top: -10px;
+}
+.boost-chips {
+  display: inline-flex;
+  gap: 4px;
+}
 
 /* ---------- control bar */
 .ctrl-group {

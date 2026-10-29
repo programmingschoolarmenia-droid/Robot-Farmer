@@ -2,7 +2,7 @@
 import { walk } from '../lang/frontend-js.js';
 
 // Quests inserted after saves kept only the position (index) of the current quest.
-const ADDED_LATER = new Set(['buy_fishing', 'fill_pond', 'fish_20', 'golden_fish', 'buy_calendar', 'season_code']);
+const ADDED_LATER = new Set(['buy_fishing', 'fill_pond', 'fish_20', 'golden_fish', 'buy_calendar', 'season_code', 'repair_bridge', 'first_request', 'repair_mill', 'make_flour']);
 
 export class QuestTracker {
   constructor(game, saved = {}) {
@@ -23,6 +23,8 @@ export class QuestTracker {
     this.offs.push(ev.on('research', () => this.check()));
     this.offs.push(ev.on('plant', (e) => this.onPlant(e)));
     this.offs.push(ev.on('useItem', (e) => this.onUseItem(e)));
+    this.offs.push(ev.on('village', () => this.check()));
+    this.offs.push(ev.on('request', () => this.check()));
   }
 
   destroy() {
@@ -35,7 +37,7 @@ export class QuestTracker {
 
   captureBaseline() {
     const g = this.game;
-    this.baseline = { gained: Object.fromEntries(g.stats.totals), harvested: Object.fromEntries(g.stats.harvested), planted: {}, used: {} };
+    this.baseline = { gained: Object.fromEntries(g.stats.totals), harvested: Object.fromEntries(g.stats.harvested), planted: {}, used: {}, requests: g.village.done };
     this.satisfied = {};
     this.hintTier = 0;
   }
@@ -84,6 +86,14 @@ export class QuestTracker {
       }
       case 'fish': {
         const v = Math.max(0, this.harvestedSince(goal.fish));
+        return { done: v >= goal.amount, value: Math.min(v, goal.amount), target: goal.amount };
+      }
+      case 'repair': {
+        const v = g.village.isRepaired(goal.id) ? 1 : 0;
+        return { done: v === 1, value: v, target: 1 };
+      }
+      case 'request': {
+        const v = Math.max(0, g.village.done - ((this.baseline && this.baseline.requests) || 0));
         return { done: v >= goal.amount, value: Math.min(v, goal.amount), target: goal.amount };
       }
       default:

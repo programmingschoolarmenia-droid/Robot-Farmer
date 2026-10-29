@@ -39,7 +39,11 @@
     "catchFish": ["dzknorsel", "ձկնորսել"],
     "getSeason": ["sezon", "սեզոն"],
     "getWeather": ["exanak", "եղանակ"],
-    "getNextWeather": ["hajordExanak", "հաջորդեղանակ"]
+    "getNextWeather": ["hajordExanak", "հաջորդեղանակ"],
+    "build": ["karucel", "կառուցել"],
+    "make": ["patrastel", "պատրաստել"],
+    "eat": ["utel", "ուտել"],
+    "buildGreenhouse": ["apakepatel", "ապակեպատել"]
   },
 
   "constants": {
@@ -57,7 +61,8 @@
     "Unlocks": ["Hetazotutyunner", "Հետազոտություններ"],
     "Fishes": ["Dzkner", "Ձկներ"],
     "Seasons": ["Sezonner", "Սեզոններ"],
-    "Weathers": ["Exanakner", "Եղանակներ"]
+    "Weathers": ["Exanakner", "Եղանակներ"],
+    "Machines": ["Sarqer", "Սարքեր"]
   },
 
   "members": {
@@ -87,7 +92,19 @@
       "Cactus": ["Kaktus", "Կակտուս"],
       "Bone": ["Voskor", "Ոսկոր"],
       "Gold": ["Voski", "Ոսկի"],
-      "Fish": ["Dzuk", "Ձուկ"]
+      "Fish": ["Dzuk", "Ձուկ"],
+      "Flour": ["Aljur", "Ալյուր"],
+      "Jam": ["Muraba", "Մուրաբա"],
+      "Lavash": ["Lavash", "Լավաշ"],
+      "Gata": ["Gata", "Գաթա"],
+      "Ghapama": ["Xapama", "Ղափամա"],
+      "Grilled_Fish": ["Xorovac", "Խորոված"],
+      "Star": ["Astx", "Աստղ"]
+    },
+    "Machines": {
+      "Mill": ["Jraxac", "Ջրաղաց"],
+      "JamPot": ["Katsa", "Կաթսա"],
+      "Tonir": ["Tonir", "Թոնիր"]
     },
     "Grounds": {
       "Grassland": ["Margagetin", "Մարգագետին"],
@@ -124,7 +141,8 @@
       "Gold_Hat": ["Voske", "Ոսկե"],
       "Dinosaur_Hat": ["Dinozavr", "Դինոզավր"],
       "Secret_Hat": ["Gaxtni", "Գաղտնի"],
-      "Fisher_Hat": ["Dzknorsi", "Ձկնորսի"]
+      "Fisher_Hat": ["Dzknorsi", "Ձկնորսի"],
+      "Mayor_Hat": ["Gyuxapeti", "Գյուղապետի"]
     },
     "Unlocks": {
       "Loops": ["Krknutyun", "Կրկնություն"],

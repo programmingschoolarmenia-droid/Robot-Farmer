@@ -1,0 +1,215 @@
+{
+  "_readme": "Գյուղը գետի մյուս ափին։ research՝ որ հետազոտությունից հետո է երևում «🏘 Գյուղ» կոճակը։ buildings՝ շենքերը (id, name, icon, x/y՝ տեղը քարտեզի վրա տոկոսներով, after՝ որ շենքերից հետո, cost՝ ինչ պետք է բերել, grants՝ ինչ է բացում, story՝ Բրիջիի պատմությունը վերանորոգելուց հետո, available: false՝ «Շուտով»)։ intro՝ առաջին անգամ գյուղը բացելիս, finale՝ երբ ամբողջ գյուղը վերանորոգված է։ requests՝ գյուղացիների օրական խնդրանքները (building՝ որ շենքից հետո, perDay՝ օրական քանիսը, stars՝ ⭐ ամեն մեկի համար, bonus՝ ⭐ բոլորը կատարելու համար, share՝ ինչ մասն են խնդրում աշակերտի ամբողջ հավաքածից, items՝ ինչ կարող են խնդրել և նվազագույնը, villagers՝ ով է խնդրում, lines-ում {amount}-ը և {item}-ը փոխարինվում են)։ machines՝ ֆերմայի սարքերը (cost՝ կառուցելու գինը, recipes՝ ինչ են պատրաստում, in՝ բաղադրիչները, seconds՝ որքան է տևում)։ boosts՝ ուտելիքների ուժը (kind՝ speed դրոնի արագություն, growth բույսերի աճ, goldenFish ոսկե ձկան հավանականություն, multiplier՝ քանի անգամ, seconds՝ որքան ժամանակ)։ greenhouse.cost՝ մեկ ապակե վանդակի գինը։",
+  "research": "Plant",
+
+  "buildings": [
+    {
+      "id": "Bridge",
+      "name": "Կամուրջ",
+      "icon": "bridge",
+      "x": 26,
+      "y": 58,
+      "description": "Գետի վրայի հին կամուրջը։ Վերանորոգիր այն, և գյուղացիները կսկսեն քեզ խնդրանքներ թողնել։",
+      "cost": { "Wood": 300, "Hay": 500 },
+      "story": [
+        { "emotion": "celebrating", "text": "Կամուրջը նորից կանգուն է։ Լսու՞մ ես. գյուղացիները վերադառնում են իրենց տները։" },
+        { "emotion": "happy", "text": "Նրանք ամեն օր խնդրանքներ կթողնեն հրապարակի տախտակին։ Կատարիր դրանք, և նրանք քեզ ⭐ աստղեր կտան։ Աստղերը պետք են գյուղի հաջորդ շենքերի համար։" }
+      ]
+    },
+    {
+      "id": "Mill",
+      "name": "Ջրաղաց",
+      "icon": "mill",
+      "x": 40,
+      "y": 26,
+      "after": ["Bridge"],
+      "description": "Ջրաղացը չոր խոտից ալյուր է աղում։ Վերանորոգելուց հետո կկարողանաս ջրաղաց կառուցել հենց ֆերմայում։",
+      "cost": { "Wood": 3000, "Hay": 5000, "Carrot": 1000, "Star": 3 },
+      "grants": { "functions": ["build", "make"], "machines": ["Mill"] },
+      "story": [
+        { "emotion": "celebrating", "text": "Ջրաղացը նորից պտտվում է։ Ջրաղացպանը շնորհակալ է և սովորեցրեց քեզ ջրաղաց կառուցել հենց ֆերմայում։" },
+        { "emotion": "thinking", "text": "karucel(Sarqer.Jraxac)-ը դրոնի տակ ջրաղաց է կառուցում (այն արժե փայտ)։ patrastel(Irer.Aljur)-ը ջրաղացում 20 չոր խոտից ալյուր է աղում մի քանի վայրկյանում։", "code": "karucel(Sarqer.Jraxac);\npatrastel(Irer.Aljur);" },
+        { "emotion": "happy", "text": "Երբ ալյուրը պատրաստ է, hasunE()-ը վերադարձնում է true, իսկ havaqel()-ը վերցնում է այն։ Մտածիր՝ ինչպես կոդով անել, որ ջրաղացը երբեք պարապ չմնա։", "code": "if (hasunE()) {\n  havaqel();\n  patrastel(Irer.Aljur);\n}" }
+      ]
+    },
+    {
+      "id": "JamHouse",
+      "name": "Մուրաբայի տուն",
+      "icon": "jamhouse",
+      "x": 58,
+      "y": 22,
+      "after": ["Mill"],
+      "description": "Այստեղ գազարից մուրաբա են եփում։ Բացում է մուրաբայի կաթսան։",
+      "cost": { "Carrot": 10000, "Pumpkin": 2000, "Wood": 5000, "Star": 6 },
+      "grants": { "machines": ["JamPot"] },
+      "story": [
+        { "emotion": "celebrating", "text": "Մուրաբայի տունը բաց է։ Անահիտ տատիկն իր գաղտնի բաղադրատոմսը տվեց քեզ 🍯" },
+        { "emotion": "thinking", "text": "karucel(Sarqer.Katsa)-ով ֆերմայում կաթսա դիր։ patrastel(Irer.Muraba)-ն 10 գազարից և 1 ջրից մուրաբա է եփում։ Մուրաբան պետք կգա փռում։", "code": "karucel(Sarqer.Katsa);\npatrastel(Irer.Muraba);" }
+      ]
+    },
+    {
+      "id": "Bakery",
+      "name": "Փուռ",
+      "icon": "bakery",
+      "x": 76,
+      "y": 28,
+      "after": ["JamHouse"],
+      "description": "Փուռ թոնիրով՝ լավաշ, գաթա, ղափամա և խորոված ձուկ։ Բացում է թոնիրը և ուտելը։",
+      "cost": { "Wood": 50000, "Pumpkin": 20000, "Cactus": 5000, "Fish": 2000, "Star": 10 },
+      "grants": { "functions": ["eat"], "machines": ["Tonir"] },
+      "story": [
+        { "emotion": "celebrating", "text": "Փուռը վառվում է, թոնիրից նորից տաք լավաշի բույր է գալիս 🔥" },
+        { "emotion": "thinking", "text": "karucel(Sarqer.Tonir)-ով թոնիր կառուցիր։ Թոնիրում կարող ես թխել լավաշ, գաթա և ղափամա, ինչպես նաև ձուկ խորովել։ Բաղադրատոմսերը տես գյուղում՝ «Փուռ»-ի մոտ։", "code": "karucel(Sarqer.Tonir);\npatrastel(Irer.Gata);" },
+        { "emotion": "happy", "text": "Իսկ ուտելիքը կարելի է նաև ուտել՝ utel(Irer.Gata)։ Գաթան 30 վայրկյան դրոնը 2 անգամ արագացնում է, ղափաման բույսերն է արագ աճեցնում, իսկ խորոված ձուկը ոսկե ձկան բախտն է բերում։", "code": "utel(Irer.Gata);" },
+        {
+          "emotion": "thinking",
+          "text": "Մի հարց՝ ե՞րբ է ավելի լավ ուտել գաթան։",
+          "quiz": {
+            "answers": ["Երբ դրոնը շատ գործ ունի անելու", "Երբ կոդը կանգնած է", "Կարևոր չէ"],
+            "correct": 0,
+            "right": "Ճիշտ է։ Արագացումը միայն 30 վայրկյան է տևում, ուստի ուտիր այն, երբ դրոնը շատ աշխատանք ունի։",
+            "wrong": "Ոչ այնքան։ Եթե կոդը կանգնած է, արագացումն իզուր կանցնի։ Փորձիր նորից։"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Greenhouse",
+      "name": "Ջերմատուն",
+      "icon": "greenhouse",
+      "x": 88,
+      "y": 58,
+      "after": ["Bakery"],
+      "description": "Ապակե տուն, որտեղ ձմեռ չկա։ Բացում է ապակե վանդակները ֆերմայում։",
+      "cost": { "Wood": 300000, "Cactus": 50000, "Gold": 2000, "Star": 20 },
+      "grants": { "functions": ["buildGreenhouse"], "hats": ["Mayor_Hat"] },
+      "story": [
+        { "emotion": "celebrating", "text": "Ջերմատունը փայլում է արևի տակ ☀️ Հիմա ձմեռն էլ մեզ չի վախեցնում։" },
+        { "emotion": "thinking", "text": "apakepatel()-ը դրոնի տակի վանդակը ապակով է ծածկում։ Ապակու տակ միշտ բույսի սիրած սեզոնն է, իսկ անձրևը, շոգը, սառույցը և կայծակը չեն հասնում, ուստի ջրել պետք է ինքդ։", "code": "apakepatel();" },
+        { "emotion": "happy", "text": "Ապակին մնում է ընդմիշտ։ Մտածիր՝ ֆերմայի որ վանդակներն արժե ծածկել։" }
+      ]
+    },
+    {
+      "id": "School",
+      "name": "Դպրոց",
+      "icon": "school",
+      "x": 56,
+      "y": 82,
+      "available": false,
+      "description": "Այստեղ շուտով կանցկացվեն շաբաթական կոդի մրցույթներ։"
+    },
+    {
+      "id": "Square",
+      "name": "Տոնական հրապարակ",
+      "icon": "square",
+      "x": 74,
+      "y": 66,
+      "available": false,
+      "description": "Այստեղ շուտով կնշենք հայկական տոները։"
+    }
+  ],
+
+  "intro": [
+    { "emotion": "thinking", "text": "Գետի մյուս ափին հին գյուղ կա։ Մի ժամանակ այնտեղ ջրաղացը պտտվում էր, թոնիրից լավաշի բույր էր գալիս, իսկ երեխաները խաղում էին հրապարակում։" },
+    { "emotion": "worried", "text": "Բայց մի գարնանային փոթորիկ քանդեց կամուրջը, և գյուղը դատարկվեց։ Տները քանդվեցին, ջրաղացը կանգ առավ։" },
+    { "emotion": "happy", "text": "Կարծում եմ՝ միասին կարող ենք գյուղը նորից կենդանացնել։ Սկսենք կամրջից։ Ամեն շենքի համար բեր այն, ինչ ունես՝ «Տալ» կոճակով։ Կարելի է քիչ-քիչ։" }
+  ],
+
+  "finale": [
+    { "emotion": "celebrating", "text": "Ուռա՜։ Գյուղը նորից կենդանի է։ Ջրաղացը պտտվում է, փուռը վառվում է, իսկ ջերմատանը ձմռանն էլ ծաղիկներ են աճում։" },
+    { "emotion": "happy", "text": "Գյուղացիները քեզ գյուղապետ ընտրեցին 🎩 Քո նոր գլխարկն է «Գյուղապետի գլխարկ»՝ poxelGlxark(Glxarkner.Gyuxapeti)։ Իսկ դպրոցն ու հրապարակը շուտով նույնպես կբացվեն…" }
+  ],
+
+  "requests": {
+    "building": "Bridge",
+    "perDay": 3,
+    "stars": 1,
+    "bonus": 2,
+    "share": 0.02,
+    "x": 64,
+    "y": 52,
+    "items": {
+      "Hay": 50,
+      "Wood": 30,
+      "Carrot": 20,
+      "Pumpkin": 10,
+      "Power": 10,
+      "Cactus": 10,
+      "Fish": 10,
+      "Bone": 5,
+      "Gold": 5,
+      "Flour": 3,
+      "Jam": 2,
+      "Lavash": 2,
+      "Gata": 1,
+      "Ghapama": 1,
+      "Grilled_Fish": 1
+    },
+    "villagers": [
+      {
+        "name": "Էրիկ",
+        "portrait": "assets/friends/erik.png",
+        "lines": ["Ֆուտբոլից հետո շատ եմ սովածանում։ Կբերե՞ս {amount} {item}։", "Ուզում եմ ընկերներիս հյուրասիրել։ Ինձ պետք է {amount} {item}։"]
+      },
+      {
+        "name": "Նշան",
+        "portrait": "assets/friends/nshan.png",
+        "lines": ["Գյուղի համար նոր նախագիծ ունեմ։ Ինձ պետք է {amount} {item}։", "Քայլ առ քայլ ենք գյուղը վերականգնում։ Կօգնե՞ս՝ {amount} {item}։"]
+      },
+      {
+        "name": "Անահիտ տատիկ",
+        "face": "👵",
+        "lines": ["Թոռներս գալու են։ Ինձ պետք է {amount} {item}, որ համեղ բան պատրաստեմ։", "Ա՜խ, ձեռքերս արդեն ծեր են։ Կբերե՞ս {amount} {item}, բալիկս։"]
+      },
+      {
+        "name": "Սիրանուշ հացթուխ",
+        "face": "👩‍🍳",
+        "lines": ["Փուռը սպասում է։ Ինձ պետք է {amount} {item}։", "Վաղը տոն է, շատ գործ ունեմ։ Բեր {amount} {item}, խնդրում եմ։"]
+      },
+      {
+        "name": "Արամ ձկնորս",
+        "face": "🎣",
+        "lines": ["Լճի մոտ խնջույք ենք անում։ Ինձ պետք է {amount} {item}։", "Նավակս նորոգում եմ։ Կբերե՞ս {amount} {item}։"]
+      },
+      {
+        "name": "Փոքրիկ Լիլիթ",
+        "face": "👧",
+        "lines": ["Դպրոցում նախագիծ ունենք։ Ինձ պետք է {amount} {item}։", "Ուզում եմ մայրիկիս անակնկալ անել։ Կօգնե՞ս՝ {amount} {item}։"]
+      }
+    ]
+  },
+
+  "machines": {
+    "Mill": {
+      "cost": { "Wood": 500 },
+      "recipes": {
+        "Flour": { "in": { "Hay": 20 }, "seconds": 5 }
+      }
+    },
+    "JamPot": {
+      "cost": { "Wood": 500, "Carrot": 200 },
+      "recipes": {
+        "Jam": { "in": { "Carrot": 10, "Water": 1 }, "seconds": 8 }
+      }
+    },
+    "Tonir": {
+      "cost": { "Wood": 2000, "Pumpkin": 200 },
+      "recipes": {
+        "Lavash": { "in": { "Flour": 2, "Water": 1 }, "seconds": 6 },
+        "Gata": { "in": { "Flour": 3, "Jam": 1 }, "seconds": 12 },
+        "Ghapama": { "in": { "Pumpkin": 5, "Jam": 1 }, "seconds": 15 },
+        "Grilled_Fish": { "in": { "Fish": 10, "Wood": 2 }, "seconds": 8 }
+      }
+    }
+  },
+
+  "boosts": {
+    "Gata": { "kind": "speed", "multiplier": 2, "seconds": 30 },
+    "Ghapama": { "kind": "growth", "multiplier": 2, "seconds": 30 },
+    "Grilled_Fish": { "kind": "goldenFish", "multiplier": 3, "seconds": 30 }
+  },
+
+  "greenhouse": {
+    "cost": { "Wood": 500, "Cactus": 200 }
+  }
+}

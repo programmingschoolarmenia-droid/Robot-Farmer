@@ -88,7 +88,8 @@ export class Calendar {
       const tile = world.tiles[Math.floor(this.game.rng.next() * world.tiles.length)];
       world.sync(tile, t);
       const e = tile.entity;
-      const charged = !!e && e.type !== 'Grass' && (this.game.settings.entities[e.type] || {}).plantable !== false;
+      const plant = e && this.game.settings.entities[e.type]; // not machines; glass keeps lightning out
+      const charged = !!plant && plant.plantable !== false && e.type !== 'Grass' && !tile.glass;
       if (charged) e.data.charged = true;
       this.game.events.emit('lightning', { x: tile.x, y: tile.y, charged });
     }
@@ -96,12 +97,13 @@ export class Calendar {
 
   // ---------------------------------------------------------------- rules (neutral without a calendar)
 
-  // ×inSeason in the plant's seasons (settings.json → entities.X.seasons), ×outOfSeason outside them, × today's luck.
-  growth(type) {
+  // ×inSeason in the plant's seasons (settings.json → entities.X.seasons) and under greenhouse glass,
+  // ×outOfSeason outside them, × today's luck.
+  growth(type, glass = false) {
     const s = this.state;
     if (!s) return 1;
     const seasons = (this.game.settings.entities[type] || {}).seasons;
-    const k = !seasons ? 1 : seasons.includes(s.season) ? this.cfg.inSeason ?? 2 : this.cfg.outOfSeason ?? 0.5;
+    const k = !seasons ? 1 : glass || seasons.includes(s.season) ? this.cfg.inSeason ?? 2 : this.cfg.outOfSeason ?? 0.5;
     return k * ((s.luck && s.luck.growth) || 1);
   }
 

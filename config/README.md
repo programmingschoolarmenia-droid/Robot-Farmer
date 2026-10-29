@@ -16,6 +16,7 @@ problem**; nothing breaks silently.
 | `bridgy.json` | Bridgy's words: intro, lessons (with quizzes), quests (with 3 hints each), reactions, credits |
 | `aliases.json` | The Armenian names of the game commands students write (`havaqel()`, `tnkel()`, `gnal(Aj)`…) |
 | `guide.json` | Bridgy's book («Բրիջի, օգնի՛ր»): every game command, the JavaScript topics and the plants |
+| `village.json` | The village across the river: buildings and what they cost and unlock, Bridgy's story, the villagers' daily requests, the kitchen machines and recipes, the dishes' boosts, the greenhouse glass |
 
 ---
 
@@ -300,6 +301,29 @@ username). To remove a student completely, also delete `saves/username` and
 The free plan (50 000 reads and 20 000 writes per day) is plenty for a school. The leaderboard
 needs no extra setup: every list is one query, a list is reused for a minute when students
 switch tabs, and «you moved up» costs one small count per online save.
+
+## village.json (the village)
+The «🏘 Գյուղ» button appears after the research in `research` (default `Plant`). It opens a map
+of the village across the river. Every building starts as a ruin; students bring the items it
+needs **little by little** («Տալ» gives what they have), and when everything is there it is
+repaired, Bridgy tells a chapter of the story and it unlocks new things.
+
+| Field | Meaning |
+|---|---|
+| `buildings` | `id`, `name`, `icon` (`bridge, mill, jamhouse, bakery, greenhouse, school, square`), `x`/`y` (place on the map, % from the left/top), `after` (buildings that must be repaired first), `description`, `cost` (`{ "Wood": 300, "Star": 3 }`), `grants` (like research: `functions`, `machines`, `hats`), `story` (Bridgy's pages after the repair, like lessons: `text`, `code`, `quiz`), `available: false` (shows «Շուտով») |
+| `intro`, `finale` | Bridgy's pages the first time the village opens, and when every building is repaired |
+| `requests` | The requests board, opened by `building`: every day `perDay` villagers ask for items the student has already gathered, at least the number in `items` or `share` (2%) of everything they ever gathered of it. Each done request gives `stars` ⭐, all of them `bonus` ⭐ more. `villagers`: `name`, `face` (an emoji) or `portrait` (a picture), `lines` with `{amount}` and `{item}`. `x`/`y`: the board on the map |
+| `machines` | `Mill`, `JamPot`, `Tonir`: `cost` to build one on the farm, `recipes` (`"Flour": { "in": { "Hay": 20 }, "seconds": 5 }`) |
+| `boosts` | Dishes that can be eaten: `kind` (`speed` = the drone, `growth` = the plants, `goldenFish`), `multiplier`, `seconds` (game time; eating again adds more) |
+| `greenhouse` | `cost` of one glass square |
+
+In code (unlocked by the buildings): `karucel(Sarqer.Jraxac / Katsa / Tonir)` builds a machine on
+the drone's square, `patrastel(Irer.Aljur)` starts a recipe (the ingredients come from the
+storage), `hasunE()` says when it is ready and `havaqel()` takes it (an unfinished machine is
+never destroyed, `herkel()` removes it), `utel(Irer.Gata)` eats a dish, and `apakepatel()` puts
+a glass roof on the square: under glass it is always the plant's favourite season, and rain,
+heat, ice and lightning stay outside. The new items (flour, jam, lavash, gata, ghapama, grilled
+fish, ⭐ stars) count for the leaderboard like the others (`settings.json → leaderboard.points`).
 
 ## texts.json
 All interface text. Words in `{curly}` braces are filled in by the game — keep them.

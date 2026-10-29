@@ -2,6 +2,7 @@
 export function describeError(err, i18n, game) {
   const p = { ...(err.params || {}) };
   const { research, api } = game;
+  let key = err.code;
   switch (err.code) {
     case 'lockedSyntax':
       p.featureName = i18n.feature(p.feature);
@@ -9,8 +10,10 @@ export function describeError(err, i18n, game) {
       break;
     case 'lockedFunction': {
       const canon = p.canonical || api.canonicalName(p.name);
-      p.nodeName = i18n.nodeName(research.nodeForFunction(canon));
+      const gate = research.nodeForFunction(canon);
+      p.nodeName = i18n.nodeName(gate);
       p.name = api.displayName(canon);
+      if (game.village.building(gate)) key = 'lockedFunctionVillage'; // unlocked by repairing a village building
       break;
     }
     case 'notFunction':
@@ -28,7 +31,7 @@ export function describeError(err, i18n, game) {
     default:
       break;
   }
-  const message = i18n.t(`errors.${err.code}`, p);
+  const message = i18n.t(`errors.${key}`, p);
   const extra = [];
   if (p.python) extra.push(i18n.t('ui.pythonHint', { js: p.python }));
   if (p.enumHint && p.enumHint.length) extra.push(i18n.t('ui.enumHint', { names: p.enumHint.join(', ') }));
@@ -47,6 +50,7 @@ export function describeWarning(w, i18n, game) {
   if (p.cost) p.costText = i18n.costText(p.cost);
   if (p.item) p.itemName = i18n.item(p.item);
   if (p.hat) p.hatName = i18n.hat(p.hat);
+  if (p.machine) p.machineName = i18n.t(`machines.${p.machine}`);
   if (w.code === 'plant_entityLocked') p.nodeName = i18n.nodeName(game.research.nodeForEntity(p.entity));
   return i18n.t(`warnings.${w.code}`, p);
 }
