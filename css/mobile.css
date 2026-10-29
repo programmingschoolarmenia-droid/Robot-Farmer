@@ -281,6 +281,17 @@
   .village-panel {
     overflow: visible;
   }
+  .village-name,
+  .village-farm {
+    padding: 0 4px;
+    border-width: 1.5px;
+    font-size: 0.6rem;
+  }
+  .village-badge {
+    padding: 0 3px;
+    border-width: 1.5px;
+    font-size: 0.58rem;
+  }
 }
 
 /* Narrow phones: the leaderboard tabs in the profile window go 2×2. */

@@ -1,7 +1,14 @@
-// The village screen: a painted map of the village across the river (ruins turn into buildings as
-// they are repaired), each building's needs, unlocks, recipes and story, and the villagers' requests.
+// The village screen: a map of the village across the river (each building is a picture in
+// assets/village, <icon>.png and its ruin <icon>-ruin.png), each building's needs, unlocks, recipes
+// and story, and the villagers' requests.
 import { h, pixelImg } from './dom.js';
 import { formatCount } from '../core/util.js';
+
+const W = 480; // the background canvas (16:10, like the map)
+const H = 300;
+const RIVER = { at: 90, width: 30 }; // the river runs down-right along y = x / 2 + at (canvas units)
+
+const art = (b, state) => `assets/village/${b.icon}${state === 'repaired' ? '' : '-ruin'}.png`;
 
 // «20 Չոր խոտ → Ալյուր (5 վրկ)»
 export function recipeText(i18n, item, recipe) {
@@ -30,7 +37,7 @@ export class VillageView {
     if (this.el) return;
     const t = this.app.i18n.t;
     this.items = h('div', { class: 'research-items' });
-    this.map = h('div', { class: 'village-map' }, this.background());
+    this.map = h('div', { class: 'village-map' }, this.background(), h('span', { class: 'village-farm' }, t('ui.villageFarm')));
     this.panel = h('div', { class: 'village-panel' });
     this.el = h(
       'div',
@@ -81,22 +88,23 @@ export class VillageView {
     const spots = village.buildings.map((b) => {
       const state = village.state(b.id);
       const badge = state === 'repaired' ? '✓' : state === 'soon' ? '🚧' : state === 'locked' ? '🔒' : `${this.percent(b)}%${this.canGive(b) ? ' 🔨' : ''}`;
-      return this.spot(b.x, b.y, `${state === 'repaired' ? 'building' : 'ruin'}:${b.icon}`, b.name, badge, b.id, state);
+      return this.spot(b, h('img', { src: art(b, state), alt: '' }), b.name, badge, b.id, state);
     });
     const r = village.cfg.requests || {};
     if (village.requestsOpen) {
       const left = village.requests().list.filter((q) => !q.done).length;
-      spots.push(this.spot(r.x ?? 64, r.y ?? 52, 'building:board', this.app.i18n.t('ui.villageBoard'), left ? `📜 ${left}` : '✓', 'board', 'repaired'));
+      spots.push(this.spot({ x: r.x ?? 44, y: r.y ?? 33, w: r.w ?? 7 }, pixelImg(sprites.url('village:board', 4), '', ''), this.app.i18n.t('ui.villageBoard'), left ? `📜 ${left}` : '✓', 'board', 'repaired'));
     }
-    this.map.replaceChildren(this.map.firstChild, ...spots);
+    this.map.replaceChildren(...[...this.map.children].slice(0, 2), ...spots);
     this.panel.replaceChildren(...(this.selected === 'board' ? this.board() : this.buildingPanel(village.building(this.selected))));
   }
 
-  spot(x, y, sprite, name, badge, id, state) {
+  // A building on the map: its picture centred at x, y (% of the map), w % of the map wide.
+  spot(b, img, name, badge, id, state) {
     return h(
       'button',
-      { class: `village-spot ${state}${this.selected === id ? ' selected' : ''}${id === 'Bridge' ? ' bridge' : ''}`, style: { left: `${x}%`, top: `${y}%` }, onclick: () => this.select(id) },
-      pixelImg(this.app.sprites.url(sprite, 3), '', ''),
+      { class: `village-spot ${state}${this.selected === id ? ' selected' : ''}`, style: { left: `${b.x}%`, top: `${b.y}%`, width: `${b.w ?? 17}%` }, onclick: () => this.select(id) },
+      img,
       h('span', { class: 'village-name' }, name),
       h('span', { class: 'village-badge' }, badge),
     );
@@ -118,7 +126,7 @@ export class VillageView {
     const village = this.village;
     const state = village.state(b.id);
     const parts = [
-      h('div', { class: 'rd-head' }, h('div', { class: 'rd-icon village-panel-icon' }, pixelImg(sprites.url(`${state === 'repaired' ? 'building' : 'ruin'}:${b.icon}`, 2), '', '')), h('div', { class: 'rd-name' }, b.name)),
+      h('div', { class: 'rd-head' }, h('img', { class: 'village-panel-art', src: art(b, state), alt: '' }), h('div', { class: 'rd-name' }, b.name)),
       h('div', { class: 'rd-desc' }, b.description || ''),
     ];
     if (state === 'soon') parts.push(h('div', { class: 'rd-note' }, t('ui.villageSoon')));
@@ -195,7 +203,8 @@ export class VillageView {
         ),
       );
     });
-    if (board.list.length) parts.push(h('div', { class: 'rd-note' }, board.bonus ? t('ui.requestsBonusDone') : t('ui.requestsBonus', { n: board.list.length, bonus: r.bonus ?? 0 })));
+    if (board.bonus) parts.push(h('div', { class: 'rd-note' }, t('ui.requestsBonusDone')));
+    else if (board.list.length > 1) parts.push(h('div', { class: 'rd-note' }, t('ui.requestsBonus', { n: board.list.length, bonus: r.bonus ?? 0 })));
     parts.push(h('div', { class: 'rd-note' }, t('ui.requestsNew')));
     return parts;
   }
@@ -210,33 +219,72 @@ export class VillageView {
     this.refresh();
   }
 
-  // The meadow, the river with the bridge's road from Bridgy's farm (left) to the village square.
+  // The meadow in isometric tiles, the river under the bridge (down-right, like the bridge's stream),
+  // Bridgy's field on the near bank, and dirt roads: field → bridge → square → every building.
   background() {
-    const W = 320;
-    const H = 200;
     const cv = h('canvas', { class: 'pixel village-bg', width: W, height: H });
     const ctx = cv.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
-    for (let y = 0; y < H; y += 16) for (let x = 0; x < W; x += 16) ctx.drawImage(this.app.sprites.get(`meadow${((x * 7 + y * 13) >> 4) % 4}`), x, y, 16, 16);
-    ctx.fillStyle = '#dba463';
-    ctx.fillRect(0, 112, W * 0.72, 10);
-    ctx.fillRect(W * 0.6, 60, 10, 110);
-    ctx.fillStyle = '#c9925a';
-    ctx.fillRect(0, 122, W * 0.72, 2);
-    for (let y = 0; y < H; y++) {
-      const x = W * 0.24 + Math.sin(y / 14) * 5;
-      ctx.fillStyle = '#285cc4';
-      ctx.fillRect(x - 1, y, 22, 1);
-      ctx.fillStyle = '#249fde';
-      ctx.fillRect(x + 1, y, 18, 1);
-      if ((y >> 2) % 6 === 0) {
-        ctx.fillStyle = '#a6fcdb';
-        ctx.fillRect(x + 4 + ((y * 3) % 9), y, 4, 1);
+    const at = (b) => [(b.x * W) / 100, (b.y * H) / 100];
+    const poly = (color, pts) => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      ctx.fill();
+    };
+    for (let r = 0; r * 4 < H + 8; r++) {
+      for (let c = -1; c * 16 < W + 16; c++) {
+        const x = c * 16 + (r % 2) * 8;
+        const y = r * 4;
+        poly(r % 2 ? '#a3d571' : '#9bcf69', [[x, y - 4], [x + 8, y], [x, y + 4], [x - 8, y]]);
       }
     }
-    ctx.fillStyle = '#71413b';
-    for (let x = 4; x < 40; x += 9) ctx.fillRect(x, 100, 2, 10);
-    ctx.fillRect(2, 102, 40, 2);
+    for (let i = 0; i < 260; i++) {
+      const n = (i * 2654435761) >>> 0;
+      ctx.fillStyle = i % 9 === 0 ? (i % 2 ? '#ffffff' : '#ffe066') : '#7fb552';
+      ctx.fillRect(n % W, (n >>> 12) % H, i % 9 === 0 ? 1 : 2, 1);
+    }
+    const band = (extra) => [[0, RIVER.at - extra], [W, RIVER.at + W / 2 - extra], [W, RIVER.at + W / 2 + extra], [0, RIVER.at + extra]];
+    const half = RIVER.width / 2;
+    poly('#6aa84a', band(half + 5));
+    poly('#e3c68d', band(half + 3));
+    poly('#2f80d8', band(half));
+    poly('#3ea6ee', band(half - 3));
+    ctx.fillStyle = '#bfeeff';
+    for (let x = 6; x < W; x += 23) for (const k of [-6, 5]) ctx.fillRect(x + ((x * 7) % 11), x / 2 + RIVER.at + k + ((x * 3) % 5), 6, 1);
+    // Bridgy's field: rows of soil with sprouts, on the near (lower-left) bank.
+    for (let i = 0; i < 4; i++) {
+      const x = 24 + i * 12;
+      const y = 238 + i * 6;
+      poly('#9a6a44', [[x, y], [x + 40, y - 20], [x + 48, y - 16], [x + 8, y + 4]]);
+      ctx.fillStyle = '#5fbf3a';
+      for (let k = 0; k < 5; k++) ctx.fillRect(x + 6 + k * 8, y - 3 - k * 4, 2, 2);
+    }
+    // Roads along the isometric axes: an L from a to b (up-right first, then down-right).
+    const road = (a, b) => {
+      const s = ((b[0] - a[0]) / 2 - (b[1] - a[1])) / 2;
+      const corner = [a[0] + 2 * s, a[1] - s];
+      for (const [color, width] of [['#b88a50', 9], ['#d6ad6b', 7]]) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(...a);
+        ctx.lineTo(...corner);
+        ctx.lineTo(...b);
+        ctx.stroke();
+      }
+    };
+    const v = this.village;
+    const bridge = v.building('Bridge');
+    const square = v.buildings.find((b) => b.icon === 'square') || bridge;
+    if (bridge) {
+      const [bx, by] = at(bridge);
+      const reach = ((bridge.w ?? 22) * W) / 100 / 2.6; // the bridge's ends, along its deck (up-right)
+      road([70, 222], [bx - reach, by + reach / 2]);
+      road([bx + reach, by - reach / 2], at(square));
+      for (const b of v.buildings) if (b !== bridge && b !== square) road(at(square), [at(b)[0], at(b)[1] + ((b.w ?? 17) * W) / 100 / 5]);
+    }
     return cv;
   }
 }

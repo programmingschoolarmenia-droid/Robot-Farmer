@@ -164,11 +164,7 @@ export class SpriteBook {
     this.put('machine:Mill', millMachine());
     this.put('machine:JamPot', jamPot());
     this.put('machine:Tonir', tonir());
-    for (const [name, draw] of Object.entries(BUILDINGS)) {
-      const art = draw();
-      this.put(`building:${name}`, art);
-      this.put(`ruin:${name}`, ruin(art, name === 'bridge'));
-    }
+    this.put('village:board', noticeBoard()); // (the buildings are pictures: assets/village)
 
     // --- research icons
     this.put('icon:hat', sideHat('#f2c04d', '#2b6fd6'));
@@ -730,101 +726,19 @@ function tonir() {
   return p;
 }
 
-// Village buildings (32×32, the bridge 32×16); ruin() makes the broken grey version of each.
-function house(wall, roof, { door = PAL.brown, windowColor = '#7ec8f0' } = {}) {
+// The villagers' requests board on the village map: a small tiled roof, posts and paper notes.
+function noticeBoard() {
   const p = new Pixels(32, 32);
-  p.rect(6, 15, 20, 14, wall);
-  p.polygon([[3, 16], [16, 4], [29, 16]], roof);
-  p.rect(14, 21, 5, 8, door);
-  p.rect(8, 19, 4, 4, windowColor).rect(21, 19, 4, 4, windowColor);
-  return p;
-}
-
-const BUILDINGS = {
-  bridge() {
-    const p = new Pixels(32, 16);
-    p.rect(0, 8, 32, 4, PAL.lightBrown);
-    for (let x = 0; x < 32; x += 4) p.rect(x, 8, 1, 4, PAL.brown);
-    p.rect(0, 4, 32, 1, PAL.brown);
-    for (const x of [1, 10, 21, 30]) p.rect(x, 4, 1, 5, PAL.darkBrown);
-    p.outline(PAL.outlineBrown);
-    return p;
-  },
-  mill() {
-    const p = house(PAL.lightBrown, PAL.red);
-    p.disc(6, 22, 6, PAL.tan);
-    p.line(0, 22, 12, 22, PAL.brown).line(6, 16, 6, 28, PAL.brown).line(2, 18, 10, 26, PAL.brown).line(10, 18, 2, 26, PAL.brown);
-    p.disc(6, 22, 1.5, PAL.darkBrown);
-    p.rect(0, 28, 12, 3, PAL.sky);
-    p.outline(PAL.outlineBrown);
-    return p;
-  },
-  jamhouse() {
-    const p = house(PAL.sand, PAL.orange);
-    p.rect(14, 10, 5, 5, '#d6402b');
-    p.rect(13, 9, 7, 1, PAL.white);
-    p.outline(PAL.outlineBrown);
-    return p;
-  },
-  bakery() {
-    const p = house(PAL.lightGrey, PAL.brown, { door: PAL.amber });
-    p.rect(21, 3, 4, 9, PAL.grey);
-    p.disc(23, 1.5, 1.5, PAL.white);
-    p.rect(15, 23, 3, 3, PAL.yellow);
-    p.outline(PAL.outlineBrown);
-    return p;
-  },
-  greenhouse() {
-    const p = house('#bfe9f2', '#d8f6fb', { door: '#9fd8e6', windowColor: '#bfe9f2' });
-    for (const x of [10, 16, 22]) p.line(x, 10, x, 28, PAL.white);
-    p.line(6, 21, 26, 21, PAL.white);
-    for (const [x, y] of [[8, 26], [12, 25], [20, 26], [24, 25], [9, 18], [23, 18]]) p.disc(x, y, 1.6, PAL.green);
-    p.outline(PAL.blue);
-    return p;
-  },
-  school() {
-    const p = house('#f6e3a1', PAL.blue);
-    p.rect(14, 0, 5, 6, PAL.lightBrown);
-    p.disc(16.5, 3.5, 1.6, PAL.yellow);
-    p.outline(PAL.outlineBrown);
-    return p;
-  },
-  square() {
-    const p = new Pixels(32, 32);
-    p.ellipse(16, 22, 14, 8, PAL.lightGrey);
-    p.ellipse(16, 21, 11, 5.5, PAL.sky);
-    p.rect(15, 10, 3, 11, PAL.grey);
-    p.disc(16.5, 9, 2.5, PAL.pale);
-    for (const [x, c] of [[3, PAL.brightRed], [28, PAL.blue]]) p.rect(x, 4, 1, 14, PAL.brown).rect(x + 1, 4, 3, 3, c);
-    p.outline(PAL.outlineBrown);
-    return p;
-  },
-  board() {
-    const p = new Pixels(16, 16);
-    p.rect(3, 9, 1, 7, PAL.brown).rect(12, 9, 1, 7, PAL.brown);
-    p.rect(1, 2, 14, 9, PAL.tan);
-    p.rect(3, 4, 4, 5, PAL.white).rect(9, 3, 4, 4, '#fff1b8');
-    p.set(4, 5, PAL.grey).set(5, 6, PAL.grey).set(10, 4, PAL.grey);
-    p.outline(PAL.outlineBrown);
-    return p;
-  },
-};
-
-// The ruin of a building: grey, darker, with holes in its upper part (the bridge: a gap in the middle).
-function ruin(art, bridge) {
-  const p = new Pixels(art.w, art.h);
-  const rand = seeded(art.w * 31 + art.h);
-  for (let y = 0; y < art.h; y++) {
-    for (let x = 0; x < art.w; x++) {
-      const c = art.get(x, y);
-      if (!c) continue;
-      if (bridge ? x >= 12 && x <= 19 && rand() < 0.9 : y < art.h * 0.5 && rand() < 0.3) continue;
-      const n = parseInt(c.slice(1), 16);
-      const v = Math.round((0.3 * (n >> 16) + 0.59 * ((n >> 8) & 255) + 0.11 * (n & 255)) * 0.72);
-      p.set(x, y, `#${v.toString(16).padStart(2, '0').repeat(3)}`);
-    }
-  }
-  if (!bridge) p.line(8, art.h - 4, art.w - 10, art.h * 0.45, PAL.brown).line(10, art.h - 6, art.w - 6, art.h - 9, PAL.lightBrown);
+  p.rect(6, 14, 2, 17, PAL.brown).rect(24, 14, 2, 17, PAL.brown);
+  p.rect(3, 9, 26, 15, PAL.lightBrown);
+  p.shade(PAL.lightBrown, PAL.tan, PAL.brown);
+  p.rect(5, 11, 22, 11, '#c9925a');
+  p.polygon([[1, 10], [16, 2], [31, 10]], PAL.red);
+  p.shade(PAL.red, PAL.brightRed, '#7a1620');
+  p.rect(7, 12, 6, 7, PAL.white).rect(15, 13, 5, 6, '#fff1b8').rect(22, 12, 4, 5, PAL.white);
+  for (const [x, y] of [[8, 14], [9, 16], [16, 15], [23, 14]]) p.rect(x, y, 3, 1, PAL.grey);
+  p.set(10, 12, PAL.brightRed).set(17, 13, PAL.blue).set(24, 12, PAL.brightRed);
+  p.outline(PAL.outlineBrown);
   return p;
 }
 

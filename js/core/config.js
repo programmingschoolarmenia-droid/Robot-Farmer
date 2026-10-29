@@ -405,6 +405,7 @@ export function validateConfig(config) {
       if (ids.has(b.id)) err(V, `${p}.id`, `«${b.id}» id-ն արդեն հետազոտություն է, ընտրիր ուրիշ անուն`);
       for (const a of b.after || []) if (!buildingIds.has(a)) err(V, `${p}.after`, `Անհայտ շենք «${a}»`);
       for (const key of ['x', 'y']) if (!isNum(b[key]) || b[key] < 0 || b[key] > 100) err(V, `${p}.${key}`, 'Պետք է լինի 0-ից 100 թիվ (տոկոս)');
+      if (b.w !== undefined && (!isNum(b.w) || b.w <= 0 || b.w > 100)) err(V, `${p}.w`, 'Պետք է լինի 1-ից 100 թիվ (տոկոս)');
       if (b.available === false) return;
       items(`${p}.cost`, b.cost, { min: 0 });
       const gr = b.grants || {};

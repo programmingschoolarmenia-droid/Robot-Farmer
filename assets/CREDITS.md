@@ -2,10 +2,12 @@
 
 | Asset | Author | License |
 |---|---|---|
-| `bridgy/bridgy.png`, `bridgy/bridgy-head.png` (Bridgy the robot farmer) | The game's owner (from `Pixel Art Robot Farmer Sprite.png`) | Owned by the school |
+| `bridgy/bridgy.png` (Bridgy the robot farmer) | The game's owner (from `Pixel Art Robot Farmer Sprite.png`) | Owned by the school |
+| `bridgy/bridgy-head.png` (Bridgy's head: the logo, the help button, the page icon) | The game's owner (from `Friendly Blue Robot Farmer Mascot.png`) | Owned by the school |
+| `village/*.png` (the village buildings and their ruins: bridge, watermill, jam cottage, bakery, greenhouse, schoolhouse, market square) | The game's owner (from the isometric pixel-art pictures, cropped and scaled to 480 px) | Owned by the school |
 | `sprites/drone.png` (the farm drone) | The game's owner (from `Retro Pixel Drone Icon.png`) | Owned by the school |
 | `sprites/crops-josehzz.png` — wheat (grass/hay), pumpkin ("orange"), sunflower | **josehzz** — [Farming crops 16x16](https://opengameart.org/content/farming-crops-16x16), profile: https://opengameart.org/users/josehzz | [CC0 1.0](http://creativecommons.org/publicdomain/zero/1.0/) |
-| Ground tiles, bush, tree, carrot, cactus, maze, treasure, apple, dinosaur, item and research icons, hats | Drawn in code (`js/ui/sprites.js`) for this game | Part of this project |
+| Ground tiles, bush, tree, carrot, cactus, maze, treasure, apple, dinosaur, item and research icons, hats, kitchen machines, the requests board | Drawn in code (`js/ui/sprites.js`) for this game | Part of this project |
 | Sounds and music | Synthesised in code with WebAudio (`js/audio.js`) | Part of this project |
 
 Code libraries (in `vendor/`):

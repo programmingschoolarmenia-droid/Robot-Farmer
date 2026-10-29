@@ -118,12 +118,12 @@ export class GameScreen {
       h(
         'header',
         { class: 'topbar' },
-        h('div', { class: 'logo' }, pixelImg(app.config.bridgy.avatar || 'assets/bridgy/bridgy-head.png'), h('span', {}, t('ui.title'))),
+        h('div', { class: 'logo' }, h('img', { src: app.config.bridgy.avatar || 'assets/bridgy/bridgy-head.png', alt: '' }), h('span', {}, t('ui.title'))),
         this.questSlot,
         h(
           'button',
           { class: 'btn help-button', onclick: () => this.bridgy.helpMenu(), title: t('ui.helpButton') },
-          pixelImg(app.config.bridgy.avatar || 'assets/bridgy/bridgy-head.png'),
+          h('img', { src: app.config.bridgy.avatar || 'assets/bridgy/bridgy-head.png', alt: '' }),
           h('span', { class: 'btn-label' }, t('ui.helpButton')),
         ),
         h('button', { class: 'btn btn-icon', title: t('ui.settingsButton'), onclick: () => this.openSettings() }, '⚙'),
