@@ -93,7 +93,7 @@ export class VillageView {
     const r = village.cfg.requests || {};
     if (village.requestsOpen) {
       const left = village.requests().list.filter((q) => !q.done).length;
-      spots.push(this.spot({ x: r.x ?? 44, y: r.y ?? 33, w: r.w ?? 7 }, pixelImg(sprites.url('village:board', 4), '', ''), this.app.i18n.t('ui.villageBoard'), left ? `📜 ${left}` : '✓', 'board', 'repaired'));
+      spots.push(this.spot({ x: r.x ?? 44, y: r.y ?? 36, w: r.w ?? 9 }, h('img', { src: 'assets/village/board.png', alt: '' }), this.app.i18n.t('ui.villageBoard'), left ? `📜 ${left}` : '✓', 'board', 'repaired'));
     }
     this.map.replaceChildren(...[...this.map.children].slice(0, 2), ...spots);
     this.panel.replaceChildren(...(this.selected === 'board' ? this.board() : this.buildingPanel(village.building(this.selected))));
@@ -219,62 +219,57 @@ export class VillageView {
     this.refresh();
   }
 
-  // The meadow in isometric tiles, the river under the bridge (down-right, like the bridge's stream),
-  // Bridgy's field on the near bank, and dirt roads: field → bridge → square → every building.
+  // A pixel-art meadow in the buildings' style, drawn pixel by pixel (each art pixel is 2×2): textured
+  // grass, the river under the bridge (down-right, like the bridge's stream) between grey stone banks,
+  // Bridgy's field on the near bank, pebbled dirt roads (field → bridge → square → every building),
+  // and bushes with flowers.
   background() {
-    const cv = h('canvas', { class: 'pixel village-bg', width: W, height: H });
+    const S = 2;
+    const cv = h('canvas', { class: 'village-bg', width: W * S, height: H * S });
     const ctx = cv.getContext('2d');
-    const at = (b) => [(b.x * W) / 100, (b.y * H) / 100];
-    const poly = (color, pts) => {
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
-      ctx.fill();
+    const img = ctx.createImageData(W * S, H * S);
+    const grid = new Uint32Array(W * H); // 0xRRGGBB per art pixel
+    const noise = (x, y, k = 0) => {
+      let n = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(k, 1442695041)) | 0;
+      n = Math.imul(n ^ (n >>> 13), 1274126177);
+      return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
     };
-    for (let r = 0; r * 4 < H + 8; r++) {
-      for (let c = -1; c * 16 < W + 16; c++) {
-        const x = c * 16 + (r % 2) * 8;
-        const y = r * 4;
-        poly(r % 2 ? '#a3d571' : '#9bcf69', [[x, y - 4], [x + 8, y], [x, y + 4], [x - 8, y]]);
+    const set = (x, y, c) => {
+      if (x >= 0 && y >= 0 && x < W && y < H) grid[(y | 0) * W + (x | 0)] = c;
+    };
+    const get = (x, y) => grid[(y | 0) * W + (x | 0)];
+    const pick = (r, list) => list.find(([p]) => (r -= p) < 0)[1];
+    // grass: clumps of four greens
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const r = noise(x >> 2, y >> 1, 1) * 0.6 + noise(x, y, 2) * 0.4;
+        set(x, y, pick(r, [[0.18, 0x5aa83a], [0.6, 0x6cba44], [0.2, 0x7bc94f], [1, 0x92d95e]]));
       }
     }
-    for (let i = 0; i < 260; i++) {
-      const n = (i * 2654435761) >>> 0;
-      ctx.fillStyle = i % 9 === 0 ? (i % 2 ? '#ffffff' : '#ffe066') : '#7fb552';
-      ctx.fillRect(n % W, (n >>> 12) % H, i % 9 === 0 ? 1 : 2, 1);
+    // Bridgy's field: furrows with sprouts, and a fence
+    for (let y = 205; y < 262; y++) {
+      for (let x = 16; x < 120; x++) {
+        const u = x - 2 * (y - 205); // along the rows (up-right)
+        const v = x / 2 + (y - 205); // across them
+        if (u < -70 || u > 30 || v < 12 || v > 76) continue;
+        const row = Math.floor(v / 8);
+        const inRow = v - row * 8;
+        set(x, y, inRow < 2 ? 0x7a4e2e : inRow < 6 ? (noise(x, y, 3) < 0.15 ? 0x8a5a36 : 0x9a6a44) : 0x6cba44);
+        if (inRow >= 2 && inRow < 4 && (x + row * 3) % 7 === 0) {
+          set(x, y - 1, 0x4fae32);
+          set(x - 1, y - 2, 0x6fd046);
+          set(x + 1, y - 2, 0x6fd046);
+        }
+      }
     }
-    const band = (extra) => [[0, RIVER.at - extra], [W, RIVER.at + W / 2 - extra], [W, RIVER.at + W / 2 + extra], [0, RIVER.at + extra]];
-    const half = RIVER.width / 2;
-    poly('#6aa84a', band(half + 5));
-    poly('#e3c68d', band(half + 3));
-    poly('#2f80d8', band(half));
-    poly('#3ea6ee', band(half - 3));
-    ctx.fillStyle = '#bfeeff';
-    for (let x = 6; x < W; x += 23) for (const k of [-6, 5]) ctx.fillRect(x + ((x * 7) % 11), x / 2 + RIVER.at + k + ((x * 3) % 5), 6, 1);
-    // Bridgy's field: rows of soil with sprouts, on the near (lower-left) bank.
-    for (let i = 0; i < 4; i++) {
-      const x = 24 + i * 12;
-      const y = 238 + i * 6;
-      poly('#9a6a44', [[x, y], [x + 40, y - 20], [x + 48, y - 16], [x + 8, y + 4]]);
-      ctx.fillStyle = '#5fbf3a';
-      for (let k = 0; k < 5; k++) ctx.fillRect(x + 6 + k * 8, y - 3 - k * 4, 2, 2);
-    }
-    // Roads along the isometric axes: an L from a to b (up-right first, then down-right).
+    // roads: L-shaped along the isometric axes, dirt with pebbles and darker edges
+    const segs = [];
     const road = (a, b) => {
-      const s = ((b[0] - a[0]) / 2 - (b[1] - a[1])) / 2;
-      const corner = [a[0] + 2 * s, a[1] - s];
-      for (const [color, width] of [['#b88a50', 9], ['#d6ad6b', 7]]) {
-        ctx.strokeStyle = color;
-        ctx.lineWidth = width;
-        ctx.lineJoin = 'round';
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(...a);
-        ctx.lineTo(...corner);
-        ctx.lineTo(...b);
-        ctx.stroke();
-      }
+      const k = ((b[0] - a[0]) / 2 - (b[1] - a[1])) / 2;
+      const c = [a[0] + 2 * k, a[1] - k];
+      segs.push([a, c], [c, b]);
     };
+    const at = (b) => [(b.x * W) / 100, (b.y * H) / 100];
     const v = this.village;
     const bridge = v.building('Bridge');
     const square = v.buildings.find((b) => b.icon === 'square') || bridge;
@@ -285,6 +280,84 @@ export class VillageView {
       road([bx + reach, by - reach / 2], at(square));
       for (const b of v.buildings) if (b !== bridge && b !== square) road(at(square), [at(b)[0], at(b)[1] + ((b.w ?? 17) * W) / 100 / 5]);
     }
+    for (const [[x1, y1], [x2, y2]] of segs) {
+      const len = Math.hypot(x2 - x1, y2 - y1) || 1;
+      for (let y = Math.floor(Math.min(y1, y2) - 6); y <= Math.max(y1, y2) + 6; y++) {
+        for (let x = Math.floor(Math.min(x1, x2) - 6); x <= Math.max(x1, x2) + 6; x++) {
+          const t = Math.max(0, Math.min(1, ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / (len * len)));
+          const d = Math.hypot(x - x1 - t * (x2 - x1), y - y1 - t * (y2 - y1));
+          if (d > 4.6 || x < 0 || y < 0 || x >= W || y >= H) continue;
+          const old = get(x, y);
+          if (d > 3.4) {
+            if (old !== 0xc9965a && old !== 0xd6a76c && old !== 0x9c8d80) set(x, y, 0xa0703f);
+          } else set(x, y, noise(x, y, 4) < 0.05 ? 0x9c8d80 : noise(x >> 1, y, 5) < 0.5 ? 0xc9965a : 0xd6a76c);
+        }
+      }
+    }
+    // the river: water between stone banks
+    const half = RIVER.width / 2;
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const d = y - (x / 2 + RIVER.at);
+        const a = Math.abs(d);
+        if (a < half) {
+          const edge = half - a;
+          let c = edge < 3 ? 0x1f6cc4 : edge < 7 ? 0x2b84dc : 0x3597ea;
+          if (noise(Math.floor((x - 2 * y) / 9), y >> 1, 6) < 0.12 && edge > 4) c = 0x7fcaf8;
+          if (noise(x >> 2, y, 7) < 0.02 && edge > 4) c = 0xe8f8ff;
+          set(x, y, c);
+        } else if (a < half + 7) {
+          const k = a - half; // 0 at the water … 6 at the grass
+          const block = Math.floor((x + (d < 0 ? 0 : 4)) / 8);
+          const tone = [0x8b939b, 0x9aa2aa, 0x7d858c][Math.floor(noise(block, d < 0 ? 1 : 2, 8) * 3)];
+          let c = k > 6 ? 0x3c3f42 : (x + (d < 0 ? 0 : 4)) % 8 === 0 || k === 3 ? 0x5c636b : k > 5 ? 0xb9c0c6 : tone;
+          if (k >= 6) c = 0x3c3f42;
+          if (noise(x, y, 9) < 0.07) c = 0x5ea83d;
+          set(x, y, c);
+        }
+      }
+    }
+    // bushes and flowers on the grass (never on the water, the roads or the field)
+    const grass = new Set([0x5aa83a, 0x6cba44, 0x7bc94f, 0x92d95e]);
+    for (let i = 0; i < 70; i++) {
+      const cx = Math.floor(noise(i, 1, 10) * W);
+      const cy = Math.floor(noise(i, 2, 10) * H);
+      const r = 3 + Math.floor(noise(i, 3, 10) * 4);
+      if (![[0, 0], [r, 0], [-r, 0], [0, r]].every(([dx, dy]) => grass.has(get(cx + dx, Math.min(H - 1, cy + dy))))) continue;
+      for (let y = -r - 1; y <= r + 1; y++) {
+        for (let x = -r - 1; x <= r + 1; x++) {
+          const q = (x * x) / (r * r) + (y * y) / (r * r * 0.7);
+          if (q > 1.35) continue;
+          set(cx + x, cy + y, q > 1 ? 0x24461e : x + y < -r * 0.6 ? 0x8fdc5a : x + y > r * 0.5 ? 0x3b8a2c : 0x5cb83c);
+        }
+      }
+      if (i % 2) for (const [dx, dy] of [[-1, -1], [2, 0]]) set(cx + dx, cy + dy, 0xffffff);
+    }
+    for (let i = 0; i < 160; i++) {
+      const x = Math.floor(noise(i, 4, 11) * W);
+      const y = Math.floor(noise(i, 5, 11) * H);
+      if (!grass.has(get(x, y))) continue;
+      if (i % 4) {
+        set(x, y, 0x4a9a30);
+        set(x + 1, y - 1, 0x4a9a30);
+        set(x + 2, y, 0x4a9a30);
+      } else {
+        set(x, y, i % 8 ? 0xffffff : 0xffd84a);
+        set(x, y + 1, 0x4a9a30);
+      }
+    }
+    // art pixels → canvas pixels
+    for (let y = 0; y < H * S; y++) {
+      for (let x = 0; x < W * S; x++) {
+        const c = grid[((y / S) | 0) * W + ((x / S) | 0)];
+        const o = (y * W * S + x) * 4;
+        img.data[o] = c >> 16;
+        img.data[o + 1] = (c >> 8) & 255;
+        img.data[o + 2] = c & 255;
+        img.data[o + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
     return cv;
   }
 }

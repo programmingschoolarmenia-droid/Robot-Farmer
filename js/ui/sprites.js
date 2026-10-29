@@ -164,7 +164,6 @@ export class SpriteBook {
     this.put('machine:Mill', millMachine());
     this.put('machine:JamPot', jamPot());
     this.put('machine:Tonir', tonir());
-    this.put('village:board', noticeBoard()); // (the buildings are pictures: assets/village)
 
     // --- research icons
     this.put('icon:hat', sideHat('#f2c04d', '#2b6fd6'));
@@ -722,22 +721,6 @@ function tonir() {
   p.shade('#c47a4a', '#e09a68', '#8e5232');
   p.ellipse(8, 11.5, 3, 2.5, PAL.darkBrown);
   p.rect(5, 12, 6, 3, PAL.darkBrown);
-  p.outline(PAL.outlineBrown);
-  return p;
-}
-
-// The villagers' requests board on the village map: a small tiled roof, posts and paper notes.
-function noticeBoard() {
-  const p = new Pixels(32, 32);
-  p.rect(6, 14, 2, 17, PAL.brown).rect(24, 14, 2, 17, PAL.brown);
-  p.rect(3, 9, 26, 15, PAL.lightBrown);
-  p.shade(PAL.lightBrown, PAL.tan, PAL.brown);
-  p.rect(5, 11, 22, 11, '#c9925a');
-  p.polygon([[1, 10], [16, 2], [31, 10]], PAL.red);
-  p.shade(PAL.red, PAL.brightRed, '#7a1620');
-  p.rect(7, 12, 6, 7, PAL.white).rect(15, 13, 5, 6, '#fff1b8').rect(22, 12, 4, 5, PAL.white);
-  for (const [x, y] of [[8, 14], [9, 16], [16, 15], [23, 14]]) p.rect(x, y, 3, 1, PAL.grey);
-  p.set(10, 12, PAL.brightRed).set(17, 13, PAL.blue).set(24, 12, PAL.brightRed);
   p.outline(PAL.outlineBrown);
   return p;
 }
