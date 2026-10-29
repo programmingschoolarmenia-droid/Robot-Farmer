@@ -1,13 +1,14 @@
-// Bridgy's quest chain (config/bridgy.json → quests): tracks goals and progress.
+// Bridgy's quest chain (config/bridgy.json → quests; the ranch's in config/ranch.json): tracks goals
+// and progress.
 import { walk } from '../lang/frontend-js.js';
 
 // Quests inserted after saves kept only the position (index) of the current quest.
 const ADDED_LATER = new Set(['buy_fishing', 'fill_pond', 'fish_20', 'golden_fish', 'buy_calendar', 'season_code', 'repair_bridge', 'first_request', 'repair_mill', 'make_flour']);
 
 export class QuestTracker {
-  constructor(game, saved = {}) {
+  constructor(game, saved = {}, quests = (game.config.bridgy && game.config.bridgy.quests) || []) {
     this.game = game;
-    this.quests = (game.config.bridgy && game.config.bridgy.quests) || [];
+    this.quests = quests;
     this.index = startIndex(this.quests, saved);
     this.baseline = saved.baseline || null;
     this.satisfied = saved.satisfied || {};
@@ -38,6 +39,7 @@ export class QuestTracker {
   captureBaseline() {
     const g = this.game;
     this.baseline = { gained: Object.fromEntries(g.stats.totals), harvested: Object.fromEntries(g.stats.harvested), planted: {}, used: {}, requests: g.village.done };
+    if (g.isRanch) Object.assign(this.baseline, { earned: g.earned.total, orders: g.ordersDone });
     this.satisfied = {};
     this.hintTier = 0;
   }
@@ -96,6 +98,13 @@ export class QuestTracker {
         const v = Math.max(0, g.village.done - ((this.baseline && this.baseline.requests) || 0));
         return { done: v >= goal.amount, value: Math.min(v, goal.amount), target: goal.amount };
       }
+      // the ranch: ֏ earned and villagers' orders delivered since the quest began
+      case 'earn':
+      case 'order': {
+        const now = goal.type === 'earn' ? g.earned.total : g.ordersDone;
+        const v = Math.max(0, now - ((this.baseline && this.baseline[goal.type === 'earn' ? 'earned' : 'orders']) || 0));
+        return { done: v >= goal.amount, value: Math.min(v, goal.amount), target: goal.amount };
+      }
       default:
         return { done: false, value: 0, target: 1 };
     }
@@ -139,8 +148,8 @@ export class QuestTracker {
 
   onRunStart({ script }) {
     this.visited = new Set();
-    const d = this.game.mainDrone;
-    this.visited.add(`${d.x},${d.y}`);
+    const d = this.game.mainDrone; // (the ranch has no visit-all goals)
+    if (d) this.visited.add(`${d.x},${d.y}`);
     const info = codeInfo(this.game.api, script);
     this.markGoal((goal) => {
       if (goal.type !== 'code') return false;

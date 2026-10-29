@@ -269,6 +269,30 @@
       "doc": "true, եթե x-ը ցուցակ է։"
     }
   },
+  "ranch": {
+    "move": { "sig": "gnal(ուղղություն)", "doc": "Դրոնը գնում է մեկ վանդակ իր վայրի ներսում։ Ցանկապատը կանգնեցնում է այն (մյուս կողմից դուրս չի գալիս)։", "example": "gnal(Aj);" },
+    "canMove": { "sig": "karoxEmGnal(ուղղություն)", "doc": "true, եթե այդ ուղղությամբ ցանկապատ չկա։", "example": "while (karoxEmGnal(Verev)) {\n  gnal(Verev);\n}" },
+    "getWorldSize": { "sig": "fermayiChap()", "doc": "Դրոնի վայրի չափը (հավանոցը 4×4 է՝ 4)։ Վայրի x և y-ը սկսվում են 0-ից։", "example": "tpel(fermayiChap());" },
+    "getEntityType": { "sig": "inchKa()", "doc": "Ինչ կա դրոնի տակ՝ ձու (Irer.Dzu), իր (Sarqer.Keraman, Sarqer.Jrhor, Sarqer.Zambyux…), կենդանի (Tesakner.Hav) կամ null։", "example": "if (inchKa() == Irer.Dzu) {\n  havaqel();\n}" },
+    "numItems": { "sig": "qanak(իր)", "doc": "Որքան կա ռանչոյի պահեստում՝ Irer.Dram, Irer.Dzu, Irer.Kat, Irer.Hatik, Irer.XotiHak։", "example": "tpel(qanak(Irer.Dram));" },
+    "harvest": { "sig": "havaqel()", "doc": "Վերցնում է դրոնի տակ ընկած ձուն դրոնի ձեռքը։ Եթե ձեռքը լիքն է, չի վերցնում։", "example": "havaqel();", "notes": "Ձուն պահեստ է մտնում միայն զամբյուղում՝ datarkel()-ով։" },
+    "milk": { "sig": "kitel()", "doc": "Կթում է դրոնի տակ կանգնած այն կովին, որ պատրաստ է։ Կաթը մնում է դրոնի ձեռքում։", "example": "kitel();", "notes": "Կովը պատրաստ է, երբ կուշտ է ու ուրախ, և նրա կաթը լցվել է։" },
+    "take": { "sig": "vercnel(իր, քանակ)", "doc": "Զամբյուղի վանդակում պահեստից կեր է վերցնում, ջրհորի վանդակում՝ ջուր։ Առանց քանակի՝ որքան տեղավորվում է ձեռքում։ Պատասխանը՝ որքան վերցրեց։", "example": "vercnel(Irer.Hatik, 2);\nvercnel(Irer.Jur);" },
+    "fill": { "sig": "lcnel()", "doc": "Կերամանի վանդակում ձեռքի կերը լցնում է կերամանի մեջ, ջրամանի վանդակում՝ ջուրը։ Ամանում տեղավորվում է 10։", "example": "lcnel();" },
+    "unload": { "sig": "datarkel()", "doc": "Զամբյուղի վանդակում ձեռքի բոլոր ապրանքները դնում է պահեստ (ջուրը թափվում է)։", "example": "datarkel();" },
+    "inHands": { "sig": "dzerqum(իր)", "doc": "Որքան է այդ իրից դրոնի ձեռքում, իսկ առանց իրի՝ ընդամենը որքան։", "example": "if (dzerqum() == 3) {\n  tpel(\"Ձեռքը լիքն է\");\n}" },
+    "build": { "sig": "karucel(սարք)", "doc": "Դրոնի տակ դնում է գնված կերաման (Sarqer.Keraman) կամ ջրաման (Sarqer.Jraman)։ Վանդակը պետք է դատարկ լինի։", "example": "karucel(Sarqer.Keraman);" },
+    "pet": { "sig": "shoyel()", "doc": "Շոյում է դրոնի տակ կանգնած կենդանիներին։ Նրանք մի րոպե ավելի ուրախ են։", "example": "shoyel();" },
+    "clear": { "sig": "maqrel()", "doc": "Մաքրում է դրոնի տակի վանդակի աղտը։", "example": "if (axtot() > 50) {\n  maqrel();\n}" },
+    "dirt": { "sig": "axtot()", "doc": "Որքան է աղտոտ դրոնի տակի վանդակը՝ 0-ից 100։ Աղտոտ վանդակում կենդանիները տխրում են։", "example": "tpel(axtot());" },
+    "animals": { "sig": "kendaniner()", "doc": "Դրոնի վայրի կենդանիների ցուցակը։ Ամեն կենդանի օբյեկտ է՝ id, tesak, x, y, sov (քաղց), carav (ծարավ), tramadrutyun (տրամադրություն), patrast (կովը պատրաստ է կթելու)։", "example": "let ker = kendaniner();\ntpel(ker[0].x, ker[0].y);" },
+    "price": { "sig": "gin(իր)", "doc": "Այսօրվա գինը ֏-ով՝ ձվի և կաթի վաճառքի, հատիկի և խոտի հակի գնման։ Գինն ամեն օր փոխվում է՝ բոլորի համար նույնը։", "example": "tpel(gin(Irer.Dzu));" },
+    "sell": { "sig": "vacharel(իր, քանակ)", "doc": "Շուկայի դրոնը վաճառում է պահեստից ձու կամ կաթ այսօրվա գնով։ Առանց քանակի՝ ամբողջը։ Պատասխանը՝ վաստակած ֏։", "example": "vacharel(Irer.Dzu);" },
+    "buy": { "sig": "gnel(իր, քանակ)", "doc": "Շուկայի դրոնը ֏-ով գնում է կեր՝ Irer.Hatik կամ Irer.XotiHak։ Պատասխանը՝ որքան գնեց։", "example": "gnel(Irer.Hatik, 5);" },
+    "bring": { "sig": "berel(իր, քանակ)", "doc": "Շուկայի դրոնը սայլով ֆերմայից բերում է խոտի հակեր՝ մեկ հակի համար 10 000 չոր խոտ ֆերմայի պահեստից։", "example": "berel(Irer.XotiHak, 2);" },
+    "orders": { "sig": "patverner()", "doc": "Այսօրվա պատվերների ցուցակը։ Ամեն պատվեր օբյեկտ է՝ anun, irer, gin, katarvac։", "example": "let p = patverner();\ntpel(p.length);" },
+    "deliver": { "sig": "hanznel(համար)", "doc": "Շուկայի դրոնը հանձնում է այդ համարի պատվերը (առաջինը՝ 0), եթե պահեստում ամեն ինչ կա։", "example": "hanznel(0);" }
+  },
   "js": [
     {
       "id": "basics",

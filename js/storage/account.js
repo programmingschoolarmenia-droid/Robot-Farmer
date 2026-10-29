@@ -33,17 +33,28 @@ export function playerRow(name, s) {
   for (const c of s.challenge ? [s.challenge, s.challenge.prev] : []) {
     if (c && c.best >= 1) Object.assign(row, { [`c${c.week}`]: c.best, [`cc${c.week}`]: String(c.bestCode).slice(0, MAX_CODE) });
   }
+  // ֏ earned on the ranch: all time, and this day and month (like the points)
+  const r = s.ranch;
+  if (r && r.total >= 1) {
+    row.ranch = Math.floor(r.total);
+    if (r.day.key && r.day.dram >= 1) row[`rd${r.day.key}`] = Math.floor(r.day.dram);
+    if (r.month.key && r.month.dram >= 1) row[`rm${r.month.key}`] = Math.floor(r.month.dram);
+  }
   return row;
 }
 
 // The row field a leaderboard list ranks by (today = 'YYYYMMDD'): points of the 'day', the
 // 'month' or 'all' time, 'code', 'perfect', this week's 'challenge' (lower is better, see
-// ASCENDING) or the running 'festival' (`festival` = its key, e.g. 'Easter2026').
+// ASCENDING), the running 'festival' (`festival` = its key, e.g. 'Easter2026') or ֏ earned on the
+// ranch ('ranch_day', 'ranch_month', 'ranch_all').
 export function boardField(tab, today, festival = '') {
   if (tab === 'day') return `d${today}`;
   if (tab === 'month') return `m${today.slice(0, 6)}`;
   if (tab === 'challenge') return `c${weekKey(today)}`;
   if (tab === 'festival') return `f${festival}`;
+  if (tab === 'ranch_day') return `rd${today}`;
+  if (tab === 'ranch_month') return `rm${today.slice(0, 6)}`;
+  if (tab === 'ranch_all') return 'ranch';
   return tab === 'code' || tab === 'perfect' ? tab : 'points';
 }
 

@@ -386,6 +386,16 @@
       "grants": { "functions": ["unlock"] }
     },
     {
+      "id": "Ranch",
+      "icon": "ranch",
+      "name": "Ռանչո",
+      "description": "Գյուղի ետևում կա հին ռանչո՝ կենդանիներով։ Այնտեղ ամեն վայր ունի իր դրոնը և իր կոդը, իսկ ձուն ու կաթը վաճառվում են ֏-ով։ Բացվում է 70 հետազոտությունից հետո։",
+      "parents": ["Objects", "Functions"],
+      "minLevels": 70,
+      "tiers": [{ "Hay": 500000, "Wood": 500000, "Carrot": 200000, "Pumpkin": 100000 }],
+      "grants": { "panels": ["ranch"] }
+    },
+    {
       "id": "Functions",
       "label": "function f()",
       "name": "Ֆունկցիաներ",

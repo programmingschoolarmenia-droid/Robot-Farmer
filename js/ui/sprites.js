@@ -197,6 +197,21 @@ export class SpriteBook {
     this.put('icon:fishing', fishingRod());
     this.put('icon:calendar', calendarIcon());
 
+    // --- the ranch: animals, goods and the things in its areas (the ranch view adds fill levels)
+    this.put('hen', hen());
+    this.put('cow', cow());
+    this.put('item:Egg', egg());
+    this.put('item:Milk', milkCan());
+    this.put('item:Grain', grainSack());
+    this.put('item:Bale', this.get('item:Hay'));
+    this.put('item:Dram', banknote());
+    this.put('thing:FeedTrough', trough());
+    this.put('thing:WaterTrough', trough());
+    this.put('thing:Well', well());
+    this.put('thing:Basket', wicker());
+    this.put('thing:Stall', stall());
+    this.put('icon:ranch', this.get('cow'));
+
     // --- hats for the drone (seen from above) and for the leaderboard avatars (from the side)
     const hats = (settings && settings.hats) || {};
     for (const [name, h] of Object.entries(hats)) {
@@ -1003,6 +1018,143 @@ function topHat(name, color, band) {
     p.disc(8, 8, 3.6, color);
     p.shade(color, PAL.white, null);
   }
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// --- the ranch -----------------------------------------------------------------------------
+
+function hen() {
+  const p = new Pixels();
+  p.art(0, 0, [
+    '................',
+    '..........RR....',
+    '.........RRRR...',
+    '.........WWWW...',
+    '........WWWEWYY.',
+    '........WWWWWYY.',
+    '..WW....WWWWWR..',
+    '.WWWW..WWWWWWR..',
+    '.WWWWWWWWWWWW...',
+    '.WWWWWWWWWWWW...',
+    '..WWWWWWWWWWG...',
+    '...WWWWWWWWGG...',
+    '....GWWWWWGG....',
+    '.....L...L......',
+    '.....L...L......',
+    '....LL..LL......',
+  ], { W: PAL.white, G: PAL.lightGrey, R: PAL.brightRed, Y: PAL.amber, L: PAL.orange, E: PAL.outline });
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function cow() {
+  const p = new Pixels();
+  p.art(0, 0, [
+    '................',
+    '...........S.S..',
+    '..........WWWW..',
+    '..........WEWWP.',
+    '.T........WWWPP.',
+    '.TWWWWWWWWWWWPP.',
+    '..WWKKWWWWWWW...',
+    '..WKKKWWWWKKW...',
+    '..WWKWWWWKKKW...',
+    '..WWWWWWWWWWW...',
+    '..WWWWWWWWWWG...',
+    '..GWWWWPPWWWG...',
+    '..W.W....W.W....',
+    '..W.W....W.W....',
+    '..K.K....K.K....',
+    '................',
+  ], { W: PAL.white, G: PAL.lightGrey, K: PAL.darkGrey, P: '#f4a6a6', S: PAL.sand, T: PAL.darkGrey, E: PAL.outline });
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function egg() {
+  const p = new Pixels();
+  p.ellipse(8, 9, 4, 5.2, '#f4ead0');
+  p.shade('#f4ead0', PAL.white, '#d9c9a0');
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function milkCan() {
+  const p = new Pixels();
+  p.rect(4, 6, 8, 9, PAL.lightGrey);
+  p.rect(5, 3, 6, 3, PAL.lightGrey);
+  p.shade(PAL.lightGrey, PAL.white, PAL.grey);
+  p.rect(4, 2, 8, 2, PAL.grey);
+  p.rect(4, 9, 8, 2, PAL.sky);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function grainSack() {
+  const p = new Pixels();
+  p.polygon([[3, 6], [13, 6], [14.5, 15], [1.5, 15]], PAL.tan);
+  p.shade(PAL.tan, PAL.sand, PAL.lightBrown);
+  p.ellipse(8, 6, 5, 2.2, PAL.yellow);
+  for (const [x, y] of [[6, 5], [9, 6], [11, 5], [7, 7]]) p.set(x, y, PAL.amber);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// ֏: a green banknote.
+function banknote() {
+  const p = new Pixels();
+  p.rect(1, 4, 14, 8, PAL.lightGreen);
+  p.rect(2, 5, 12, 6, PAL.paleGreen);
+  p.disc(8, 8, 2.2, PAL.green);
+  p.set(3, 6, PAL.green).set(12, 9, PAL.green);
+  p.outline(PAL.outline);
+  return p;
+}
+
+// A wooden trough (the ranch view draws its feed or water by how full it is).
+function trough() {
+  const p = new Pixels();
+  p.rect(2, 13, 2, 2, PAL.brown).rect(12, 13, 2, 2, PAL.brown);
+  p.polygon([[1, 6], [15, 6], [13.5, 13], [2.5, 13]], PAL.lightBrown);
+  p.shade(PAL.lightBrown, PAL.tan, PAL.brown);
+  p.rect(3, 7, 10, 3, PAL.darkBrown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function well() {
+  const p = new Pixels();
+  p.disc(8, 10.5, 5.2, PAL.lightGrey);
+  p.shade(PAL.lightGrey, PAL.white, PAL.grey);
+  p.disc(8, 10.5, 3.2, PAL.navy);
+  p.rect(2, 2, 1, 8, PAL.brown).rect(13, 2, 1, 8, PAL.brown);
+  p.polygon([[1, 3], [8, -0.5], [15, 3]], PAL.red);
+  p.line(8, 3, 8, 8, PAL.tan);
+  p.rect(7, 8, 2, 2, PAL.brown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// The basket where drones unload their hands.
+function wicker() {
+  const p = new Pixels();
+  p.line(4, 8, 6, 3, PAL.brown).line(6, 3, 10, 3, PAL.brown).line(10, 3, 12, 8, PAL.brown);
+  p.polygon([[1.5, 7.5], [14.5, 7.5], [12.5, 14.5], [3.5, 14.5]], PAL.tan);
+  for (let y = 9; y < 14; y += 2) p.line(3, y, 13, y, PAL.lightBrown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// The market stall: a striped awning over a counter with eggs and milk.
+function stall() {
+  const p = new Pixels();
+  p.rect(2, 6, 1, 4, PAL.brown).rect(13, 6, 1, 4, PAL.brown);
+  for (let x = 1; x < 15; x += 4) p.rect(x, 2, 2, 4, PAL.brightRed).rect(x + 2, 2, 2, 4, PAL.white);
+  p.rect(1, 10, 14, 5, PAL.lightBrown);
+  p.shade(PAL.lightBrown, PAL.tan, PAL.brown);
+  p.disc(5, 9, 1.4, '#f4ead0').disc(7.5, 9, 1.4, '#f4ead0');
+  p.rect(10, 7, 3, 3, PAL.lightGrey);
   p.outline(PAL.outlineBrown);
   return p;
 }

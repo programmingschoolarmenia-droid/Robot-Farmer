@@ -171,19 +171,33 @@ test('notes: a note waits for a big enough farm (and its research); facts are re
   assert.equal(sun.research.hasHat('Treasure_Hat'), true);
 });
 
-test('Perfection: research levels and repaired buildings by their weights; 100% gives the Legend hat', () => {
+test('Perfection: research levels, repaired buildings and the ranch by their weights; 100% gives the Legend hat', () => {
   const fresh = makeGame();
   const { nodes } = fresh.research;
   const buildings = fresh.village.buildings.filter((b) => b.available !== false);
   const levels = nodes.reduce((a, n) => a + n.tiers.length, 0);
-  assert.deepEqual(perfection(fresh), { percent: 0, parts: [{ id: 'research', value: 0, max: levels, weight: 70 }, { id: 'village', value: 0, max: buildings.length, weight: 30 }] });
+  const ranchMax = fresh.ranch.progress().max;
+  assert.deepEqual(perfection(fresh), {
+    percent: 0,
+    parts: [
+      { id: 'research', value: 0, max: levels, weight: 50 },
+      { id: 'village', value: 0, max: buildings.length, weight: 20 },
+      { id: 'ranch', value: 0, max: ranchMax, weight: 30 },
+    ],
+  });
   const game = makeGame({ levels: Object.fromEntries(nodes.map((n) => [n.id, n.tiers.length])) });
-  assert.equal(perfection(game).percent, 70, 'all research');
+  assert.equal(perfection(game).percent, 50, 'all research');
   game.village.repair(buildings[0].id);
-  assert.equal(perfection(game).percent, Math.floor(70 + 30 / buildings.length));
-  for (const b of buildings.slice(1, -1)) game.village.repair(b.id);
+  assert.equal(perfection(game).percent, Math.floor(50 + 20 / buildings.length));
+  for (const b of buildings.slice(1)) game.village.repair(b.id);
+  assert.equal(perfection(game).percent, 70, 'all research and buildings');
   assert.equal(game.research.hasHat('Legend_Hat'), false);
-  game.village.repair(buildings.at(-1).id);
+  // everything lasting in the ranch's shop (bought for real, «needs» first)
+  const ranch = game.ranch;
+  ranch.inventory.add('Dram', 1e6);
+  const lasting = ranch.shop.filter((it) => ['area', 'size', 'upgrade', 'command'].includes(it.kind) && it.available !== false);
+  for (let pass = 0; pass < 3; pass++) for (const it of lasting) while (ranch.shopState(it.id) === 'affordable') ranch.buy(it.id);
+  assert.deepEqual(ranch.progress(), { value: ranchMax, max: ranchMax });
   assert.deepEqual([perfection(game).percent, game.leaderStats().perfect, game.research.hasHat('Legend_Hat')], [100, 100, true]);
   game.config.research.nodes[0].available = false;
   game.research.levels.set(nodes[0].id, 0);

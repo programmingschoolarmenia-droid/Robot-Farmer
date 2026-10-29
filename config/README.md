@@ -18,6 +18,7 @@ problem**; nothing breaks silently.
 | `guide.json` | Bridgy's book («Բրիջի, օգնի՛ր»): every game command, the JavaScript topics and the plants |
 | `village.json` | The village across the river: buildings and what they cost and unlock, Bridgy's story, the villagers' daily requests, the kitchen machines and recipes, the dishes' boosts, the greenhouse glass |
 | `events.json` | Festivals on their real dates, the weekly challenge, the secret notes, the stickers and Perfection % |
+| `ranch.json` | Bridgy's ranch: its map and areas, the animals and their needs, prices, the farm's cart, the villagers' orders, the shop, Bridgy's ranch story, lessons and quests |
 
 ---
 
@@ -132,9 +133,11 @@ here, give it a name in `texts.json → hats`, and unlock it from a research car
 | `timeZone` | The day and month lists restart at midnight in this time zone | `Asia/Yerevan` |
 
 The leaderboard has two dropdowns. **What:** ⭐ points, 💻 code words, 🎓 this week's challenge
-(the fastest time first), 🌟 Perfection, and the running festival (objects found) while one is on.
-**When** (only for points): **Այսօր** (today), **Այս ամիս** (this month) or **Բոլոր ժամանակները**
-(all time). Next to each name: the drone hat, the tier icon, 🔥 days played in a row, 👑
+(the fastest time first), 🌟 Perfection, 🐄 ֏ earned on the ranch (sales and orders), and the
+running festival (objects found) while one is on. **When** (for points and the ranch):
+**Այսօր** (today), **Այս ամիս** (this month) or **Բոլոր ժամանակները** (all time). The ranch's
+goods count for points like farm items (`points.Egg`, `points.Milk`: one ranch good is worth
+about 10 000 farm items, as the farm's cart counts them). Next to each name: the drone hat, the tier icon, 🔥 days played in a row, 👑
 yesterday's champion, 🏆 last month's champion and 🎓 last week's challenge winner. Clicking a
 name opens the player's card. In the Profile, students also see where their points come from, how
 far the next tier is, their Perfection and sticker album, and «🎯 Հաջորդը…», the player just above
@@ -178,12 +181,14 @@ Each card in `nodes`:
     "panels": ["debugger"]       // the Variables window
   },
   "available": false,            // optional: shows the card as "Coming soon"
-  "secret": true                 // optional: shows "?" until it can be bought
+  "secret": true,                // optional: shows "?" until it can be bought
+  "minLevels": 70                // optional: also needs this many research levels in all
 }
 ```
+`"panels": ["ranch"]` (on the «Ranch» card) shows the 🐄 ranch button.
 Icons available: `hat, goldhat, speed, grass, expand, carrot, water, tree, fertilizer,
 sunflower, maze, drones, pumpkin, cactus, polyculture, dinosaur, secret, debugger, trophy, fishing,
-calendar`.
+calendar, ranch`.
 A function that is not listed in any card is available from the start (e.g. `harvest` = `havaqel()`).
 A `label` with code (`tnkel()`, `while`…) should use the Armenian command names.
 
@@ -242,6 +247,8 @@ autocomplete, error messages); the other names also work. The English name alway
 If you rename a command here, also update the texts that mention it (`bridgy.json`,
 `guide.json`, `texts.json`). JavaScript itself (`while`, `if`, `let`, `Math.floor`…) is not
 renamed — it is the real language the students learn.
+The `ranch` section has the ranch's own names in the same format (`datarkel()`, `kendaniner()`,
+`Tesakner.Hav`, `Sarqer.Keraman`…); the farm's names (`gnal`, `tpel`, `havaqel`…) work there too.
 
 ## guide.json (Bridgy's book)
 Opened from «Բրիջի, օգնի՛ր» → 📖 Խաղի հրամաններ / 🟨 JavaScript / 🌱 Բույսեր. Students see
@@ -255,6 +262,8 @@ Opened from «Բրիջի, օգնի՛ր» → 📖 Խաղի հրամաններ / 
 * `plants` — plant cards: `{ "entity": "Carrot", "icon": "carrot3", "about": "…", "tips": "…" }`
   (the numbers — where it grows, cost, growth time, harvest — are read live from
   `settings.json`), or a card for a research: `{ "research": "Watering", "title": "Ջուր", "icon": "item:Water", … }`.
+* `ranch` — the ranch's commands, like `commands`; on the ranch the book shows these (a command
+  that means something else there, like `havaqel()` = pick up an egg, has its own text here).
 
 ## Accounts and the leaderboard (Firebase, free)
 Students register with a **username and a password** only (no e-mail, no verification).
@@ -367,17 +376,50 @@ notes are in Bridgy's book («Գրառումներ»), and solving all of them g
 until the farm is big enough for its square.
 
 **Stickers** (`stickers`) are only for the album in the Profile: `id`, `group` (`code`, `farm`,
-`village`, `secret`), `icon`, `name`, `about`, `secret: true` (shown «?» until earned) and `when`,
+`village`, `ranch`, `secret`), `icon`, `name`, `about`, `secret: true` (shown «?» until earned) and `when`,
 one condition: `feature` (`loops`, `if`, `variables`, `functions`, `lists`, `objects`, `import`),
 `params`, `recursion`, `drones`, `codeWords`, `giant`, `chain`, `sunflowerBonus`, `dino`,
-`fishAll`, `fish`, `goldenFish`, `total` (`{ "Hay": 1000000 }`), `researchAll`, `village`
-(`"all"`), `requests`, `notes`, `festivalHats` (a number or `"all"`), `challengeTop`,
-`perfection`, `flips`, `hats`, `eaten`.
+`fishAll`, `fish`, `goldenFish`, `total` (`{ "Hay": 1000000 }`, also ranch goods: `{ "Egg": 500 }`),
+`researchAll`, `village` (`"all"`), `requests`, `notes`, `festivalHats` (a number or `"all"`),
+`challengeTop`, `perfection`, `flips`, `hats`, `eaten`, `ranchEarned` (֏ earned on the ranch),
+`ranchOrders` (villagers' orders delivered).
 
 **Perfection** (`perfection`): how much of the game is done, shown as «🌟 37%» next to the
 player's name, in the Profile (with what is missing), on the player card and in the leaderboard.
-`research` and `village` are the weights of the research levels and the repaired buildings
-(«soon» ones don't count); `hat` comes at 100%.
+`research`, `village` and `ranch` are the weights of the research levels, the repaired buildings
+and what was bought to keep in the ranch's shop (areas, bigger pens, upgrades and commands, level
+by level; animals and troughs don't count). «Soon» things don't count; `hat` comes at 100%.
+
+## ranch.json (Bridgy's ranch)
+The ranch opens with the research named in `research` («Ռանչո», after 70 research levels). It is a
+second world on its own screen: only the open world runs, so the farm waits while the ranch is open
+and the ranch waits while the farm is. Its areas lie on one map, each with **its own drone and its
+own code tab** (pen coordinates start at (0, 0) in the area's bottom-left corner; the fences stop
+the drones). Animals get hungry, thirsty and dirty, walk to a trough that has what they need,
+and give their goods only while they are happy enough: a sad, starving or very thirsty animal gives
+nothing (nothing ever dies). Drones carry a few things in their hands: eggs (`havaqel()`), milk
+(`kitel()`), feed from the basket and water from the well (`vercnel()`), poured into troughs
+(`lcnel()`) and unloaded into the storage at the basket (`datarkel()`). ֏ is earned by the market's
+drone (`vacharel()`, villagers' orders) and spent in the 🛒 shop.
+
+| Field | Meaning |
+|---|---|
+| `research` | The research that opens the ranch |
+| `map` | `area` (squares per area side, `7`) and `layout`: the areas in rows, the first row on top, one path square apart |
+| `start` | `areas` (open from the start), `animals` (`{ "Hen": 2 }`), `items` (the storage: `{ "Dram": 50, "Grain": 6 }`) |
+| `areas` | Each area: `icon`, `name`, `script` (its code tab's name), `animal` (who lives there), `sizes` (its side now and after each «bigger» upgrade, up to `map.area`), `objects` (where its things start: `Basket`, `Well`, `FeedTrough`, `WaterTrough`, the market's `Stall`; a market is the area with the stall), `code` (the tab's first text), `available: false` = «soon» (drawn as a ruin) |
+| `animals` | `feed` (what it eats: an item with `"feed": true`), `product` and `lays` (`true`: a hen lays it on its square; `false`: a cow's milk gets ready on the animal), `every` (seconds per product when happy), `space` (squares per animal: more animals make everyone sad), `step` (seconds per step), `needs` (how fast `hunger`, `thirst` and the `dirt` of its square grow per second, 0–100) |
+| `needs` | `seek` (from this hunger/thirst it walks to a trough), `fill` (how much one portion takes off), `unhappy` (from this it gets sad), `dirty` (a dirt this high makes it sad), `sad` (below this mood it gives nothing), `petBoost` and `petSeconds` (`shoyel()`), `moodSpeed` |
+| `troughs` | `capacity` (portions in one trough) |
+| `items` | The ranch's goods in storage order: `sell` (base price in ֏), `buy` (feed's base price), `feed: true` |
+| `prices` | `spread`: every day each price moves up to this share from its base (`0.3` = ±30%), the same for everyone |
+| `cart` | Farm items for one ranch feed: `{ "Bale": { "Hay": 10000 } }` (`berel()`) |
+| `orders` | `perDay`, `pay` (× the base price), `base` (amounts asked, grown with the animals), `lines` (`{list}` and `{pay}`); the names and faces come from `village.json → requests.villagers` |
+| `hands` | What a drone holds at each «big hands» level: `[3, 5, 10, 20]` |
+| `shop` | `id`, `kind` and `cost` (or `costs`, one per level), `icon`, `name`, `about`, `needs` (buy that first), `available: false`. Kinds: `area` (its id is the area's; `animals` come with it, `grants` its commands), `animal` (`animal`), `size` (`area`; one cost per bigger size), `trough` (`FeedTrough` / `WaterTrough`: built with `karucel()`), `upgrade` (`Speed`: drones ×1.5 per level; `Hands`), `command` (`grants`: the commands it opens) |
+| `story` | Bridgy's pages: `intro` (the first visit) and `areas` (when an area is bought) |
+| `lessons` | Bridgy's pages when a shop item (by its `id`) is bought |
+| `quests` | The ranch's quests, like `bridgy.json`; goals: `gain`/`have` (ranch goods), `code` (`fn`, `feature`), `research` (a shop item's `id` bought), `earn` (֏ earned), `order` (orders delivered) |
 
 ## texts.json
 All interface text. Words in `{curly}` braces are filled in by the game — keep them.

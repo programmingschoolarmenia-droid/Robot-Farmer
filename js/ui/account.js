@@ -7,8 +7,8 @@ import { festivalOn } from '../engine/festivals.js';
 
 const AVATAR_COLORS = ['#2d6be0', '#36a852', '#e2483d', '#f08a24', '#7c3aed', '#0e7490', '#c026d3', '#b45309'];
 const MEDALS = ['🥇', '🥈', '🥉'];
-const WHAT = ['points', 'code', 'challenge', 'perfect', 'festival']; // the festival only while one runs
-const WHEN = ['day', 'month', 'all']; // (for points)
+const WHAT = ['points', 'code', 'challenge', 'perfect', 'ranch', 'festival']; // the festival only while one runs
+const WHEN = ['day', 'month', 'all']; // (for points and the ranch's ֏)
 
 export function accountErrorText(i18n, e) {
   if (!e || !e.code) console.error(e);
@@ -182,8 +182,8 @@ export function leaderboardView(app, me = null, before = null) {
   });
   const load = async (refresh = false) => {
     const mine = ++seq;
-    const tab = what === 'points' ? when : what;
-    whenSelect.hidden = what !== 'points';
+    const tab = what === 'points' ? when : what === 'ranch' ? `ranch_${when}` : what;
+    whenSelect.hidden = what !== 'points' && what !== 'ranch';
     help.textContent = t(`ui.boardHelp.${what}`);
     body.replaceChildren(h('div', { class: 'board-note' }, t('ui.loading')));
     const today = todayKey(app);
@@ -220,10 +220,10 @@ function boardContent(app, ctx) {
   const crowns = ['day', 'month', 'week'].map((k) => champs && champs[k] && t(`ui.champion_${k}`, { name: champs[k].name })).filter(Boolean);
   if (crowns.length) out.push(h('div', { class: 'board-champs' }, crowns.map((c) => h('span', {}, c))));
   if (rows.length) out.push(h('ol', { class: 'board' }, rows.map((r, i) => boardRow(app, r, i + 1, ctx))));
-  else out.push(h('div', { class: 'board-note' }, t({ day: 'ui.leadersEmptyDay', code: 'ui.leadersEmptyCode', challenge: 'ui.leadersEmptyChallenge' }[tab] || 'ui.leadersEmpty')));
+  else out.push(h('div', { class: 'board-note' }, t({ day: 'ui.leadersEmptyDay', code: 'ui.leadersEmptyCode', challenge: 'ui.leadersEmptyChallenge' }[tab] || (tab.startsWith('ranch') ? 'ui.leadersEmptyRanch' : 'ui.leadersEmpty'))));
   const myValue = me ? me[field] || 0 : 0;
   if (myValue > 0 && !rows.some((r) => r.id === me.id)) out.push(h('ol', { class: 'board board-mine' }, boardRow(app, me, place, ctx)));
-  const what = ['day', 'month', 'all'].includes(tab) ? 'points' : tab;
+  const what = ['day', 'month', 'all'].includes(tab) ? 'points' : tab.startsWith('ranch') ? 'ranch' : tab;
   const gap = Math.abs(myValue - (rival ? rival[field] : 0));
   if (rival) out.push(h('div', { class: 'board-place' }, t(`ui.rival.${what}`, { name: rival.name, n: what === 'challenge' ? (gap / 10).toFixed(1) : formatCount(gap) })));
   else if (myValue > 0 && (place === 1 || !ascending(field))) out.push(h('div', { class: 'board-place' }, t('ui.rivalFirst')));
@@ -233,6 +233,7 @@ function boardContent(app, ctx) {
 // A row's number as its list shows it: a time, a percent or a count.
 export function boardValue(field, v) {
   if (ascending(field)) return formatTenths(v || 0);
+  if (field === 'ranch' || /^r[dm]\d/.test(field)) return `${formatCount(v || 0)} ֏`;
   return field === 'perfect' ? `${v || 0}%` : formatCount(v || 0);
 }
 

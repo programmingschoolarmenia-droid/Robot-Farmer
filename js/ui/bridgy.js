@@ -306,20 +306,22 @@ export class Bridgy {
     this.showHint(hint, q, who, intro);
   }
 
+  // (On the ranch, ctx.ranch: only Bridgy helps, and the book has no plants.)
   helpMenu() {
     const t = this.i18n.t;
     const ctx = this.getHelpContext();
     const q = ctx.quests.current();
+    const friend = (id) => (!ctx.ranch && this.friend(id) ? id : undefined);
     const options = [
       {
         label: `🧭 ${t('ui.helpWhatNow')}`,
         onClick: () => {
-          const who = this.friend('nshan') ? 'nshan' : undefined;
+          const who = friend('nshan');
           const text = q ? `${q.title}. ${q.text}` : t('ui.allQuestsDone');
           this.say([{ emotion: 'happy', who, text: who ? this.friendText(who, text) : text }], { key: 'menu', replaceSame: true, interrupt: true });
         },
       },
-      { label: `💡 ${t('ui.helpHint')}`, onClick: () => this.helpHint(true, this.friend('erik') ? 'erik' : undefined) },
+      { label: `💡 ${t('ui.helpHint')}`, onClick: () => this.helpHint(true, friend('erik')) },
       ctx.note && {
         label: `📜 ${t('ui.helpNote')}`,
         onClick: () => {
@@ -329,7 +331,7 @@ export class Bridgy {
       },
       { label: `📖 ${t('ui.helpCommands')}`, onClick: () => this.openBook('commands') },
       { label: `🟨 ${t('ui.helpJs')}`, onClick: () => this.openBook('js') },
-      { label: `🌱 ${t('ui.helpPlants')}`, onClick: () => this.openBook('plants') },
+      !ctx.ranch && { label: `🌱 ${t('ui.helpPlants')}`, onClick: () => this.openBook('plants') },
       ctx.hasNotes && { label: `📜 ${t('ui.helpNotes')}`, onClick: () => this.openBook('notes') },
       {
         label: `🐞 ${t('ui.helpLastError')}`,

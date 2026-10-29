@@ -4,8 +4,8 @@ import { codeInfo } from './quests.js';
 import { FISH_NAMES } from './api.js';
 
 // { percent, parts: [{ id, value, max, weight }] } from events.json → perfection weights. Only what
-// students can get counts («soon» research and buildings don't). (The ranch's animals and
-// buildings will be added as more parts.)
+// students can get counts («soon» research, buildings and ranch things don't). The ranch part is
+// what was bought in its shop to keep (areas with their animals, bigger pens, upgrades, commands).
 export function perfection(game) {
   const w = (game.config.events || {}).perfection || {};
   const nodes = game.research.nodes.filter((n) => n.available !== false);
@@ -13,6 +13,7 @@ export function perfection(game) {
   const parts = [
     { id: 'research', value: nodes.reduce((a, n) => a + game.research.level(n.id), 0), max: nodes.reduce((a, n) => a + n.tiers.length, 0), weight: w.research ?? 70 },
     { id: 'village', value: buildings.filter((b) => game.village.isRepaired(b.id)).length, max: buildings.length, weight: w.village ?? 30 },
+    { id: 'ranch', ...game.ranch.progress(), weight: w.ranch ?? 0 },
   ];
   const total = parts.reduce((a, p) => a + p.weight, 0) || 1;
   const done = parts.reduce((a, p) => a + (p.max ? (p.weight * Math.min(p.value, p.max)) / p.max : p.weight), 0);
@@ -39,6 +40,7 @@ export class Stickers {
     on('noteSolved', ['notes']);
     on('research', ['researchAll', 'perfection']);
     on('challengePrize', ['challengeTop']);
+    on('ranch', ['total', 'ranchEarned', 'ranchOrders', 'perfection']);
     game.events.on('flip', () => {
       this.seen.flips++;
       this.check(['flips']);
@@ -52,7 +54,7 @@ export class Stickers {
       this.seen.eaten++;
       this.check(['eaten']);
     });
-    for (const name of ['research', 'village']) game.events.on(name, () => this.checkLegend());
+    for (const name of ['research', 'village', 'ranch']) game.events.on(name, () => this.checkLegend());
   }
 
   get list() {
@@ -105,6 +107,10 @@ export class Stickers {
       }
       case 'challengeTop':
         return !!g.flags.challengeTop && g.flags.challengeTop <= v;
+      case 'ranchEarned':
+        return g.ranch.earned.total >= v;
+      case 'ranchOrders':
+        return g.ranch.ordersDone >= v;
       case 'perfection':
         return perfection(g).percent >= v;
       case 'flips':

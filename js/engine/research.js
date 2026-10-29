@@ -34,11 +34,12 @@ export class Research {
     return this.level(id) >= this.maxLevel(id);
   }
 
-  // A node is visible (can be bought) when all parents have at least one level.
+  // A node is visible (can be bought) when all parents have at least one level (and the player has
+  // `minLevels` research levels in all, e.g. the ranch after 70).
   parentsDone(id) {
     const n = this.byId.get(id);
     if (!n) return false;
-    return (n.parents || []).every((p) => this.level(p) > 0);
+    return (n.parents || []).every((p) => this.level(p) > 0) && this.totalLevels() >= (n.minLevels || 0);
   }
 
   nextCost(id) {

@@ -1,10 +1,11 @@
 // Loads config/*.json and checks them, so a teacher's typo shows a clear message
 // (file, field, problem) instead of a broken game.
 import { GameApi, ENTITY_NAMES, ITEM_NAMES, GROUND_NAMES, FISH_NAMES, MACHINE_NAMES } from '../engine/api.js';
+import { RanchApi, RANCH_THINGS } from '../engine/ranchApi.js';
 import { SYNTAX_FEATURES } from '../lang/gate.js';
 import { SEASON_NAMES, WEATHER_NAMES } from '../engine/calendar.js';
 
-export const CONFIG_FILES = ['settings', 'research', 'texts', 'bridgy', 'aliases', 'guide', 'village', 'events'];
+export const CONFIG_FILES = ['settings', 'research', 'texts', 'bridgy', 'aliases', 'guide', 'village', 'events', 'ranch'];
 
 export async function loadConfig(base = 'config/') {
   const config = {};
@@ -57,12 +58,14 @@ export function validateConfig(config) {
   const G = 'guide.json';
   const V = 'village.json';
   const E = 'events.json';
-  const { settings, research, texts, bridgy, aliases, guide, village, events } = config;
+  const RA = 'ranch.json';
+  const { settings, research, texts, bridgy, aliases, guide, village, events, ranch } = config;
 
-  for (const [name, v] of Object.entries({ settings, research, texts, bridgy, aliases, guide, village, events })) {
+  for (const [name, v] of Object.entries({ settings, research, texts, bridgy, aliases, guide, village, events, ranch })) {
     if (!isObj(v)) err(`${name}.json`, '', 'Ֆայլը պետք է պարունակի JSON օբյեկտ { … }');
   }
   if (errors.length) return errors;
+  const ranchItems = isObj(ranch.items) ? Object.keys(ranch.items) : [];
 
   // ---------------------------------------------------------------- research
   const nodes = research.nodes;
@@ -92,6 +95,7 @@ export function validateConfig(config) {
     if (typeof n.name !== 'string' || !n.name) err(R, `${p}.name`, 'Պետք է լինի անուն (տեքստ)');
     if (n.parents !== undefined && !Array.isArray(n.parents)) err(R, `${p}.parents`, 'Պետք է լինի ցուցակ');
     for (const par of n.parents || []) if (!ids.has(par)) err(R, `${p}.parents`, `Անհայտ ծնող «${par}»`);
+    if (n.minLevels !== undefined && !(Number.isInteger(n.minLevels) && n.minLevels >= 0)) err(R, `${p}.minLevels`, 'Պետք է լինի 0 կամ դրական ամբողջ թիվ (քանի հետազոտություն է պետք)');
     if (!Array.isArray(n.tiers) || !n.tiers.length) err(R, `${p}.tiers`, 'Պետք է լինի առնվազն մեկ մակարդակ');
     else
       n.tiers.forEach((tier, j) => {
@@ -288,7 +292,7 @@ export function validateConfig(config) {
       if (!isObj(lb.points)) err(S, 'leaderboard.points', 'Պետք է լինի օբյեկտ, օրինակ՝ { "Hay": 1, "Gold": 20 }');
       else
         for (const [item, n] of Object.entries(lb.points)) {
-          if (!ITEM_NAMES.includes(item)) err(S, `leaderboard.points.${item}`, `Անհայտ իր «${item}»`);
+          if (!ITEM_NAMES.includes(item) && !ranchItems.includes(item)) err(S, `leaderboard.points.${item}`, `Անհայտ իր «${item}»`);
           else needNum(`leaderboard.points.${item}`, n, { min: 0 });
         }
       if (lb.tiers !== undefined && !Array.isArray(lb.tiers)) err(S, 'leaderboard.tiers', 'Պետք է լինի աստիճանների ցուցակ');
@@ -546,7 +550,7 @@ export function validateConfig(config) {
       if (c.items !== undefined) items(`${p}.items`, c.items, { file: E });
       if (c.seed !== undefined && !Number.isInteger(c.seed)) err(E, `${p}.seed`, 'Պետք է լինի ամբողջ թիվ');
     });
-  const KINDS = ['feature', 'params', 'recursion', 'drones', 'codeWords', 'giant', 'chain', 'sunflowerBonus', 'dino', 'fishAll', 'fish', 'goldenFish', 'total', 'researchAll', 'village', 'requests', 'notes', 'festivalHats', 'challengeTop', 'perfection', 'flips', 'hats', 'eaten'];
+  const KINDS = ['feature', 'params', 'recursion', 'drones', 'codeWords', 'giant', 'chain', 'sunflowerBonus', 'dino', 'fishAll', 'fish', 'goldenFish', 'total', 'researchAll', 'village', 'requests', 'notes', 'festivalHats', 'challengeTop', 'perfection', 'flips', 'hats', 'eaten', 'ranchEarned', 'ranchOrders'];
   const stickerIds = new Set();
   (Array.isArray(events.stickers) ? events.stickers : []).forEach((st, i) => {
     const p = `stickers[${i}]`;
@@ -557,13 +561,136 @@ export function validateConfig(config) {
     if (keys.length !== 1 || !KINDS.includes(keys[0])) err(E, `${p}.when`, `Պետք է ունենա մեկ պայման՝ ${KINDS.join(', ')}`);
     else if (keys[0] === 'feature' && !SYNTAX_FEATURES.includes(st.when.feature)) err(E, `${p}.when.feature`, `Անհայտ հնարավորություն «${st.when.feature}»`);
     else if (keys[0] === 'fish' && !FISH_NAMES.includes(st.when.fish)) err(E, `${p}.when.fish`, `Անհայտ ձուկ «${st.when.fish}»`);
-    else if (keys[0] === 'total' && (!isObj(st.when.total) || !Object.keys(st.when.total).every((k) => ITEM_NAMES.includes(k)))) err(E, `${p}.when.total`, 'Պետք է լինի { "Hay": 1000000 } (հայտնի իրերով)');
+    else if (keys[0] === 'total' && (!isObj(st.when.total) || !Object.keys(st.when.total).every((k) => ITEM_NAMES.includes(k) || ranchItems.includes(k)))) err(E, `${p}.when.total`, 'Պետք է լինի { "Hay": 1000000 } (հայտնի իրերով)');
   });
   const perf = isObj(events.perfection) ? events.perfection : null;
   if (!perf) err(E, 'perfection', 'Պարտադիր բաժին է');
   else {
-    for (const key of ['research', 'village']) if (!(isNum(perf[key]) && perf[key] >= 0)) err(E, `perfection.${key}`, 'Պետք է լինի 0 կամ դրական թիվ');
+    for (const key of ['research', 'village', 'ranch']) if (!(isNum(perf[key]) && perf[key] >= 0)) err(E, `perfection.${key}`, 'Պետք է լինի 0 կամ դրական թիվ');
     if (!settingsHats.includes(perf.hat)) err(E, 'perfection.hat', `Անհայտ գլխարկ «${perf.hat}» (ավելացրու settings.json → hats)`);
+  }
+
+  // ---------------------------------------------------------------- ranch
+  const areas = isObj(ranch.areas) ? ranch.areas : {};
+  const animals = isObj(ranch.animals) ? ranch.animals : {};
+  const isFeed = (item) => !!(ranch.items && isObj(ranch.items[item]) && ranch.items[item].feed);
+  if (!ids.has(ranch.research)) err(RA, 'research', `Անհայտ հետազոտություն «${ranch.research}»`);
+  if (!ranchItems.includes('Dram')) err(RA, 'items', 'Պետք է լինի ապրանքների օբյեկտ՝ Dram-ով, օրինակ՝ { "Dram": {}, "Egg": { "sell": 4 } }');
+  for (const [item, c] of Object.entries(ranch.items || {})) {
+    if (!/^[A-Z]\w*$/.test(item) || !isObj(c)) err(RA, `items.${item}`, 'Պետք է լինի լատինատառ անուն (մեծատառով) և օբյեկտ, օրինակ՝ "Egg": { "sell": 4 }');
+    else for (const key of ['sell', 'buy']) if (c[key] !== undefined && !(isNum(c[key]) && c[key] > 0)) err(RA, `items.${item}.${key}`, 'Պետք է լինի դրական թիվ (֏)');
+  }
+  const map = ranch.map;
+  const mapOk = isObj(map) && Number.isInteger(map.area) && map.area >= 3 && Array.isArray(map.layout) && map.layout.length > 0 && map.layout.every((r) => Array.isArray(r) && r.length === map.layout[0].length);
+  if (!mapOk) err(RA, 'map', 'Պետք է լինի { "area": 7, "layout": [["Hens", "Cows"], ["Market", "Goats"]] } (հավասար տողերով)');
+  else for (const id of map.layout.flat()) if (!areas[id]) err(RA, 'map.layout', `Անհայտ վայր «${id}» (տես areas)`);
+  const scripts = new Set();
+  for (const [id, a] of Object.entries(areas)) {
+    const p = `areas.${id}`;
+    if (!isObj(a) || typeof a.name !== 'string' || typeof a.icon !== 'string') {
+      err(RA, p, 'Պետք է լինի { "icon": "🐔", "name": "…", … }');
+      continue;
+    }
+    if (a.available === false) continue;
+    if (typeof a.script !== 'string' || !/^[\p{L}_][\p{L}\p{N}_]*$/u.test(a.script) || scripts.has(a.script)) err(RA, `${p}.script`, 'Պետք է լինի կոդի ներդիրի չկրկնվող անուն (տառեր և թվեր)');
+    scripts.add(a.script);
+    const most = mapOk ? map.area : 99;
+    if (!Array.isArray(a.sizes) || !a.sizes.length || !a.sizes.every((n, i) => Number.isInteger(n) && n >= 2 && n <= most && (i === 0 || n > a.sizes[i - 1]))) err(RA, `${p}.sizes`, `Պետք է լինի աճող չափերի ցուցակ (2-ից ${most})`);
+    if (a.animal !== undefined && !animals[a.animal]) err(RA, `${p}.animal`, `Անհայտ կենդանի «${a.animal}» (տես animals)`);
+    const first = Array.isArray(a.sizes) ? a.sizes[0] : 2;
+    for (const [type, xy] of Object.entries(a.objects || {})) {
+      if (!RANCH_THINGS.includes(type)) err(RA, `${p}.objects.${type}`, `Անհայտ իր։ Թույլատրված են՝ ${RANCH_THINGS.join(', ')}`);
+      else if (!Array.isArray(xy) || xy.length !== 2 || !xy.every((v) => Number.isInteger(v) && v >= 0 && v < first)) err(RA, `${p}.objects.${type}`, `Պետք է լինի [x, y]՝ 0-ից ${first - 1}`);
+    }
+    if (a.animal && !(a.objects || {}).Basket) err(RA, `${p}.objects`, 'Կենդանիների վայրին պետք է զամբյուղ (Basket)');
+  }
+  if (!Object.values(areas).some((a) => isObj(a) && a.available !== false && (a.objects || {}).Stall)) err(RA, 'areas', 'Պետք է լինի շուկա՝ վայր "Stall"-ով');
+  for (const [type, c] of Object.entries(animals)) {
+    const p = `animals.${type}`;
+    if (!isObj(c)) {
+      err(RA, p, 'Պետք է լինի օբյեկտ');
+      continue;
+    }
+    if (!isFeed(c.feed)) err(RA, `${p}.feed`, 'Պետք է լինի կերի ապրանք (items-ում "feed": true)');
+    if (!ranchItems.includes(c.product)) err(RA, `${p}.product`, `Անհայտ ապրանք «${c.product}»`);
+    for (const key of ['every', 'space', 'step']) if (!(isNum(c[key]) && c[key] > 0)) err(RA, `${p}.${key}`, 'Պետք է լինի դրական թիվ');
+    for (const key of ['hunger', 'thirst', 'dirt']) if (!(isObj(c.needs) && isNum(c.needs[key]) && c.needs[key] >= 0)) err(RA, `${p}.needs.${key}`, 'Պետք է լինի 0 կամ դրական թիվ');
+  }
+  for (const key of ['seek', 'fill', 'unhappy', 'dirty', 'sad', 'petBoost', 'petSeconds', 'moodSpeed']) {
+    if (!(isObj(ranch.needs) && isNum(ranch.needs[key]) && ranch.needs[key] >= 0)) err(RA, `needs.${key}`, 'Պետք է լինի 0 կամ դրական թիվ');
+  }
+  const st = isObj(ranch.start) ? ranch.start : {};
+  for (const id of st.areas || []) if (!areas[id] || areas[id].available === false) err(RA, 'start.areas', `Անհայտ վայր «${id}»`);
+  for (const [type, n] of Object.entries(st.animals || {})) if (!animals[type] || !Number.isInteger(n) || n < 0) err(RA, `start.animals.${type}`, 'Պետք է լինի հայտնի կենդանի և 0 կամ դրական ամբողջ թիվ');
+  items('start.items', st.items || {}, { file: RA, names: ranchItems });
+  for (const [item, cost] of Object.entries(ranch.cart || {})) {
+    if (!isFeed(item)) err(RA, `cart.${item}`, `Սայլը բերում է միայն կեր («${item}»-ը կեր չէ)`);
+    items(`cart.${item}`, cost, { min: 1, file: RA });
+  }
+  const ord = isObj(ranch.orders) ? ranch.orders : {};
+  if (!(Number.isInteger(ord.perDay) && ord.perDay >= 0) || !(isNum(ord.pay) && ord.pay > 0) || !Array.isArray(ord.lines) || !ord.lines.every((l) => typeof l === 'string')) {
+    err(RA, 'orders', 'Պետք է լինի { "perDay": 3, "pay": 1.6, "base": { "Egg": 6 }, "lines": ["… {list} … {pay} ֏"] }');
+  }
+  items('orders.base', ord.base || {}, { min: 1, file: RA, names: ranchItems.filter((it) => ranch.items[it].sell) });
+  if (!Array.isArray(ranch.hands) || !ranch.hands.length || !ranch.hands.every((n) => Number.isInteger(n) && n >= 1)) err(RA, 'hands', 'Պետք է լինի ամբողջ թվերի ցուցակ, օրինակ՝ [3, 5, 10, 20]');
+  let ranchFns = new Set();
+  try {
+    ranchFns = new Set([...new RanchApi({ config: { ...config, aliases: {} } }).globals].filter(([, g]) => g.kind === 'function' || g.kind === 'lib').map(([k]) => k));
+  } catch (e) {
+    err(RA, '', `Չհաջողվեց ստուգել ռանչոյի հրամանները (${e.message})`);
+  }
+  const shopIds = new Set((Array.isArray(ranch.shop) ? ranch.shop : []).filter((it) => isObj(it) && typeof it.id === 'string').map((it) => it.id));
+  const SHOP_KINDS = ['area', 'animal', 'size', 'trough', 'upgrade', 'command'];
+  if (!Array.isArray(ranch.shop)) err(RA, 'shop', 'Պետք է լինի ցուցակ');
+  else
+    ranch.shop.forEach((it, i) => {
+      const p = `shop[${i}]`;
+      if (!isObj(it) || typeof it.id !== 'string' || !SHOP_KINDS.includes(it.kind)) return err(RA, p, `Պետք է լինի { "id": "…", "kind": "…" }։ kind-ը՝ ${SHOP_KINDS.join(', ')}`);
+      if (ranch.shop.findIndex((x) => isObj(x) && x.id === it.id) !== i) err(RA, `${p}.id`, `«${it.id}» id-ն կրկնվում է`);
+      if (it.available === false) return;
+      const costs = it.costs || [it.cost];
+      if (!Array.isArray(costs) || !costs.length || !costs.every((c) => isNum(c) && c >= 0)) err(RA, `${p}.cost`, 'Պետք է լինի "cost" (֏) կամ "costs" (ամեն մակարդակի գինը)');
+      if (it.needs !== undefined && !shopIds.has(it.needs)) err(RA, `${p}.needs`, `Անհայտ «${it.needs}»`);
+      if (it.kind === 'area' && !(areas[it.id] && areas[it.id].animal && Array.isArray(areas[it.id].sizes))) err(RA, `${p}.id`, 'Պետք է լինի կենդանիների վայր areas-ից');
+      if (it.kind === 'animal' && !animals[it.animal]) err(RA, `${p}.animal`, `Անհայտ կենդանի «${it.animal}»`);
+      if (it.kind === 'size' && !(areas[it.area] && Array.isArray(it.costs) && it.costs.length === (areas[it.area].sizes || []).length - 1)) err(RA, `${p}.costs`, 'Պետք է ունենա "area" և այնքան գին, որքան մեծացում կա (sizes-ից մեկով պակաս)');
+      if (it.kind === 'trough' && !['FeedTrough', 'WaterTrough'].includes(it.id)) err(RA, `${p}.id`, 'Պետք է լինի FeedTrough կամ WaterTrough');
+      if (it.kind === 'upgrade' && !['Speed', 'Hands'].includes(it.id)) err(RA, `${p}.id`, 'Պետք է լինի Speed կամ Hands');
+      if (it.id === 'Hands' && (it.costs || []).length !== (ranch.hands || []).length - 1) err(RA, `${p}.costs`, 'Գների քանակը պետք է լինի hands-ից մեկով պակաս');
+      for (const f of it.grants || []) if (ranchFns.size && !ranchFns.has(f)) err(RA, `${p}.grants`, `Անհայտ հրաման «${f}»`);
+    });
+  const story = isObj(ranch.story) ? ranch.story : {};
+  checkPages(RA, 'story.intro', story.intro || []);
+  for (const [id, pages] of Object.entries(story.areas || {})) {
+    if (!areas[id]) err(RA, `story.areas.${id}`, `Անհայտ վայր «${id}»`);
+    checkPages(RA, `story.areas.${id}`, pages);
+  }
+  for (const [id, pages] of Object.entries(ranch.lessons || {})) {
+    if (!shopIds.has(id)) err(RA, `lessons.${id}`, `Անհայտ «${id}» (տես shop)`);
+    checkPages(RA, `lessons.${id}`, pages);
+  }
+  // quests: like bridgy.json; "research" goals name shop items, "earn" counts ֏, "order" orders
+  const ranchQuestIds = new Set();
+  (Array.isArray(ranch.quests) ? ranch.quests : []).forEach((q, i) => {
+    const p = `quests[${i}]`;
+    if (!isObj(q) || typeof q.id !== 'string' || typeof q.title !== 'string' || !Array.isArray(q.goals) || !q.goals.length) return err(RA, p, 'Պետք է լինի { "id": "…", "title": "…", "goals": [ … ] }');
+    if (ranchQuestIds.has(q.id)) err(RA, `${p}.id`, `«${q.id}» id-ն կրկնվում է`);
+    ranchQuestIds.add(q.id);
+    q.goals.forEach((g, j) => {
+      const gp = `${p}.goals[${j}]`;
+      const types = ['gain', 'have', 'research', 'code', 'earn', 'order'];
+      if (!isObj(g) || !types.includes(g.type)) return err(RA, gp, `type-ը պետք է լինի՝ ${types.join(', ')}`);
+      if ((g.type === 'gain' || g.type === 'have') && !ranchItems.includes(g.item)) err(RA, `${gp}.item`, `Անհայտ ապրանք «${g.item}»`);
+      if (g.type === 'research' && !shopIds.has(g.id)) err(RA, `${gp}.id`, `Անհայտ «${g.id}» (տես shop)`);
+      if (g.type === 'code' && g.feature && !SYNTAX_FEATURES.includes(g.feature)) err(RA, `${gp}.feature`, `Անհայտ հնարավորություն «${g.feature}»`);
+      if (g.type === 'code' && g.fn && ranchFns.size && !ranchFns.has(g.fn)) err(RA, `${gp}.fn`, `Անհայտ հրաման «${g.fn}»`);
+      if (['gain', 'have', 'earn', 'order'].includes(g.type) && !(isNum(g.amount) && g.amount >= 1)) err(RA, `${gp}.amount`, 'Պետք է լինի 1 կամ ավելի թիվ');
+    });
+    if (q.hints !== undefined && (!Array.isArray(q.hints) || !q.hints.every((x) => typeof x === 'string'))) err(RA, `${p}.hints`, 'Պետք է լինի տեքստերի ցուցակ');
+  });
+  for (const [name, c] of Object.entries(guide.ranch || {})) {
+    if (ranchFns.size && !ranchFns.has(name)) err(G, `ranch.${name}`, `Անհայտ ռանչոյի հրաման «${name}»`);
+    if (!isObj(c) || typeof c.sig !== 'string' || typeof c.doc !== 'string') err(G, `ranch.${name}`, 'Պետք է լինի { "sig": "…", "doc": "…" }');
   }
 
   // ---------------------------------------------------------------- aliases
@@ -595,6 +722,32 @@ export function validateConfig(config) {
       for (const [target, names] of Object.entries(members)) {
         if (!enumNs.has(target)) err(A, `members.${ns}.${target}`, `«${ns}» խմբում «${target}» չկա`);
         checkNames(`members.${ns}.${target}`, target, names, memberNames, (n) => enumNs.has(n));
+      }
+    }
+    // the ranch's own names ("ranch" section, same format); the farm's names keep working there
+    const r = isObj(aliases.ranch) ? aliases.ranch : {};
+    const rapi = new RanchApi({ config: { ...config, aliases: {} } });
+    const ranchNames = new Map();
+    for (const section of ['functions', 'constants', 'namespaces']) {
+      for (const [target, names] of Object.entries(aliases[section] || {})) if (rapi.globals.has(target) && Array.isArray(names)) for (const n of names) ranchNames.set(n, target);
+    }
+    for (const section of ['functions', 'namespaces']) {
+      for (const [target, names] of Object.entries(r[section] || {})) {
+        if (!rapi.globals.has(target)) err(A, `ranch.${section}.${target}`, `Անհայտ ռանչոյի անուն «${target}»`);
+        checkNames(`ranch.${section}.${target}`, target, names, ranchNames, (n) => rapi.globals.has(n));
+      }
+    }
+    for (const [ns, members] of Object.entries(r.members || {})) {
+      const enumNs = rapi.enums[ns];
+      if (!enumNs) {
+        err(A, `ranch.members.${ns}`, `Անհայտ խումբ «${ns}»`);
+        continue;
+      }
+      const memberNames = new Map();
+      for (const [target, names] of Object.entries((aliases.members || {})[ns] || {})) if (enumNs.has(target) && Array.isArray(names)) for (const n of names) memberNames.set(n, target);
+      for (const [target, names] of Object.entries(members)) {
+        if (!enumNs.has(target)) err(A, `ranch.members.${ns}.${target}`, `«${ns}» խմբում «${target}» չկա`);
+        checkNames(`ranch.members.${ns}.${target}`, target, names, memberNames, (n) => enumNs.has(n));
       }
     }
   } catch (e) {

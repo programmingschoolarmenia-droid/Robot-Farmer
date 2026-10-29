@@ -42,7 +42,7 @@ test('code words: a stopped endless loop and drones count; the run end reports t
   game.runner.start('main');
   for (let i = 0; i < 50; i++) game.update(0.1);
   game.runner.stop('user');
-  assert.deepEqual(end, { reason: 'user', code: 3 });
+  assert.deepEqual(end, { reason: 'user', code: 3, script: 'main' });
   assert.equal(words(game, 'function work() {\n  harvest();\n  doAFlip();\n}\nlet d = spawnDrone(work);\nwaitFor(d);'), 11);
   assert.equal(game.stats.codeWords, 14);
 });

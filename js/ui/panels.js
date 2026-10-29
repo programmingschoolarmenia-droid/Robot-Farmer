@@ -177,7 +177,13 @@ export class QuestBar {
           chip.append(`${i18n.entity(goal.entity)} ${p.value}/${p.target}`);
           break;
         case 'research':
-          chip.append(`🔬 ${done ? '✓' : `${p.value}/${p.target}`}`);
+          chip.append(`${this.game.isRanch ? '🛒' : '🔬'} ${done ? '✓' : `${p.value}/${p.target}`}`);
+          break;
+        case 'earn':
+          chip.append(pixelImg(this.app.sprites.url('item:Dram', 2)), `${formatCount(p.value)}/${formatCount(p.target)}`);
+          break;
+        case 'order':
+          chip.append(`📜 ${p.value}/${p.target}`);
           break;
         case 'code':
           chip.append(`</> ${goal.feature ? i18n.feature(goal.feature).split(' ')[0] : `${goal.fn}()`} ${done ? '✓' : ''}`);

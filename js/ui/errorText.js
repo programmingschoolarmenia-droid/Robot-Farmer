@@ -13,7 +13,8 @@ export function describeError(err, i18n, game) {
       const gate = research.nodeForFunction(canon);
       p.nodeName = i18n.nodeName(gate);
       p.name = api.displayName(canon);
-      if (game.village.building(gate)) key = 'lockedFunctionVillage'; // unlocked by repairing a village building
+      if (game.isRanch && game.shopItem(gate)) key = 'lockedFunctionRanch'; // sold in the ranch's shop
+      else if (game.village.building(gate)) key = 'lockedFunctionVillage'; // unlocked by repairing a village building
       break;
     }
     case 'notFunction':

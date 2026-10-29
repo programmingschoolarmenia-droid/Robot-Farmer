@@ -67,12 +67,15 @@ export class ConsolePanel {
 }
 
 export class EditorPanel {
-  constructor({ app, game, container, onChange, onRun }) {
+  // tabs (the ranch): { fixed(name) → can't be renamed or deleted, running(name), extra(name) → a node
+  // added to the tab (its ▶/■), title(name) }.
+  constructor({ app, game, container, onChange, onRun, tabs = null }) {
     this.app = app;
     this.i18n = app.i18n;
     this.game = game;
     this.onChange = onChange;
     this.onRun = onRun;
+    this.tabs = tabs;
     this.docs = new Map();
     this.marks = [];
     this.errorLine = null;
@@ -186,19 +189,23 @@ export class EditorPanel {
   renderTabs() {
     const i18n = this.i18n;
     const runner = this.game.runner;
+    const opt = this.tabs || {};
     const tabs = this.game.scripts.map((s) => {
       const isActive = s.name === this.active;
+      const fixed = !!(opt.fixed && opt.fixed(s.name));
+      const running = opt.running ? opt.running(s.name) : runner.isActive() && runner.entry === s.name;
       const tab = h(
         'div',
         {
-          class: `tab ${isActive ? 'active' : ''} ${runner.isActive() && runner.entry === s.name ? 'running' : ''} ${this.errorTabs && this.errorTabs.has(s.name) ? 'has-error' : ''}`,
-          title: isActive ? `${i18n.t('ui.runThisFile')} · ${i18n.t('ui.renameTab')}: 2×` : s.name,
+          class: `tab ${isActive ? 'active' : ''} ${running ? 'running' : ''} ${this.errorTabs && this.errorTabs.has(s.name) ? 'has-error' : ''}`,
+          title: opt.title ? opt.title(s.name) : isActive ? `${i18n.t('ui.runThisFile')} · ${i18n.t('ui.renameTab')}: 2×` : s.name,
           onclick: () => this.switchTo(s.name),
-          ondblclick: () => this.renameTab(s.name),
+          ondblclick: () => !fixed && this.renameTab(s.name),
         },
         h('span', {}, s.name),
+        opt.extra ? opt.extra(s.name) : null,
       );
-      if (this.game.scripts.length > 1) {
+      if (this.game.scripts.length > 1 && !fixed) {
         tab.append(
           h(
             'button',
@@ -247,6 +254,12 @@ export class EditorPanel {
     this.docs.set(name, CM.Doc(code, 'javascript'));
     this.switchTo(name);
     this.onChange && this.onChange();
+  }
+
+  // Scripts the game added itself (a new ranch area's tab) get their documents.
+  addDocs() {
+    for (const s of this.game.scripts) if (!this.docs.has(s.name)) this.docs.set(s.name, CM.Doc(s.code, 'javascript'));
+    this.renderTabs();
   }
 
   async renameTab(old) {

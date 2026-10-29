@@ -202,7 +202,51 @@
       "AutoUnlock": ["AvtomatBacum", "ԱվտոմատԲացում"],
       "Functions": ["Funkcianer", "Ֆունկցիաներ"],
       "Import": ["Nermucum", "Ներմուծում"],
-      "Utilities": ["Ognakanner", "Օգնականներ"]
+      "Utilities": ["Ognakanner", "Օգնականներ"],
+      "Ranch": ["Rancho", "Ռանչո"]
+    }
+  },
+
+  "ranch": {
+    "_readme": "Ռանչոյի կոդի անունները (նույն ձևով)։ Ֆերմայի անունները (gnal, tpel, havaqel, …) ռանչոյում էլ են աշխատում։",
+    "functions": {
+      "unload": ["datarkel", "դատարկել"],
+      "take": ["vercnel", "վերցնել"],
+      "fill": ["lcnel", "լցնել"],
+      "inHands": ["dzerqum", "ձեռքում"],
+      "sell": ["vacharel", "վաճառել"],
+      "price": ["gin", "գին"],
+      "buy": ["gnel", "գնել"],
+      "milk": ["kitel", "կթել"],
+      "pet": ["shoyel", "շոյել"],
+      "dirt": ["axtot", "աղտոտ"],
+      "animals": ["kendaniner", "կենդանիներ"],
+      "bring": ["berel", "բերել"],
+      "orders": ["patverner", "պատվերներ"],
+      "deliver": ["hanznel", "հանձնել"]
+    },
+    "namespaces": {
+      "Animals": ["Tesakner", "Տեսակներ"]
+    },
+    "members": {
+      "Items": {
+        "Dram": ["Dram", "Դրամ"],
+        "Egg": ["Dzu", "Ձու"],
+        "Milk": ["Kat", "Կաթ"],
+        "Grain": ["Hatik", "Հատիկ"],
+        "Bale": ["XotiHak", "ԽոտիՀակ"]
+      },
+      "Animals": {
+        "Hen": ["Hav", "Հավ"],
+        "Cow": ["Kov", "Կով"]
+      },
+      "Machines": {
+        "FeedTrough": ["Keraman", "Կերաման"],
+        "WaterTrough": ["Jraman", "Ջրաման"],
+        "Well": ["Jrhor", "Ջրհոր"],
+        "Basket": ["Zambyux", "Զամբյուղ"],
+        "Stall": ["Krpak", "Կրպակ"]
+      }
     }
   }
 }

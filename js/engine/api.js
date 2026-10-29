@@ -41,7 +41,7 @@ export class GameApi {
     this.labels = new Map(); // canonical -> name shown to players (first alias)
     this.enums = {};
     this.compiled = new Map(); // script name -> { code, ast, errors }
-    const aliases = game.config.aliases || {};
+    const aliases = this.aliasConfig();
     this.buildEnums(aliases);
     this.buildFunctions();
     this.buildLibraries();
@@ -52,23 +52,30 @@ export class GameApi {
     return this.game.config.settings;
   }
 
+  // aliases.json (the ranch adds its own section on top).
+  aliasConfig() {
+    return this.game.config.aliases || {};
+  }
+
   // ------------------------------------------------------------------ registry
 
   // Enum values carry their shown (Armenian) label, so they are built after reading the aliases.
-  buildEnums(aliases) {
+  makeEnum(aliases, name, members) {
     const first = (list) => (Array.isArray(list) && list[0]) || null;
-    const mk = (name, members) => {
-      const ns = new Namespace(name, 'enum', first(aliases.namespaces && aliases.namespaces[name]) || name);
-      const own = (aliases.members && aliases.members[name]) || {};
-      for (const m of members) {
-        const label = first(own[m]);
-        if (label) ns.labels.set(m, label);
-        ns.set(m, new EnumValue(name, m, `${ns.label}.${label || m}`));
-      }
-      this.enums[name] = ns;
-      this.globals.set(name, { kind: 'enum', value: ns });
-      return ns;
-    };
+    const ns = new Namespace(name, 'enum', first(aliases.namespaces && aliases.namespaces[name]) || name);
+    const own = (aliases.members && aliases.members[name]) || {};
+    for (const m of members) {
+      const label = first(own[m]);
+      if (label) ns.labels.set(m, label);
+      ns.set(m, new EnumValue(name, m, `${ns.label}.${label || m}`));
+    }
+    this.enums[name] = ns;
+    this.globals.set(name, { kind: 'enum', value: ns });
+    return ns;
+  }
+
+  buildEnums(aliases) {
+    const mk = (name, members) => this.makeEnum(aliases, name, members);
     mk('Entities', ENTITY_NAMES);
     mk('Items', ITEM_NAMES);
     mk('Grounds', GROUND_NAMES);
@@ -78,6 +85,12 @@ export class GameApi {
     mk('Machines', MACHINE_NAMES);
     mk('Hats', Object.keys(this.settings.hats || { Straw_Hat: {} }));
     mk('Unlocks', this.game.config.research.nodes.map((n) => n.id));
+    this.buildConstants(aliases);
+  }
+
+  // Directions (Verev, …), undefined / NaN / Infinity and the Map / Set classes.
+  buildConstants(aliases) {
+    const first = (list) => (Array.isArray(list) && list[0]) || null;
     this.directions = {};
     for (const d of Object.keys(DIRECTIONS)) {
       const v = new EnumValue('', d, first(aliases.constants && aliases.constants[d]) || d);

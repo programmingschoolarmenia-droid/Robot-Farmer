@@ -7,8 +7,12 @@ import { Drone } from './drone.js';
 const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
 export class Runner {
-  constructor(game) {
+  // A ranch area runs its own drone and script (rootDrone, rootScript); the farm runs its main drone
+  // and the active tab.
+  constructor(game, rootDrone = null, rootScript = null) {
     this.game = game;
+    this.rootDrone = rootDrone;
+    this.rootScript = rootScript;
     this.state = 'idle'; // idle | running | paused
     this.drones = [];
     this.entry = null;
@@ -21,6 +25,10 @@ export class Runner {
 
   get settings() {
     return this.game.config.settings;
+  }
+
+  get root() {
+    return this.rootDrone || this.game.mainDrone;
   }
 
   makeInterpreter(drone) {
@@ -52,10 +60,10 @@ export class Runner {
     } catch (e) {
       if (!(e instanceof GameError)) throw e;
       this.lastError = e;
-      game.events.emit('runError', { error: e, module: e.module || script.name, drone: 0, phase: 'compile' });
+      game.events.emit('runError', { error: e, module: e.module || script.name, drone: 0, phase: 'compile', script: script.name });
       return { ok: false, error: e };
     }
-    const d = game.mainDrone;
+    const d = this.root;
     this.runId++;
     d.interp = this.makeInterpreter(d);
     d.gen = d.interp.runModule(script.name);
@@ -88,12 +96,12 @@ export class Runner {
       d.gen = null;
     }
     this.removeExtraDrones();
-    if (!silent) this.game.events.emit('runEnd', { reason, code });
+    if (!silent) this.game.events.emit('runEnd', { reason, code, script: this.entry });
   }
 
   // A run ended without an error: adds the code words of its new statements (codeWords.js).
   countCode() {
-    const I = this.game.mainDrone.interp;
+    const I = this.root.interp;
     if (!I) return 0;
     try {
       return this.game.stats.addCode(codeFingerprints([...I.modules.values()].map((m) => m.ast), I.runId, this.game.api));
@@ -190,10 +198,10 @@ export class Runner {
   step() {
     const game = this.game;
     if (this.state === 'idle') {
-      const r = this.start(game.activeScript);
+      const r = this.start(this.rootScript || game.activeScript);
       if (!r.ok) return;
       this.state = 'paused';
-      const d = game.mainDrone;
+      const d = this.root;
       const v = this.stepDrone(d); // run to the first statement
       if (v === 'done' || v === 'error') return;
       this.stepTarget = d.time;
@@ -202,7 +210,7 @@ export class Runner {
     }
     if (this.state === 'running') this.pause();
     if (this.state !== 'paused') return;
-    const d = this.drones.find((x) => x.state === 'running') || game.mainDrone;
+    const d = this.drones.find((x) => x.state === 'running') || this.root;
     if (d.state !== 'running') return;
     let guard = 0;
     for (;;) {
@@ -238,7 +246,7 @@ export class Runner {
       this.state = 'idle';
       this.stepTarget = null;
       this.removeExtraDrones();
-      this.game.events.emit('runEnd', { reason: 'done', code });
+      this.game.events.emit('runEnd', { reason: 'done', code, script: this.entry });
     }
   }
 
@@ -263,7 +271,7 @@ export class Runner {
       x.gen = null;
     }
     this.removeExtraDrones();
-    this.game.events.emit('runError', { error: err, module: err.module || this.entry, drone: d.id, phase: 'run' });
+    this.game.events.emit('runError', { error: err, module: err.module || this.entry, drone: d.id, phase: 'run', script: this.entry });
   }
 
   // Megafarm: start a new drone on `fn` at the parent's position.

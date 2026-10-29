@@ -310,7 +310,9 @@ export class ResearchTree {
       );
       if (state === 'locked') {
         const names = (n.parents || []).filter((p) => research.level(p) === 0).map((p) => `«${research.node(p).name}»`);
-        parts.push(h('div', { class: 'rd-note' }, '🔒 ', t('ui.lockedNeed', { parents: names.join(', ') })));
+        if (names.length) parts.push(h('div', { class: 'rd-note' }, '🔒 ', t('ui.lockedNeed', { parents: names.join(', ') })));
+        const have = research.totalLevels();
+        if (have < (n.minLevels || 0)) parts.push(h('div', { class: 'rd-note' }, '🔒 ', t('ui.lockedLevels', { n: n.minLevels, have })));
       }
       const btn = h(
         'button',

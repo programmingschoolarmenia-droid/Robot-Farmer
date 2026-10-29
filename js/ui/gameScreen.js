@@ -16,6 +16,7 @@ import { openBook } from './book.js';
 import { openModal } from './modal.js';
 import { VillageView, recipeText } from './village.js';
 import { ChallengeScreen, schoolPanel } from './challenge.js';
+import { RanchScreen } from './ranch.js';
 import { formatClock, dayKey, dayNumber, keyOfDay, weekKey } from '../core/util.js';
 import { SEASON_NAMES } from '../engine/calendar.js';
 import { nextFestival, lastFestival } from '../engine/festivals.js';
@@ -112,6 +113,7 @@ export class GameScreen {
     this.villageBadge = h('span', { class: 'badge', hidden: true });
     this.perfectLabel = h('span', { class: 'perfect-label' });
     this.villageBtn = h('button', { class: 'btn village-button', hidden: true, onclick: () => this.openVillage() }, '🏘 ', t('ui.villageButton'), this.villageBadge);
+    this.ranchBtn = h('button', { class: 'btn ranch-button', hidden: true, onclick: () => this.openRanch() }, '🐄 ', t('ui.ranchButton'));
     this.farmStage = h('div', { class: 'farm-stage' });
     this.codePanel = h('section', { class: 'panel code-panel' });
     this.inventoryList = h('ul', { class: 'inventory-list' });
@@ -144,6 +146,7 @@ export class GameScreen {
           { class: 'side-panel' },
           h('section', { class: 'panel grow' }, h('div', { class: 'panel-head' }, '🧺 ', t('ui.inventory')), this.inventoryList),
           this.villageBtn,
+          this.ranchBtn,
           this.researchBtn,
         )),
       ),
@@ -190,27 +193,41 @@ export class GameScreen {
     });
     this.research = new ResearchTree({ app, game, onBuy: (id, card) => this.onResearchBought(id, card) });
     this.villageView = new VillageView({ app, game, onStory: (b) => this.bridgy.say(b.story, { key: `story:${b.id}`, interrupt: true }), extra: (b, state) => this.schoolPart(b, state) });
+    // While the ranch is open, Bridgy helps with the ranch (its quests, commands and errors).
     this.bridgy = new Bridgy({
       app,
-      codeKind: (w) => game.api.codeKind(w),
+      codeKind: (w) => (this.ranchScreen ? game.ranch : game).api.codeKind(w),
       onShowLine: (err) => {
-        this.setTab('code');
-        this.editor.jumpTo(err.module, err.loc.line);
+        const screen = this.ranchScreen || this;
+        screen.setTab('code');
+        screen.editor.jumpTo(err.module, err.loc.line);
       },
-      getHelpContext: () => ({
-        quests: this.quests,
-        api: game.api,
-        research: game.research,
-        lastError: this.lastError,
-        explainLastError: () => this.explainError(this.lastError),
-        openBook: (tab) => openBook({ app, game, tab }),
-        note: game.notes.note(game.notes.active),
-        hasNotes: game.notes.got.length > 0,
-      }),
+      getHelpContext: () =>
+        this.ranchScreen
+          ? {
+              ranch: true,
+              quests: game.ranch.quests,
+              api: game.ranch.api,
+              research: game.ranch,
+              lastError: this.ranchScreen.lastError,
+              explainLastError: () => this.bridgy.explainError(this.ranchScreen.lastError, describeError(this.ranchScreen.lastError, app.i18n, game.ranch)),
+              openBook: (tab) => openBook({ app, game: game.ranch, tab }),
+            }
+          : {
+              quests: this.quests,
+              api: game.api,
+              research: game.research,
+              lastError: this.lastError,
+              explainLastError: () => this.explainError(this.lastError),
+              openBook: (tab) => openBook({ app, game, tab }),
+              note: game.notes.note(game.notes.active),
+              hasNotes: game.notes.got.length > 0,
+            },
     });
     this.updateFarmLabel();
     this.updateCalendarChip();
     this.updateVillageButton();
+    this.updateRanchButton();
     this.updatePerfection();
   }
 
@@ -282,7 +299,8 @@ export class GameScreen {
       }
     });
     on('research', (e) => this.onResearch(e));
-    for (const name of ['research', 'village']) on(name, () => this.updatePerfection());
+    for (const name of ['research', 'village', 'ranch']) on(name, () => this.updatePerfection());
+    on('research', () => this.updateRanchButton());
     on('sticker', (e) => {
       const list = this.game.stickers.list.filter((s) => e.ids.includes(s.id));
       app.audio.play('unlock');
@@ -399,6 +417,38 @@ export class GameScreen {
     this.villageBadge.hidden = !ready && !complete;
     this.villageBadge.textContent = ready ? String(ready) : '!';
     if (this.villageView.isOpen) this.villageView.refresh();
+  }
+
+  // ------------------------------------------------------------------ ranch
+
+  // «🐄 Ռանչո» appears with the ranch's research (research.json → grants.panels: ["ranch"]).
+  updateRanchButton() {
+    const shown = this.game.research.hasPanel('ranch');
+    if (shown && this.ranchBtn.hidden && this.first('ranchNew')) this.bridgy.toast(this.app.i18n.t('ui.ranchNew'), 7000);
+    this.ranchBtn.hidden = !shown;
+  }
+
+  // The ranch's screen: only the open world runs, so the farm waits (no frames, no keys) until «🌾 Ֆերմա».
+  openRanch() {
+    if (this.ranchScreen || this.challenge) return;
+    this.villageView.close();
+    cancelAnimationFrame(this.raf);
+    this.el.hidden = true;
+    this.ranchScreen = new RanchScreen({
+      app: this.app,
+      main: this.game,
+      bridgy: this.bridgy,
+      first: (key) => this.first(key),
+      onDirty: () => this.markDirty(),
+      onClose: () => {
+        this.ranchScreen = null;
+        this.el.hidden = false;
+        this.save();
+        this.layoutSizes();
+        this.last = performance.now();
+        this.raf = requestAnimationFrame((t) => this.tick(t));
+      },
+    });
   }
 
   openVillage() {
@@ -730,7 +780,7 @@ export class GameScreen {
   }
 
   handleKey(e) {
-    if (this.challenge) return; // (its editor has its own Ctrl+Enter)
+    if (this.challenge || this.ranchScreen) return; // (their editors have their own Ctrl+Enter)
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
       this.run();
@@ -946,6 +996,7 @@ export class GameScreen {
   destroy() {
     if (this.destroyed) return;
     if (this.challenge) this.challenge.destroy();
+    if (this.ranchScreen) this.ranchScreen.destroy();
     this.game.runner.stop('exit', true);
     this.destroyed = true;
     cancelAnimationFrame(this.raf);

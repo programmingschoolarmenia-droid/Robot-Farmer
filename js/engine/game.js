@@ -13,6 +13,7 @@ import { Notes } from './notes.js';
 import { Stickers, perfection } from './stickers.js';
 import { GameApi, FISH_NAMES } from './api.js';
 import { Runner } from './runner.js';
+import { Ranch } from './ranch.js';
 import { locOf } from '../lang/errors.js';
 import { DIR_BITS } from './maze.js';
 
@@ -61,6 +62,7 @@ export class Game {
     if (save.dino && this.mainDrone.hat === 'Dinosaur_Hat') {
       this.dino = { drone: this.mainDrone, tail: save.dino.tail || [], apple: save.dino.apple || null, eaten: save.dino.eaten || 0 };
     } else if (this.mainDrone.hat === 'Dinosaur_Hat') this.mainDrone.hat = 'Straw_Hat';
+    this.ranch = new Ranch(this, save.ranch); // the second world (js/engine/ranch.js); it runs only while open
     this.events.on('research', (e) => this.onResearch(e));
     this.calendar.update(this.time);
   }
@@ -538,6 +540,7 @@ export class Game {
       perfect: perfection(this).percent,
       festival: this.festivals.latest(),
       challenge: this.challenge,
+      ranch: this.ranch.earned,
     };
   }
 
@@ -562,6 +565,7 @@ export class Game {
       notes: this.notes.toSave(),
       stickers: this.stickers.toSave(),
       challenge: this.challenge,
+      ranch: this.ranch.toSave(),
       boosts: this.boosts,
       dino: this.dino ? { tail: this.dino.tail, apple: this.dino.apple, eaten: this.dino.eaten } : null,
     };

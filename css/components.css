@@ -390,6 +390,13 @@
   right: -8px;
   top: -10px;
 }
+.ranch-button {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 10px 12px;
+  background: var(--orange-soft);
+  font-size: 1rem;
+}
 .boost-chips {
   display: inline-flex;
   gap: 4px;

@@ -12,11 +12,13 @@ const TABS = [
 ];
 const NOTE_ICONS = { math: '🔢', code: '💻', cipher: '🔐', fact: '🌻' };
 
+// On the ranch (game = the Ranch) the book has its commands and the JavaScript topics.
 export function openBook({ app, game, tab = 'commands' }) {
   const t = app.i18n.t;
   const list = h('div', { class: 'book-list' });
   const search = h('input', { class: 'input book-search', type: 'search', placeholder: t('ui.bookSearch'), oninput: () => filter() });
-  const tabButtons = TABS.map(([id, icon, label]) => h('button', { class: 'login-tab', dataset: { tab: id }, onclick: () => show(id) }, `${icon} ${t(label)}`));
+  const tabs = TABS.filter(([id]) => !game.isRanch || id === 'commands' || id === 'js');
+  const tabButtons = tabs.map(([id, icon, label]) => h('button', { class: 'login-tab', dataset: { tab: id }, onclick: () => show(id) }, `${icon} ${t(label)}`));
   const nothing = h('div', { class: 'board-note', hidden: true }, t('ui.bookNothing'));
   const show = (id) => {
     for (const b of tabButtons) b.classList.toggle('active', b.dataset.tab === id);
@@ -39,7 +41,7 @@ export function openBook({ app, game, tab = 'commands' }) {
     className: 'book-modal',
     body: [h('div', { class: 'login-tabs' }, tabButtons), search, list],
   });
-  show(tab);
+  show(tabs.some(([id]) => id === tab) ? tab : 'commands');
 }
 
 function buildCards(app, game, tab) {
@@ -49,7 +51,7 @@ function buildCards(app, game, tab) {
   let entries;
   if (tab === 'commands') {
     // Game commands only (they have an Armenian name); Math & co. are explained in the JS tab.
-    entries = Object.entries(guide.commands)
+    entries = Object.entries(game.isRanch ? { ...guide.commands, ...guide.ranch } : guide.commands)
       .filter(([name]) => api.labels.has(name))
       .map(([name, c]) => ({ open: research.hasFunction(name), card: () => commandCard(app, game, name, c) }));
   } else if (tab === 'js') {
@@ -78,8 +80,15 @@ function commandCard(app, game, name, c) {
     h('summary', {}, h('code', { class: 'book-sig' }, c.sig), h('span', { class: 'book-short' }, c.doc)),
     c.example ? section(t('ui.bookExample'), code(game, c.example)) : null,
     c.notes ? h('p', { class: 'book-note' }, `💡 ${c.notes}`) : null,
-    node ? h('p', { class: 'book-from' }, `${game.village.building(node) ? '🏘' : '🔬'} ${t('ui.bookFrom', { name: app.i18n.nodeName(node) })}`) : null,
+    node ? h('p', { class: 'book-from' }, fromText(app, game, node)) : null,
   );
+}
+
+// Where a command comes from: 🛒 the ranch's shop, 🏘 a village building or 🔬 a research.
+function fromText(app, game, node) {
+  const t = app.i18n.t;
+  if (game.isRanch && game.shopItem(node)) return `🛒 ${t('ui.bookFrom', { name: game.shopName(game.shopItem(node)) })}`;
+  return `${game.village.building(node) ? '🏘' : '🔬'} ${t('ui.bookFrom', { name: app.i18n.nodeName(node) })}`;
 }
 
 // A secret note in Bridgy's book: its riddle (and program) and whether its treasure was found.

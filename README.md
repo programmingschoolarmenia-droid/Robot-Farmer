@@ -40,6 +40,17 @@ step is needed.
   challenge on a test farm that is the same for everyone (fastest time wins, the top 3 get hats
   and 🏅 medals). Villagers also give secret code notes (`gtnel()` digs out their treasure), the
   Profile has a sticker album, and «🌟 %» shows how much of the game a student has done.
+* **Bridgy's ranch** («🐄 Ռանչո», a research that appears after 70 research levels): a second
+  world on its own screen (the farm waits meanwhile). Every area — the henhouse, the cowshed, the
+  market — has its own drone and its own code tab; the big ▶ runs them all. Animals walk, get
+  hungry, thirsty, dirty and sad, and give eggs or milk only when they are cared for, so the code
+  carries feed and water to troughs, picks up eggs, milks the cows (they walk around:
+  `kendaniner()` lists them) and unloads everything in the basket. The market's drone sells for ֏
+  at prices that change every day (the same for everyone), buys feed, brings hay from the farm
+  (10 000 → 1 bale) and delivers villagers' orders; ֏ buys new areas, animals, bigger pens, drone
+  upgrades and the ranch commands in the 🛒 shop. Everything is in
+  [`config/ranch.json`](config/README.md) (goats, sheep and carpets, bees, buffalo, rabbits and
+  the workshop are «soon»).
 * **Seasons, weather and the luck of the day** follow the real clock, the same for every
   student: with the default 15-minute seasons, each hour is spring (:00), summer (:15), autumn
   (:30) and winter (:45). Plants grow faster in their favourite season, rain waters the whole
@@ -48,8 +59,8 @@ step is needed.
 * **Accounts and the leaderboard:** students register with a username and a password.
   Their farm is saved in their account. The leaderboard's two dropdowns choose what (points for
   everything gathered, where rare items count more; working code words, where repeats count
-  once; the weekly challenge; Perfection; the running festival) and, for points, when
-  (today / this month / all time).
+  once; the weekly challenge; Perfection; ֏ earned on the ranch; the running festival) and, for
+  points and the ranch, when (today / this month / all time).
   To make this work online (school ↔ home ↔ phone), create a free Firebase project once —
   step by step in [`config/README.md`](config/README.md#accounts-and-the-leaderboard-firebase-free).
   Without it, accounts work only inside one browser.

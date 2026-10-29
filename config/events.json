@@ -458,6 +458,11 @@
     {"id": "festivalAll", "group": "village", "icon": "🎊", "name": "Բոլոր տոները", "about": "Վաստակիր բոլոր տոների գլխարկները։", "when": {"festivalHats": "all"}},
     {"id": "challenge", "group": "village", "icon": "🏆", "name": "Մրցույթի մեդալ", "about": "Շաբաթական մրցույթում լինես առաջին երեքում։", "when": {"challengeTop": 3}},
     {"id": "perfect50", "group": "village", "icon": "🌟", "name": "Կես ճանապարհ", "about": "Հասիր 50% կատարելության։", "when": {"perfection": 50}},
+    {"id": "firstEgg", "group": "ranch", "icon": "🥚", "name": "Առաջին ձուն", "about": "Ռանչոյում դիր առաջին ձուն զամբյուղի մեջ։", "when": {"total": {"Egg": 1}}},
+    {"id": "firstMilk", "group": "ranch", "icon": "🥛", "name": "Առաջին կաթը", "about": "Կթիր կովին և դիր կաթը պահեստ։", "when": {"total": {"Milk": 1}}},
+    {"id": "eggs500", "group": "ranch", "icon": "🧺", "name": "Ձվի սար", "about": "Հավաքիր 500 ձու։", "when": {"total": {"Egg": 500}}},
+    {"id": "dram1000", "group": "ranch", "icon": "💰", "name": "Հազար դրամ", "about": "Վաստակիր 1000 ֏ ռանչոյում։", "when": {"ranchEarned": 1000}},
+    {"id": "orders10", "group": "ranch", "icon": "📜", "name": "Գյուղի մատակարար", "about": "Կատարիր գյուղացիների 10 պատվեր։", "when": {"ranchOrders": 10}},
     {"id": "flips100", "group": "secret", "icon": "🤸", "name": "Ակրոբատ", "about": "Դրոնը 100 անգամ սալտո արեց։", "when": {"flips": 100}, "secret": true},
     {"id": "hats10", "group": "secret", "icon": "🎩", "name": "Նորաձև դրոն", "about": "Դրոնը կրել է 10 տարբեր գլխարկ։", "when": {"hats": 10}, "secret": true},
     {"id": "eat20", "group": "secret", "icon": "😋", "name": "Գուրման", "about": "Կերար 20 ուտելիք։", "when": {"eaten": 20}, "secret": true},
@@ -465,5 +470,5 @@
     {"id": "iceFish", "group": "secret", "icon": "🧊", "name": "Սառցե ձկնորս", "about": "Բռնիր սիգ՝ ձմեռային ձուկը։", "when": {"fish": "Whitefish"}, "secret": true}
   ],
 
-  "perfection": { "_readme": "Կատարելություն՝ քանի տոկոսն է արված։ research՝ հետազոտությունների կշիռը, village՝ գյուղի շենքերինը (հետո կավելանա ագարակը), hat՝ գլխարկը 100%-ի համար։", "research": 70, "village": 30, "hat": "Legend_Hat" }
+  "perfection": { "_readme": "Կատարելություն՝ քանի տոկոսն է արված։ research՝ հետազոտությունների կշիռը, village՝ գյուղի շենքերինը, ranch՝ ռանչոյի խանութից գնված մնայուն բաներինը (վայրեր, ավելի մեծ հավանոց ու գոմ, արագություն, ձեռքեր, հրամաններ), hat՝ գլխարկը 100%-ի համար։", "research": 50, "village": 20, "ranch": 30, "hat": "Legend_Hat" }
 }

@@ -14,6 +14,7 @@ export function loadConfig() {
     guide: read('guide.json'),
     village: read('village.json'),
     events: read('events.json'),
+    ranch: read('ranch.json'),
   };
 }
 
