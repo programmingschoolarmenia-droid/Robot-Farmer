@@ -43,7 +43,9 @@
     "build": ["karucel", "կառուցել"],
     "make": ["patrastel", "պատրաստել"],
     "eat": ["utel", "ուտել"],
-    "buildGreenhouse": ["apakepatel", "ապակեպատել"]
+    "buildGreenhouse": ["apakepatel", "ապակեպատել"],
+    "festivalDistance": ["hototel", "հոտոտել"],
+    "findTreasure": ["gtnel", "գտնել"]
   },
 
   "constants": {
@@ -99,7 +101,8 @@
       "Gata": ["Gata", "Գաթա"],
       "Ghapama": ["Xapama", "Ղափամա"],
       "Grilled_Fish": ["Xorovac", "Խորոված"],
-      "Star": ["Astx", "Աստղ"]
+      "Star": ["Astx", "Աստղ"],
+      "Medal": ["Medal", "Մեդալ"]
     },
     "Machines": {
       "Mill": ["Jraxac", "Ջրաղաց"],
@@ -142,7 +145,26 @@
       "Dinosaur_Hat": ["Dinozavr", "Դինոզավր"],
       "Secret_Hat": ["Gaxtni", "Գաղտնի"],
       "Fisher_Hat": ["Dzknorsi", "Ձկնորսի"],
-      "Mayor_Hat": ["Gyuxapeti", "Գյուղապետի"]
+      "Mayor_Hat": ["Gyuxapeti", "Գյուղապետի"],
+      "Trndez_Hat": ["Trndezi", "Տրնդեզի"],
+      "Trndez_Gold_Hat": ["TrndeziVoske", "ՏրնդեզիՈսկե"],
+      "Easter_Hat": ["Zatki", "Զատկի"],
+      "Easter_Gold_Hat": ["ZatkiVoske", "ԶատկիՈսկե"],
+      "Vardavar_Hat": ["Vardavari", "Վարդավառի"],
+      "Vardavar_Gold_Hat": ["VardavariVoske", "ՎարդավառիՈսկե"],
+      "Navasard_Hat": ["Navasardi", "Նավասարդի"],
+      "Navasard_Gold_Hat": ["NavasardiVoske", "ՆավասարդիՈսկե"],
+      "Knowledge_Hat": ["Gitelqi", "Գիտելիքի"],
+      "Knowledge_Gold_Hat": ["GitelqiVoske", "ԳիտելիքիՈսկե"],
+      "Teacher_Hat": ["Usucchi", "Ուսուցչի"],
+      "Teacher_Gold_Hat": ["UsucchiVoske", "ՈւսուցչիՈսկե"],
+      "NewYear_Hat": ["Amanori", "Ամանորի"],
+      "NewYear_Gold_Hat": ["AmanoriVoske", "ԱմանորիՈսկե"],
+      "Challenge_Gold_Hat": ["MrcuytiVoske", "ՄրցույթիՈսկե"],
+      "Challenge_Silver_Hat": ["MrcuytiArcate", "ՄրցույթիԱրծաթե"],
+      "Challenge_Bronze_Hat": ["MrcuytiBronze", "ՄրցույթիԲրոնզե"],
+      "Treasure_Hat": ["Gandzorsi", "Գանձորսի"],
+      "Legend_Hat": ["Legendi", "Լեգենդի"]
     },
     "Unlocks": {
       "Loops": ["Krknutyun", "Կրկնություն"],

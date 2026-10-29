@@ -33,15 +33,23 @@ step is needed.
   ⭐ stars, and the repaired buildings unlock kitchen machines on the farm (mill, jam pot,
   tonir: flour, jam, lavash, gata, ghapama…), dishes that boost the drone, and greenhouse glass.
   Everything is in [`config/village.json`](config/README.md).
+* **Festivals and the weekly challenge** (see [`config/README.md`](config/README.md) →
+  `events.json`): Trndez, Easter, Vardavar, Navasard, Knowledge Day, Teacher's Day and the New
+  Year come on their real dates with a bonus for everyone, and with the Festival square students
+  hunt hidden objects with `hototel()` for festival hats. The School opens a weekly coding
+  challenge on a test farm that is the same for everyone (fastest time wins, the top 3 get hats
+  and 🏅 medals). Villagers also give secret code notes (`gtnel()` digs out their treasure), the
+  Profile has a sticker album, and «🌟 %» shows how much of the game a student has done.
 * **Seasons, weather and the luck of the day** follow the real clock, the same for every
   student: with the default 15-minute seasons, each hour is spring (:00), summer (:15), autumn
   (:30) and winter (:45). Plants grow faster in their favourite season, rain waters the whole
   farm, lightning makes a plant give ×3, and every day has its own luck. The 📺 button above the
   farm shows it all; see [`config/README.md`](config/README.md) → `calendar`.
 * **Accounts and the leaderboard:** students register with a username and a password.
-  Their farm is saved in their account. The leaderboard has Today / This month / All time
-  tabs (points for everything gathered, rare items count more) and a «best code» tab
-  (working code words, repeats count once).
+  Their farm is saved in their account. The leaderboard's two dropdowns choose what (points for
+  everything gathered, where rare items count more; working code words, where repeats count
+  once; the weekly challenge; Perfection; the running festival) and, for points, when
+  (today / this month / all time).
   To make this work online (school ↔ home ↔ phone), create a free Firebase project once —
   step by step in [`config/README.md`](config/README.md#accounts-and-the-leaderboard-firebase-free).
   Without it, accounts work only inside one browser.

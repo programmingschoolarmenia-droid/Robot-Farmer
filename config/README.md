@@ -17,6 +17,7 @@ problem**; nothing breaks silently.
 | `aliases.json` | The Armenian names of the game commands students write (`havaqel()`, `tnkel()`, `gnal(Aj)`…) |
 | `guide.json` | Bridgy's book («Բրիջի, օգնի՛ր»): every game command, the JavaScript topics and the plants |
 | `village.json` | The village across the river: buildings and what they cost and unlock, Bridgy's story, the villagers' daily requests, the kitchen machines and recipes, the dishes' boosts, the greenhouse glass |
+| `events.json` | Festivals on their real dates, the weekly challenge, the secret notes, the stickers and Perfection % |
 
 ---
 
@@ -130,12 +131,14 @@ here, give it a name in `texts.json → hats`, and unlock it from a research car
 | `tiers` | Rank tiers by all-time points, in growing order: `{ "name": "Հասկ", "icon": "🌾", "points": 1000 }`. Reaching a new tier gives confetti and a word from Bridgy. (Avoid 🥇🥈🥉 here: they already mark the first three places.) | 🌱 0 … 🌟 100 000 000 |
 | `timeZone` | The day and month lists restart at midnight in this time zone | `Asia/Yerevan` |
 
-The leaderboard has four tabs: **Այսօր** (points gathered today), **Այս ամիս** (this month),
-**Բոլոր ժամանակները** (all-time points) and **💻 Լավագույն կոդ** (code words). Next to each name:
-the drone hat, the tier icon, 🔥 days played in a row, 👑 yesterday's champion and 🏆 last
-month's champion. Clicking a name opens the player's card. In the Profile, students also see
-where their points come from, how far the next tier is, and «🎯 Հաջորդը…», the player just
-above them.
+The leaderboard has two dropdowns. **What:** ⭐ points, 💻 code words, 🎓 this week's challenge
+(the fastest time first), 🌟 Perfection, and the running festival (objects found) while one is on.
+**When** (only for points): **Այսօր** (today), **Այս ամիս** (this month) or **Բոլոր ժամանակները**
+(all time). Next to each name: the drone hat, the tier icon, 🔥 days played in a row, 👑
+yesterday's champion, 🏆 last month's champion and 🎓 last week's challenge winner. Clicking a
+name opens the player's card. In the Profile, students also see where their points come from, how
+far the next tier is, their Perfection and sticker album, and «🎯 Հաջորդը…», the player just above
+them. The challenge's 🏅 medals count for points like items (`points.Medal`).
 
 **Code words** (the 💻 tab) count working code a student wrote: only code that ran without an
 error, and only statements that really ran. Each piece of code counts **once per student,
@@ -324,6 +327,57 @@ never destroyed, `herkel()` removes it), `utel(Irer.Gata)` eats a dish, and `apa
 a glass roof on the square: under glass it is always the plant's favourite season, and rain,
 heat, ice and lightning stay outside. The new items (flour, jam, lavash, gata, ghapama, grilled
 fish, ⭐ stars) count for the leaderboard like the others (`settings.json → leaderboard.points`).
+
+## events.json (festivals, the weekly challenge, notes, stickers, Perfection)
+**Festivals** come on their real dates (Yerevan time) for everyone. On a festival day its bonus
+replaces the luck of the day, the farm's fence gets flags and the 📺 shows it. With the
+**🎪 Festival square** repaired, objects hide in the farm: `hototel()` tells how many steps away
+the nearest one is (left/right + up/down), `porel()` on its square takes it, and `porel()` on a
+wrong square makes the nearest one run away. 60 objects give the festival's hat; the 3 players
+who found the most get its gold hat after the festival (on their next login). A missed hat comes
+back next year.
+
+| Field | Meaning |
+|---|---|
+| `today` | A festival's `id` (e.g. `"Vardavar"`) runs that festival for everyone today, until you set it back to `""` |
+| `festival` | `building` (opens the hidden objects), `count` (objects for the hat, `60`), `hidden` (how many hide at once, `3`) |
+| `festivals` | `id`, `name`, `icon`, the days: `from`/`to` (`"MM-DD"`, may go into the next year) or `easter: [-1, 1]` (days around Easter, computed for each year; Vardavar is `[97, 99]`), `luck` (like `calendar` luck, plus `freeWater: true`), `hat` and `goldHat` (in `settings.json → hats`), `colors` (the flags), `object` (`firewood, egg, drop, basket, book, flower, gift`) and `objectName`, `greeting` (Bridgy's words), `splash` (Vardavar: chance that watering hides a new drop), `snow: true` |
+
+**The weekly challenge** opens with the **🏫 School**. Every Monday the next task of `challenges`
+starts, the same for everyone. Students open it from the School's panel («🎓 Սկսել մրցույթը»): a
+clear page with a test farm, an empty editor (their code is kept for the week), a console and
+the storage; the main farm waits meanwhile. Every ▶ starts the same fresh farm (the task's size,
+research, items and seed; no seasons, luck or dishes), and the time is the game time when the goal
+was reached, so speeds up to ×8 only show it faster. The best time counts (unlimited tries), the
+first solution gives ⭐, and the School shows the top 10, the student's place and last week's
+winner's code. Last week's 1st, 2nd and 3rd get a challenge hat and 🏅 medals on their next login.
+
+| Field | Meaning |
+|---|---|
+| `challenge` | `building`, `limit` (game seconds per try, `600`), `speeds`, `stars` (first solution), `hats` and `medals` (for places 1–3), `levels` (research every test farm has; a task's `levels` add to it) |
+| `challenges` | `id`, `name`, `about`, `goal` (one of: `items: { "Hay": 500 }` gathered, `harvest: { "Trout": 1 }` harvested or caught, also `Treasure`, `giant: 4` pumpkin size, `chain: 16` cacti in one harvest, `dino: 12` dinosaur length), `levels` (`Expand` sets the farm size), `items` (the storage at the start), `seed` (the farm's luck: the same for everyone) |
+
+**Secret notes:** after a request a villager sometimes gives the next note (one at a time). Each
+is a riddle whose answer is a square; `gtnel()` there digs out the treasure (⭐), `gtnel()` on a
+wrong square loses it (the note can come again later). Erik gives hints in «Բրիջի, օգնի՛ր», the
+notes are in Bridgy's book («Գրառումներ»), and solving all of them gives the treasure hunter's hat.
+`notes`: `chance` (per request, `0.25`), `stars`, `hat`, `list` (`id`, `kind`: `math`, `code`,
+`cipher` or `fact`, `text`, `hint`, the answer `x`/`y`, or `fact`: `sunflower`, `cactus`, `giant`,
+`ponds`, `gold` with `dx`/`dy` from it and `needs`: the research the fact needs). A note waits
+until the farm is big enough for its square.
+
+**Stickers** (`stickers`) are only for the album in the Profile: `id`, `group` (`code`, `farm`,
+`village`, `secret`), `icon`, `name`, `about`, `secret: true` (shown «?» until earned) and `when`,
+one condition: `feature` (`loops`, `if`, `variables`, `functions`, `lists`, `objects`, `import`),
+`params`, `recursion`, `drones`, `codeWords`, `giant`, `chain`, `sunflowerBonus`, `dino`,
+`fishAll`, `fish`, `goldenFish`, `total` (`{ "Hay": 1000000 }`), `researchAll`, `village`
+(`"all"`), `requests`, `notes`, `festivalHats` (a number or `"all"`), `challengeTop`,
+`perfection`, `flips`, `hats`, `eaten`.
+
+**Perfection** (`perfection`): how much of the game is done, shown as «🌟 37%» next to the
+player's name, in the Profile (with what is missing), on the player card and in the leaderboard.
+`research` and `village` are the weights of the research levels and the repaired buildings
+(«soon» ones don't count); `hat` comes at 100%.
 
 ## texts.json
 All interface text. Words in `{curly}` braces are filled in by the game — keep them.

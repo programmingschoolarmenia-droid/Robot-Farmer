@@ -108,6 +108,11 @@ export class FarmView {
       ev.on('build', (e) => this.puff(e.x, e.y, ['#bb7547', '#dba463', '#71413b'], 12)),
       ev.on('make', (e) => this.puff(e.x, e.y, ['#ffffff', '#f4efe2'], 8)),
       ev.on('glass', (e) => this.puff(e.x, e.y, ['#ffffff', '#bfe9f2', '#a6fcdb'], 14)),
+      ev.on('festivalFound', (e) => {
+        this.puff(e.x, e.y, ['#ffd541', '#ffffff', '#f7a8c4'], 16);
+        this.popup(e.x, e.y, `${e.count}/${e.total}`, `fest:${e.object}`);
+      }),
+      ev.on('festivalMiss', (e) => this.puff(e.x, e.y, ['#d9e2ec', '#b3b9d1'], 10)),
       ev.on('lightning', (e) => {
         this.bolt = { x: e.x, y: e.y, at: performance.now() };
         this.puff(e.x, e.y, ['#ffd541', '#fffc40', '#ffffff'], 14);
@@ -291,6 +296,7 @@ export class FarmView {
     ctx.drawImage(this.bg, 0, 0);
     ctx.drawImage(this.groundCache, this.ox, this.oy);
     const cal = game.calendar;
+    if (cal.state && cal.state.festival) this.drawFestival(ctx, cal.state.festival, t);
     const tint = cal.state && SEASON_TINT[cal.state.season];
     if (tint) {
       ctx.fillStyle = tint;
@@ -465,6 +471,31 @@ export class FarmView {
       ctx.fillStyle = i % 2 ? '#bc4a9b' : '#e07cc4';
       const s = Math.max(2, r.s / 12);
       ctx.fillRect(px, py, s, s);
+    }
+  }
+
+  // A festival on the farm's fence: little flags in the festival's colours (snow for the New Year).
+  drawFestival(ctx, fest, t) {
+    const world = this.game.world;
+    const px = Math.max(1, Math.min(this.tile / 16, 3)) * this.dpr;
+    const x0 = this.ox - 3 * px;
+    const x1 = this.ox + world.width * this.tile + 3 * px;
+    const colors = fest.colors && fest.colors.length ? fest.colors : ['#ffffff'];
+    for (const y of [this.oy - 3 * px, this.oy + world.height * this.tile + 3 * px]) {
+      if (fest.snow) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x0, y - px * 3, x1 - x0, px * 1.5);
+      }
+      const step = Math.max(px * 6, this.tile * 0.4);
+      for (let x = x0 + step / 2, i = 0; x < x1 - px * 3; x += step, i++) {
+        const sway = this.fx ? Math.sin(t * 2 + i) * px : 0;
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.beginPath();
+        ctx.moveTo(x - px * 2.5, y - px * 1.5);
+        ctx.lineTo(x + px * 2.5, y - px * 1.5);
+        ctx.lineTo(x + sway, y + px * 4);
+        ctx.fill();
+      }
     }
   }
 

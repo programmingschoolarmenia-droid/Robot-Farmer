@@ -2,6 +2,15 @@
 
 // Phone / portrait-tablet layout (tabs instead of side-by-side panels). Keep in sync with css/mobile.css.
 export const mobileQuery = window.matchMedia('(max-width: 1023px), (max-height: 599px)');
+
+// Wide screens: the farm panel of a game screen is a square as tall as the main area (leaving room
+// for the editor and the side panel). Phones show one panel at a time.
+export function sizeFarm(screen, sidePanel) {
+  if (mobileQuery.matches) return;
+  const H = window.innerHeight - 62 - 66 - 40;
+  const W = window.innerWidth - 48 - (sidePanel.offsetWidth || 272) - 340;
+  screen.style.setProperty('--farm-size', `${Math.floor(Math.max(300, Math.min(H, W, 900)))}px`);
+}
 export function h(tag, props = {}, ...children) {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(props || {})) {

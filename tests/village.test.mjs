@@ -25,7 +25,10 @@ const seasonGame = (clock, opts) => {
 test('village: buildings are repaired little by little, in order, and their grants unlock commands', () => {
   const game = makeGame({ levels: { Plant: 1, Debug: 1 }, items: { Wood: 200, Hay: 100 } });
   const v = game.village;
-  assert.deepEqual(['Bridge', 'Mill', 'School'].map((id) => v.state(id)), ['open', 'locked', 'soon']);
+  assert.deepEqual(['Bridge', 'Mill', 'School'].map((id) => v.state(id)), ['open', 'locked', 'locked']);
+  game.config.village.buildings.find((b) => b.id === 'School').available = false;
+  assert.equal(v.state('School'), 'soon', 'available: false shows «soon»');
+  delete game.config.village.buildings.find((b) => b.id === 'School').available;
   assert.deepEqual(v.give('Bridge'), { given: { Wood: 200, Hay: 100 }, repaired: false });
   assert.deepEqual(v.missing('Bridge'), { Wood: 100, Hay: 400 });
   assert.equal(game.inventory.get('Wood'), 0);
@@ -34,7 +37,7 @@ test('village: buildings are repaired little by little, in order, and their gran
   game.inventory.add('Wood', 1000);
   game.inventory.add('Hay', 1000);
   assert.deepEqual(v.give('Bridge'), { given: { Wood: 100, Hay: 400 }, repaired: true });
-  assert.deepEqual([game.inventory.get('Wood'), events.at(-1).repaired, v.state('Bridge'), v.state('Mill')], [900, true, 'repaired', 'open']);
+  assert.deepEqual([game.inventory.get('Wood'), events.at(-1).repaired, v.state('Bridge'), v.state('Mill'), v.state('School'), v.state('Square')], [900, true, 'repaired', 'open', 'open', 'open']);
 
   // karucel() is locked until the mill is repaired, and the error points to the village.
   const r = runCode(game, 'karucel(Sarqer.Jraxac);');

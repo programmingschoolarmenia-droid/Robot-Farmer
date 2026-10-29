@@ -12,7 +12,7 @@ import { SEASON_NAMES, WEATHER_NAMES } from './calendar.js';
 export const ENTITY_NAMES = ['Grass', 'Bush', 'Tree', 'Carrot', 'Pumpkin', 'Dead_Pumpkin', 'Sunflower', 'Cactus', 'Hedge', 'Treasure', 'Apple', 'Dinosaur'];
 export const ITEM_NAMES = [
   'Hay', 'Wood', 'Carrot', 'Pumpkin', 'Power', 'Water', 'Fertilizer', 'Weird_Substance', 'Cactus', 'Bone', 'Gold', 'Fish',
-  'Flour', 'Jam', 'Lavash', 'Gata', 'Ghapama', 'Grilled_Fish', 'Star',
+  'Flour', 'Jam', 'Lavash', 'Gata', 'Ghapama', 'Grilled_Fish', 'Star', 'Medal',
 ];
 export const GROUND_NAMES = ['Grassland', 'Soil', 'Pond'];
 export const FISH_NAMES = ['Carp', 'Barbel', 'Trout', 'Golden_Fish', 'Whitefish', 'Catfish'];
@@ -560,8 +560,26 @@ export class GameApi {
       const tile = api.droneTile(I);
       const ok = world().digPond(tile, api.now(I));
       api.act(I, ok);
-      if (ok) game.events.emit('dig', { x: tile.x, y: tile.y, drone: I.drone.id });
+      if (ok) {
+        game.events.emit('dig', { x: tile.x, y: tile.y, drone: I.drone.id });
+        game.festivals.dig(tile.x, tile.y); // a festival's hidden object, if one is there
+      }
       return ok;
+    });
+
+    // --- secret notes (after the Bridge): gtnel() digs here for the treasure of the note being solved
+    this.def('findTreasure', (I, args, node) => {
+      const tile = api.droneTile(I);
+      const r = game.notes.dig(tile.x, tile.y);
+      api.act(I, r === 'solved');
+      if (!r) game.warn('noNote', {}, node, I.drone);
+      return r === 'solved';
+    });
+
+    // --- the Festival square: how far the nearest hidden festival object is (null without a festival)
+    this.def('festivalDistance', (I) => {
+      api.getter(I);
+      return game.festivals.distance(I.drone);
     });
 
     this.def(

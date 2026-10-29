@@ -294,16 +294,6 @@
   }
 }
 
-/* Narrow phones: the leaderboard tabs in the profile window go 2×2. */
-@media (max-width: 599px) {
-  .modal .board-tabs {
-    display: grid;
-  }
-  .modal .board-tabs .login-tab {
-    white-space: normal;
-  }
-}
-
 /* Phones held sideways: Bridgy beside the login form, no meadow strip; the control bar and the
    tabs share one row so the panels keep their height. */
 @media (max-height: 599px) and (min-width: 600px) {

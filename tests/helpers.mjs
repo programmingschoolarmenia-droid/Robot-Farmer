@@ -13,6 +13,7 @@ export function loadConfig() {
     bridgy: read('bridgy.json'),
     guide: read('guide.json'),
     village: read('village.json'),
+    events: read('events.json'),
   };
 }
 

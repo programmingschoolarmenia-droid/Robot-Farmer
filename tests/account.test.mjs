@@ -202,3 +202,27 @@ test('firebase: a student from the old version keeps everything and gets points 
     globalThis.fetch = realFetch;
   }
 });
+
+test('the weekly challenge list: the fastest first, my place from two counts, last week kept for its prizes (here and on Firebase)', async () => {
+  const realFetch = globalThis.fetch;
+  for (const online of [false, true]) {
+    globalThis.fetch = createFakeFirebase().fetch;
+    try {
+      const a = new Accounts(memory(), online ? { apiKey: 'test-key', projectId: 'test-project', leaderboardSize: 2 } : { leaderboardSize: 2 });
+      const challenge = (best, prev = null) => ({ challenge: { week: '202644', best, bestCode: `code ${best}`, prev } });
+      for (const [name, o] of [['ani', challenge(834, { week: '202643', best: 700, bestCode: 'old' })], ['bob', challenge(612)], ['gor', challenge(990)], ['dav', challenge(0)]]) {
+        await a.register(name, 'secret1');
+        await a.saveOnline({}, stats(o));
+      }
+      const field = boardField('challenge', '20261029');
+      const board = await a.leaderboard(field, { id: 'gor', value: 990 });
+      assert.deepEqual([field, board.rows.map((r) => [r.name, r[field], r[`cc${field.slice(1)}`]]), board.place, board.rival], ['c202644', [['bob', 612, 'code 612'], ['ani', 834, 'code 834']], 3, null]);
+      assert.equal((await a.leaderboard(field, { id: 'ani', value: 834 })).rival.name, 'bob');
+      assert.deepEqual(await Promise.all([612, 700, 834, 990].map((v) => a.place(field, v))), [1, 2, 2, 3]);
+      assert.deepEqual((await a.top('c202643')).map((r) => [r.name, r.cc202643]), [['ani', 'old']]);
+      assert.equal((await a.champions('d20261028', 'm202609', 'c202643')).week.name, 'ani');
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  }
+});

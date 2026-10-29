@@ -149,7 +149,8 @@
       "Gata",
       "Ghapama",
       "Grilled_Fish",
-      "Star"
+      "Star",
+      "Medal"
     ]
   },
 
@@ -253,7 +254,26 @@
     "Dinosaur_Hat": { "color": "#65a30d", "band": "#365314" },
     "Secret_Hat": { "color": "#111827", "band": "#f59e0b" },
     "Fisher_Hat": { "color": "#c9a46a", "band": "#285cc4" },
-    "Mayor_Hat": { "color": "#3b2a6b", "band": "#e8b04a" }
+    "Mayor_Hat": { "color": "#3b2a6b", "band": "#e8b04a" },
+    "Trndez_Hat": { "color": "#e4572e", "band": "#ffd23f" },
+    "Trndez_Gold_Hat": { "color": "#ffd541", "band": "#e4572e" },
+    "Easter_Hat": { "color": "#f7a8c4", "band": "#7bc96f" },
+    "Easter_Gold_Hat": { "color": "#ffd541", "band": "#f7a8c4" },
+    "Vardavar_Hat": { "color": "#3fa7f5", "band": "#ffffff" },
+    "Vardavar_Gold_Hat": { "color": "#ffd541", "band": "#3fa7f5" },
+    "Navasard_Hat": { "color": "#d9a441", "band": "#8c5a2b" },
+    "Navasard_Gold_Hat": { "color": "#ffd541", "band": "#8c5a2b" },
+    "Knowledge_Hat": { "color": "#2b59c3", "band": "#f2c14e" },
+    "Knowledge_Gold_Hat": { "color": "#ffd541", "band": "#2b59c3" },
+    "Teacher_Hat": { "color": "#c2185b", "band": "#ffd1dc" },
+    "Teacher_Gold_Hat": { "color": "#ffd541", "band": "#c2185b" },
+    "NewYear_Hat": { "color": "#d62828", "band": "#ffffff" },
+    "NewYear_Gold_Hat": { "color": "#ffd541", "band": "#d62828" },
+    "Challenge_Gold_Hat": { "color": "#ffd541", "band": "#1e3a8a" },
+    "Challenge_Silver_Hat": { "color": "#cfd8dc", "band": "#1e3a8a" },
+    "Challenge_Bronze_Hat": { "color": "#cd7f32", "band": "#1e3a8a" },
+    "Treasure_Hat": { "color": "#6d4c41", "band": "#ffd541" },
+    "Legend_Hat": { "color": "#7c3aed", "band": "#ffd541" }
   },
 
   "online": {
@@ -268,7 +288,7 @@
   "leaderboard": {
     "_readme": "Լավագույնների ցուցակ։ points՝ քանի միավոր է տալիս յուրաքանչյուր հավաքած իրը (հազվագյուտ իրերն արժեն ավելի շատ, ջուրն ու պարարտանյութը 0 են, քանի որ գալիս են ինքնիրեն)։ tiers՝ աստիճաններն ըստ բոլոր ժամանակների միավորների (աճման կարգով)։ timeZone՝ օրը սկսվում է այս գոտու կեսգիշերին։",
     "timeZone": "Asia/Yerevan",
-    "points": { "Hay": 1, "Wood": 1, "Carrot": 2, "Pumpkin": 4, "Power": 3, "Water": 0, "Fertilizer": 0, "Weird_Substance": 3, "Cactus": 5, "Bone": 20, "Gold": 20, "Fish": 3, "Flour": 25, "Jam": 25, "Lavash": 60, "Gata": 150, "Ghapama": 200, "Grilled_Fish": 120, "Star": 100 },
+    "points": { "Hay": 1, "Wood": 1, "Carrot": 2, "Pumpkin": 4, "Power": 3, "Water": 0, "Fertilizer": 0, "Weird_Substance": 3, "Cactus": 5, "Bone": 20, "Gold": 20, "Fish": 3, "Flour": 25, "Jam": 25, "Lavash": 60, "Gata": 150, "Ghapama": 200, "Grilled_Fish": 120, "Star": 100, "Medal": 1000 },
     "tiers": [
       { "name": "Սերմ", "icon": "🌱", "points": 0 },
       { "name": "Ծիլ", "icon": "🌿", "points": 200 },

@@ -282,6 +282,50 @@
   color: var(--ink-faint);
   font-weight: 700;
 }
+.sticker-group {
+  margin: 8px 0 4px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.sticker-album {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 6px;
+}
+.sticker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px;
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+  color: var(--ink-faint);
+  cursor: pointer;
+}
+.sticker .sticker-icon {
+  font-size: 1.6rem;
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+.sticker small {
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+}
+.sticker.got {
+  border-style: solid;
+  border-color: var(--gold);
+  color: var(--navy);
+}
+.sticker.got .sticker-icon {
+  filter: none;
+  opacity: 1;
+}
 .profile-meta {
   font-size: 0.85rem;
   color: var(--ink-soft);
@@ -304,34 +348,17 @@
   max-height: min(46vh, 420px);
   overflow: auto;
 }
-/* leaderboard tabs: pills (2×2; one row in the profile window) */
-.board-tabs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
-  margin-bottom: 8px;
-  border-bottom: 0;
-}
-.board-tabs .login-tab {
-  margin: 0;
-  padding: 6px 8px;
-  border: 2px solid var(--line);
-  border-radius: 10px;
-  background: #fff;
-  font-size: 0.85rem;
-}
-.board-tabs .login-tab.active {
-  border-color: var(--navy);
-  background: var(--navy);
-  color: #fff;
-}
-.modal .board-tabs {
+/* leaderboard: what × when (when only for points) */
+.board-selects {
   display: flex;
-  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
 }
-.modal .board-tabs .login-tab {
-  flex: 1 1 auto;
-  white-space: nowrap;
+.board-select {
+  flex: 1 1 0;
+  padding: 6px 8px;
+  border-width: 2px;
+  font-size: 0.9rem;
 }
 .board-row {
   display: grid;
@@ -395,6 +422,73 @@
 .board-row.me {
   border-color: var(--gold-dark);
   background: var(--gold-soft);
+}
+
+/* the weekly challenge: the School's panel and the challenge page (a game screen with one file) */
+.challenge-top {
+  list-style: none;
+  margin: 8px 0 4px;
+  padding: 0;
+  display: grid;
+  gap: 3px;
+}
+.challenge-top li {
+  display: grid;
+  grid-template-columns: 2em minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 3px 8px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+.challenge-top li.me {
+  border-color: var(--gold-dark);
+  background: var(--gold-soft);
+}
+.challenge-top b,
+.challenge-chip,
+.challenge-result-time {
+  font-family: var(--font-code);
+}
+.challenge-code {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  max-height: 220px;
+}
+.screen-challenge .tabs-bar {
+  display: none;
+}
+.screen-challenge .code-panel {
+  grid-template-rows: minmax(0, 1fr) auto auto;
+}
+.challenge-task {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  color: var(--navy);
+}
+.challenge-task span {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.challenge-result {
+  text-align: center;
+}
+.challenge-result-time {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--navy);
+}
+.challenge-result-line {
+  margin-top: 6px;
+  font-weight: 700;
 }
 .board-rank {
   text-align: center;

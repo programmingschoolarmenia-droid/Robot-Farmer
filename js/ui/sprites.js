@@ -161,6 +161,15 @@ export class SpriteBook {
     this.put('item:Ghapama', ghapama());
     this.put('item:Grilled_Fish', grilledFish());
     this.put('item:Star', star());
+    this.put('item:Medal', medal());
+    // --- festival objects found in the farm (config/events.json → festivals[].object)
+    this.put('fest:firewood', firewood());
+    this.put('fest:egg', paintedEgg());
+    this.put('fest:drop', this.get('item:Water'));
+    this.put('fest:basket', basket());
+    this.put('fest:book', book());
+    this.put('fest:flower', tulip());
+    this.put('fest:gift', gift());
     this.put('machine:Mill', millMachine());
     this.put('machine:JamPot', jamPot());
     this.put('machine:Tonir', tonir());
@@ -685,6 +694,79 @@ function star() {
   }
   p.polygon(pts, PAL.yellow);
   p.shade(PAL.yellow, PAL.brightYellow, PAL.amber);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// The weekly challenge's medal: a gold coin on a blue and red ribbon.
+function medal() {
+  const p = new Pixels();
+  p.polygon([[3, 0], [7, 0], [9.5, 7], [5.5, 7]], PAL.blue).polygon([[13, 0], [9, 0], [6.5, 7], [10.5, 7]], PAL.brightRed);
+  p.disc(8, 10.5, 4.6, PAL.yellow);
+  p.shade(PAL.yellow, PAL.brightYellow, PAL.amber);
+  p.disc(8, 10.5, 1.6, PAL.amber);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// --- festival objects -------------------------------------------------------------------
+
+function firewood() {
+  const p = new Pixels();
+  p.line(2, 13, 13, 9, PAL.brown).line(2, 14, 13, 10, PAL.lightBrown);
+  p.line(3, 9, 14, 13, PAL.brown).line(3, 10, 14, 14, PAL.lightBrown);
+  p.polygon([[8, 1], [11.5, 8], [8, 9.5], [4.5, 8]], PAL.orange);
+  p.polygon([[8, 4], [10, 8], [8, 9], [6, 8]], PAL.yellow);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function paintedEgg() {
+  const p = new Pixels();
+  p.ellipse(8, 8.8, 5, 6.3, PAL.brightRed);
+  p.shade(PAL.brightRed, '#f06a4d', PAL.red);
+  p.rect(3, 8, 10, 1, PAL.yellow);
+  for (const x of [5, 8, 11]) p.set(x, 11, PAL.white);
+  p.set(6, 5, PAL.white);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function basket() {
+  const p = new Pixels();
+  p.disc(6, 6, 2.6, PAL.brightRed).disc(10, 5.5, 2.6, PAL.orange).disc(8, 4, 2.2, PAL.yellow);
+  p.polygon([[1.5, 7.5], [14.5, 7.5], [12.5, 14.5], [3.5, 14.5]], PAL.lightBrown);
+  for (let y = 9; y < 14; y += 2) p.line(3, y, 13, y, PAL.brown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function book() {
+  const p = new Pixels();
+  p.rect(2, 3, 12, 10, PAL.blue);
+  p.rect(3, 4, 10, 8, PAL.white);
+  p.rect(8, 4, 1, 8, PAL.lightGrey);
+  for (const y of [6, 8, 10]) p.rect(4, y, 3, 1, PAL.grey).rect(10, y, 2, 1, PAL.grey);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function tulip() {
+  const p = new Pixels();
+  p.line(8, 8, 8, 15, PAL.green);
+  p.polygon([[8, 13], [11.5, 9.5], [12, 11]], PAL.lightGreen);
+  p.polygon([[4, 2], [6, 4], [8, 1.5], [10, 4], [12, 2], [11.5, 7.5], [8, 9], [4.5, 7.5]], '#e0457b');
+  p.shade('#e0457b', '#f48fb1', '#a3164c');
+  p.outline(PAL.outline);
+  return p;
+}
+
+function gift() {
+  const p = new Pixels();
+  p.rect(2, 6, 12, 9, PAL.brightRed);
+  p.rect(1, 4, 14, 3, '#f05a46');
+  p.rect(7, 4, 2, 11, PAL.yellow);
+  p.disc(5.5, 2.6, 2, PAL.yellow).disc(10.5, 2.6, 2, PAL.yellow);
   p.outline(PAL.outlineBrown);
   return p;
 }

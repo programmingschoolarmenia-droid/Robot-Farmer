@@ -320,9 +320,17 @@ export class Bridgy {
         },
       },
       { label: `💡 ${t('ui.helpHint')}`, onClick: () => this.helpHint(true, this.friend('erik') ? 'erik' : undefined) },
+      ctx.note && {
+        label: `📜 ${t('ui.helpNote')}`,
+        onClick: () => {
+          const who = this.friend('erik') ? 'erik' : undefined;
+          this.say([{ emotion: 'thinking', who, text: who ? this.friendText(who, ctx.note.hint) : ctx.note.hint }], { key: 'menu', replaceSame: true, interrupt: true });
+        },
+      },
       { label: `📖 ${t('ui.helpCommands')}`, onClick: () => this.openBook('commands') },
       { label: `🟨 ${t('ui.helpJs')}`, onClick: () => this.openBook('js') },
       { label: `🌱 ${t('ui.helpPlants')}`, onClick: () => this.openBook('plants') },
+      ctx.hasNotes && { label: `📜 ${t('ui.helpNotes')}`, onClick: () => this.openBook('notes') },
       {
         label: `🐞 ${t('ui.helpLastError')}`,
         onClick: () => {
@@ -331,7 +339,7 @@ export class Bridgy {
         },
       },
       { label: `👋 ${t('ui.helpClose')}`, onClick: () => this.end() },
-    ];
+    ].filter(Boolean);
     this.say([{ emotion: 'happy', text: this.pick('helpIntro') || t('ui.helpButton'), options }], { key: 'menu', replaceSame: true, interrupt: true });
   }
 

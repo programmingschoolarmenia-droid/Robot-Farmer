@@ -8,6 +8,9 @@ import { Drone } from './drone.js';
 import { Stats } from './stats.js';
 import { Calendar } from './calendar.js';
 import { Village } from './village.js';
+import { Festivals } from './festivals.js';
+import { Notes } from './notes.js';
+import { Stickers, perfection } from './stickers.js';
 import { GameApi, FISH_NAMES } from './api.js';
 import { Runner } from './runner.js';
 import { locOf } from '../lang/errors.js';
@@ -25,6 +28,9 @@ export class Game {
     this.stats = new Stats(this, save.stats);
     this.calendar = new Calendar(this); // before the world: World.sync reads its rules
     this.village = new Village(this, save.village); // before research: repaired buildings unlock commands
+    this.festivals = new Festivals(this, save.festivals);
+    this.notes = new Notes(this, save.notes);
+    this.stickers = new Stickers(this, save.stickers);
     this.boosts = { ...(save.boosts || {}) }; // eaten dishes: { speed: { item, multiplier, until } }
     this.inventory = new Inventory(this, save.inventory ?? (this.settings.game && this.settings.game.startItems) ?? {});
     const extra = this.settings.dev && this.settings.dev.extraItems;
@@ -49,6 +55,7 @@ export class Game {
     this.warned = new Set();
     this.production = { Water: 0, Fertilizer: 0, ...(save.production || {}) };
     this.flags = { ...(save.flags || {}) };
+    this.challenge = { week: '', code: '', best: 0, bestCode: '', prev: null, prizeWeek: '', ...(save.challenge || {}) }; // the weekly challenge (js/engine/challenge.js)
     this.powerUse = save.powerUse || 0;
     this.dino = null;
     if (save.dino && this.mainDrone.hat === 'Dinosaur_Hat') {
@@ -322,7 +329,9 @@ export class Game {
 
   useItem(drone, item, n, t, node) {
     const count = Math.max(1, n || 1);
-    if (this.inventory.get(item) < count) {
+    const luck = this.calendar.state && this.calendar.state.luck;
+    const free = item === 'Water' && !!(luck && luck.freeWater); // Vardavar
+    if (!free && this.inventory.get(item) < count) {
       this.warn('notEnoughItem', { item, need: count }, node, drone);
       return false;
     }
@@ -330,8 +339,9 @@ export class Game {
     if (item === 'Water') {
       const amount = ((this.settings.water && this.settings.water.tankAmount) ?? 0.25) * count;
       this.world.addWater(tile, amount, t);
-      this.inventory.add('Water', -count, 'use');
+      if (!free) this.inventory.add('Water', -count, 'use');
       this.events.emit('useItem', { item, x: tile.x, y: tile.y, drone: drone.id });
+      this.festivals.splash(tile.x, tile.y);
       return true;
     }
     if (item === 'Fertilizer') {
@@ -418,6 +428,15 @@ export class Game {
     if (hat) this.flags.fisherHat = true;
     this.events.emit('fish', { species, amount, hat, x: tile.x, y: tile.y, drone: drone.id });
     return species;
+  }
+
+  // Hats won in events (festivals, the weekly challenge, secret notes, Perfection); they stay in the save.
+  earnHat(hat) {
+    const hats = (this.flags.hats = this.flags.hats || []);
+    if (!hat || hats.includes(hat)) return false;
+    hats.push(hat);
+    this.events.emit('hatEarned', { hat });
+    return true;
   }
 
   // Eats a dish (village.json → boosts); its boost lasts `seconds` of game time, eating again adds more.
@@ -516,6 +535,9 @@ export class Game {
       prevDay: s.prevDay,
       month: s.month,
       prevMonth: s.prevMonth,
+      perfect: perfection(this).percent,
+      festival: this.festivals.latest(),
+      challenge: this.challenge,
     };
   }
 
@@ -536,6 +558,10 @@ export class Game {
       powerUse: this.powerUse,
       flags: this.flags,
       village: this.village.toSave(),
+      festivals: this.festivals.toSave(),
+      notes: this.notes.toSave(),
+      stickers: this.stickers.toSave(),
+      challenge: this.challenge,
       boosts: this.boosts,
       dino: this.dino ? { tail: this.dino.tail, apple: this.dino.apple, eaten: this.dino.eaten } : null,
     };

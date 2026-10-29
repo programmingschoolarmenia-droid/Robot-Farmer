@@ -110,6 +110,8 @@ export class Research {
     // The fisher's hat is not bought: the first golden fish gives it (game.flags.fisherHat).
     this.fisherHat = (this.game.config.settings.fishing || {}).hat;
     if (this.fisherHat) this.hatGate.set(this.fisherHat, null);
+    // Event hats are won (config/events.json; game.earnHat → game.flags.hats).
+    for (const hat of eventHats(this.game.config.events)) if (!this.hatGate.has(hat)) this.hatGate.set(hat, null);
   }
 
   hasSyntax(feature) {
@@ -125,7 +127,8 @@ export class Research {
   }
 
   hasHat(name) {
-    return this.granted.hats.has(name) || !this.hatGate.has(name) || (name === this.fisherHat && !!this.game.flags.fisherHat);
+    const flags = this.game.flags;
+    return this.granted.hats.has(name) || !this.hatGate.has(name) || (name === this.fisherHat && !!flags.fisherHat) || (flags.hats || []).includes(name);
   }
 
   hasPanel(name) {
@@ -158,4 +161,15 @@ export class Research {
   toSave() {
     return Object.fromEntries([...this.levels].filter(([, v]) => v > 0));
   }
+}
+
+// Every hat that config/events.json gives as a prize.
+export function eventHats(events = {}) {
+  const e = events || {};
+  return [
+    ...(e.festivals || []).flatMap((f) => [f.hat, f.goldHat]),
+    ...((e.challenge || {}).hats || []),
+    (e.notes || {}).hat,
+    (e.perfection || {}).hat,
+  ].filter(Boolean);
 }

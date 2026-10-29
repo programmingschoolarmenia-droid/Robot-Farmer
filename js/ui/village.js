@@ -17,10 +17,11 @@ export function recipeText(i18n, item, recipe) {
 }
 
 export class VillageView {
-  constructor({ app, game, onStory }) {
+  constructor({ app, game, onStory, extra }) {
     this.app = app;
     this.game = game;
     this.onStory = onStory; // (building) → Bridgy tells its story again
+    this.extra = extra; // (building, state) → more of its panel (the School's weekly challenge) or null
     this.el = null;
     this.selected = null;
   }
@@ -161,6 +162,8 @@ export class VillageView {
       if (recipes.length) parts.push(h('div', { class: 'rd-section' }, h('h4', {}, t('ui.villageRecipes')), ...recipes));
       if (b.story) parts.push(h('button', { class: 'btn btn-sm', onclick: () => this.onStory(b) }, t('ui.villageStory')));
     }
+    const more = this.extra && this.extra(b, state);
+    if (more) parts.push(more);
     return parts;
   }
 

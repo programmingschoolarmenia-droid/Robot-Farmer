@@ -33,6 +33,12 @@ export function groupDigits(n) {
 }
 
 // Seconds -> "1:05" or "1:02:05"
+// Tenths of a second as «1:23.4» (the weekly challenge's times).
+export function formatTenths(tenths) {
+  const s = Math.max(0, Math.round(tenths)) / 10;
+  return `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`;
+}
+
 export function formatClock(seconds) {
   const s = Math.max(0, Math.floor(seconds));
   const h = Math.floor(s / 3600);
@@ -57,6 +63,24 @@ export function dayKey(ms, timeZone) {
 export function prevDayKey(key) {
   const d = new Date(Date.UTC(+key.slice(0, 4), +key.slice(4, 6) - 1, +key.slice(6, 8) - 1));
   return d.toISOString().slice(0, 10).replace(/-/g, '');
+}
+
+// 'YYYYMMDD' <-> days since 1 Jan 1970, to count and add days.
+export function dayNumber(key) {
+  return Date.UTC(+key.slice(0, 4), +key.slice(4, 6) - 1, +key.slice(6, 8)) / 86400000;
+}
+
+export function keyOfDay(n) {
+  return new Date(n * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
+}
+
+// The ISO week (Monday to Sunday) of a day: '20261029' -> '202644'.
+export function weekKey(key) {
+  const t = new Date(dayNumber(key) * 86400000);
+  t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7) + 3); // the Thursday of that week
+  const year = t.getUTCFullYear();
+  const week = 1 + Math.floor((t - Date.UTC(year, 0, 1)) / 604800000);
+  return `${year}${String(week).padStart(2, '0')}`;
 }
 
 // '202601' -> '202512'

@@ -5,6 +5,7 @@
 // sync interval ever mixes two seasons or two weathers.
 import { Rng } from '../core/rng.js';
 import { dayKey } from '../core/util.js';
+import { festivalOn } from './festivals.js';
 
 export const SEASON_NAMES = ['Spring', 'Summer', 'Autumn', 'Winter'];
 export const WEATHER_NAMES = ['Sunny', 'Rain', 'Storm', 'Heat', 'Snow'];
@@ -12,7 +13,7 @@ export const WEATHER_NAMES = ['Sunny', 'Rain', 'Storm', 'Heat', 'Snow'];
 export class Calendar {
   constructor(game) {
     this.game = game;
-    this.state = null; // { season, weather, next, day, luck, seasonEnds, weatherEnds } (ends: real ms)
+    this.state = null; // { season, weather, next, day, festival, luck, seasonEnds, weatherEnds } (ends: real ms)
     this.checkAt = 0;
     this.strike = 0; // game seconds since the last lightning
   }
@@ -30,12 +31,14 @@ export class Calendar {
     const weatherOf = (slot) => pickWeighted(c.weather[seasonAt(slot * weatherMs)], new Rng(slot).next());
     const slot = Math.floor(now / weatherMs);
     const day = dayKey(now, (this.game.settings.leaderboard || {}).timeZone);
+    const festival = festivalOn(this.game.config.events, day); // a festival's bonus replaces the luck
     return {
       season: seasonAt(now),
       weather: weatherOf(slot),
       next: weatherOf(slot + 1),
       day,
-      luck: this.luckOf(day),
+      festival,
+      luck: festival ? festival.luck || null : this.luckOf(day),
       seasonEnds: (Math.floor(now / seasonMs) + 1) * seasonMs,
       weatherEnds: (slot + 1) * weatherMs,
     };

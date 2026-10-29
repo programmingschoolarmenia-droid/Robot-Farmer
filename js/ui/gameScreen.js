@@ -1,5 +1,5 @@
 // The main game screen: wires the engine to the farm view, editor, Bridgy and panels.
-import { h, pixelImg, mobileQuery } from './dom.js';
+import { h, pixelImg, mobileQuery, sizeFarm } from './dom.js';
 import { Game, SAVE_VERSION } from '../engine/game.js';
 import { QuestTracker } from '../engine/quests.js';
 import { FarmView } from './farmView.js';
@@ -11,11 +11,15 @@ import { Bridgy } from './bridgy.js';
 import { openSettings } from './settingsModal.js';
 import { describeError, describeWarning } from './errorText.js';
 import { openProfile, accountErrorText, tierOf } from './account.js';
+import { perfection } from '../engine/stickers.js';
 import { openBook } from './book.js';
 import { openModal } from './modal.js';
 import { VillageView, recipeText } from './village.js';
-import { formatClock, dayKey } from '../core/util.js';
+import { ChallengeScreen, schoolPanel } from './challenge.js';
+import { formatClock, dayKey, dayNumber, keyOfDay, weekKey } from '../core/util.js';
 import { SEASON_NAMES } from '../engine/calendar.js';
+import { nextFestival, lastFestival } from '../engine/festivals.js';
+import { weekTask, givePrize } from '../engine/challenge.js';
 
 const CALENDAR_ICONS = { Spring: '🌸', Summer: '🌻', Autumn: '🍂', Winter: '❄️', Sunny: '☀️', Rain: '🌧️', Storm: '⛈️', Heat: '🔥', Snow: '🌨️' };
 
@@ -74,7 +78,7 @@ export class GameScreen {
     this.layoutSizes();
     setTimeout(() => this.startStory(), 400);
     this.save();
-    this.syncCloud({ now: true }); // new players appear on the leaderboard right away
+    this.syncCloud({ now: true }).then(() => this.claimPrizes()); // new players appear on the leaderboard right away
   }
 
   // ------------------------------------------------------------------ DOM
@@ -106,6 +110,7 @@ export class GameScreen {
     this.calendarChip = h('button', { class: 'btn btn-sm calendar-chip', title: t('ui.tvButton'), hidden: true, onclick: () => this.openTv() });
     this.boostChips = h('span', { class: 'boost-chips' });
     this.villageBadge = h('span', { class: 'badge', hidden: true });
+    this.perfectLabel = h('span', { class: 'perfect-label' });
     this.villageBtn = h('button', { class: 'btn village-button', hidden: true, onclick: () => this.openVillage() }, '🏘 ', t('ui.villageButton'), this.villageBadge);
     this.farmStage = h('div', { class: 'farm-stage' });
     this.codePanel = h('section', { class: 'panel code-panel' });
@@ -127,7 +132,7 @@ export class GameScreen {
           h('span', { class: 'btn-label' }, t('ui.helpButton')),
         ),
         h('button', { class: 'btn btn-icon', title: t('ui.settingsButton'), onclick: () => this.openSettings() }, '⚙'),
-        h('button', { class: 'btn player-pill', title: t('ui.profileTitle'), onclick: () => this.openProfile() }, '👤', h('span', { class: 'btn-label' }, app.account.user.name)),
+        h('button', { class: 'btn player-pill', title: t('ui.profileTitle'), onclick: () => this.openProfile() }, '👤', h('span', { class: 'btn-label' }, app.account.user.name), this.perfectLabel),
       ),
       h(
         'main',
@@ -184,7 +189,7 @@ export class GameScreen {
       },
     });
     this.research = new ResearchTree({ app, game, onBuy: (id, card) => this.onResearchBought(id, card) });
-    this.villageView = new VillageView({ app, game, onStory: (b) => this.bridgy.say(b.story, { key: `story:${b.id}`, interrupt: true }) });
+    this.villageView = new VillageView({ app, game, onStory: (b) => this.bridgy.say(b.story, { key: `story:${b.id}`, interrupt: true }), extra: (b, state) => this.schoolPart(b, state) });
     this.bridgy = new Bridgy({
       app,
       codeKind: (w) => game.api.codeKind(w),
@@ -199,21 +204,18 @@ export class GameScreen {
         lastError: this.lastError,
         explainLastError: () => this.explainError(this.lastError),
         openBook: (tab) => openBook({ app, game, tab }),
+        note: game.notes.note(game.notes.active),
+        hasNotes: game.notes.got.length > 0,
       }),
     });
     this.updateFarmLabel();
     this.updateCalendarChip();
     this.updateVillageButton();
+    this.updatePerfection();
   }
 
-  // Wide screens: the farm panel is a square as tall as the main area (leaving room for the
-  // editor and the side panel). Phones show one panel at a time (setTab).
   layoutSizes() {
-    if (!mobileQuery.matches) {
-      const H = window.innerHeight - 62 - 66 - 40;
-      const W = window.innerWidth - 48 - (this.sidePanel.offsetWidth || 272) - 340;
-      this.el.style.setProperty('--farm-size', `${Math.floor(Math.max(300, Math.min(H, W, 900)))}px`);
-    }
+    sizeFarm(this.el, this.sidePanel);
     if (this.editor) this.editor.refresh();
   }
 
@@ -227,6 +229,10 @@ export class GameScreen {
   updateFarmLabel() {
     const w = this.game.world;
     this.farmSizeLabel.textContent = `${w.width}×${w.height}`;
+  }
+
+  updatePerfection() {
+    this.perfectLabel.textContent = `🌟 ${perfection(this.game).percent}%`;
   }
 
   // ------------------------------------------------------------------ events
@@ -276,6 +282,12 @@ export class GameScreen {
       }
     });
     on('research', (e) => this.onResearch(e));
+    for (const name of ['research', 'village']) on(name, () => this.updatePerfection());
+    on('sticker', (e) => {
+      const list = this.game.stickers.list.filter((s) => e.ids.includes(s.id));
+      app.audio.play('unlock');
+      this.bridgy.toast(t('ui.stickerEarned', { list: list.map((s) => `${s.icon} ${s.name}`).join(', ') }), 7000);
+    });
     on('questComplete', (e) => this.onQuestComplete(e));
     on('questProgress', () => {
       this.questDirty = true;
@@ -307,8 +319,30 @@ export class GameScreen {
     on('calendar', (e) => {
       this.updateCalendarChip();
       if (!e.before) return;
-      if (e.day !== e.before.day) this.showLuck();
+      if (e.day !== e.before.day) {
+        this.showLuck();
+        this.greetFestival();
+      }
       this.calendarToast(e.season !== e.before.season, e.weather !== e.before.weather);
+    });
+    on('festivalFound', () => app.audio.play('harvest'));
+    on('note', () => this.bridgy.toast(t('ui.noteGiven', { name: this.lastVillager || '' }), 9000));
+    on('noteSolved', () => {
+      app.audio.play('quest');
+      if (this.prefs.animations !== false && !this.prefs.lowGraphics) app.confetti.burst(window.innerWidth / 2, window.innerHeight / 3, 60);
+      this.bridgy.toast(t('ui.noteSolved', { n: (this.game.config.events.notes || {}).stars ?? 3 }), 7000);
+    });
+    on('noteFailed', () => {
+      app.audio.play('error');
+      this.bridgy.toast(t('ui.noteFailed'), 8000);
+    });
+    on('festivalMiss', () => {
+      if (this.first('festivalMiss')) this.bridgy.toast(t('ui.festivalMiss'), 7000);
+    });
+    on('hatEarned', (e) => {
+      app.audio.play('quest');
+      if (this.prefs.animations !== false && !this.prefs.lowGraphics) app.confetti.burst(window.innerWidth / 2, window.innerHeight / 3, 80);
+      this.bridgy.toast(t('ui.hatEarned', { hatName: app.i18n.hat(e.hat), code: String(this.game.api.enums.Hats.get(e.hat)) }), 9000);
     });
     on('lightning', (e) => {
       app.audio.play('thunder');
@@ -318,9 +352,15 @@ export class GameScreen {
       if (e.item === 'Water' && this.game.calendar.frozen && this.game.world.tile(e.x, e.y).ground !== 'Pond' && this.first('winterWater')) this.bridgy.toast(t('ui.winterWater'), 7000);
     });
     on('village', (e) => this.onVillage(e));
+    on('challengePrize', (e) => {
+      const cfg = this.game.config.events.challenge || {};
+      const place = e.place === 1 ? t('ui.ordinalFirst') : t('ui.ordinal', { n: e.place });
+      this.bridgy.toast(t('ui.challengePrize', { place, n: (cfg.medals || [])[e.place - 1] || 0 }), 10000);
+    });
     on('request', (e) => {
       const board = this.game.village.board;
       const v = this.game.village.cfg.requests.villagers[board.list[e.index].who];
+      this.lastVillager = v.name;
       app.audio.play('quest');
       this.bridgy.toast(t('ui.requestThanks', { name: v.name, n: e.stars }), 5000);
       this.villageDirty = true;
@@ -364,6 +404,73 @@ export class GameScreen {
   openVillage() {
     this.villageView.open();
     if (this.first('villageIntro')) this.bridgy.say(this.game.village.cfg.intro || [], { key: 'villageIntro', interrupt: true });
+  }
+
+  // ------------------------------------------------------------------ weekly challenge
+
+  today() {
+    return dayKey(this.game.stats.clock(), (this.app.config.settings.leaderboard || {}).timeZone);
+  }
+
+  // The repaired School's panel shows the challenge (built once a minute: the village panel is
+  // redrawn often, and its lists come from the leaderboard).
+  schoolPart(b, state) {
+    const task = weekTask(this.app.config.events, this.today());
+    if (!task || state !== 'repaired' || b.id !== (this.app.config.events.challenge || {}).building) return null;
+    if (!this.school || Date.now() - this.school.at > 60000) this.school = { at: Date.now(), el: schoolPanel(this.app, this.game, task, this.today(), () => this.openChallenge(task)) };
+    return this.school.el;
+  }
+
+  // The challenge page: the main farm waits (no frames, no keys) until «back to the village».
+  openChallenge(task) {
+    if (this.challenge) return;
+    this.villageView.close();
+    cancelAnimationFrame(this.raf);
+    this.el.hidden = true;
+    this.challenge = new ChallengeScreen({
+      app: this.app,
+      main: this.game,
+      task,
+      onResult: () => {
+        this.save();
+        return this.syncCloud({ now: true });
+      },
+      onClose: () => {
+        this.challenge = this.school = null;
+        this.el.hidden = false;
+        this.save();
+        this.layoutSizes();
+        this.last = performance.now();
+        this.raf = requestAnimationFrame((t) => this.tick(t));
+        this.openVillage();
+        this.villageView.select(this.app.config.events.challenge.building);
+      },
+    });
+  }
+
+  // On login: last week's challenge top 3 and the last festival's top 3 get their prizes (each
+  // looked for once; without internet it is tried again next time).
+  async claimPrizes() {
+    const game = this.game;
+    const me = this.app.account.user.id;
+    const today = this.today();
+    try {
+      const week = weekKey(keyOfDay(dayNumber(today) - 7));
+      if (game.challenge.prizeWeek !== week) {
+        const place = (await this.app.account.top(`c${week}`)).findIndex((r) => r.id === me) + 1;
+        game.challenge.prizeWeek = week;
+        if (place) givePrize(game, place);
+      }
+      const f = lastFestival(game.config.events, today);
+      if (f && !game.festivals.claimed.includes(f.key)) {
+        const top = await this.app.account.top(`f${f.key}`);
+        game.festivals.claimed.push(f.key);
+        if (top.some((r) => r.id === me)) game.earnHat(f.goldHat);
+      }
+      this.save();
+    } catch (e) {
+      console.warn('Prizes not checked:', e);
+    }
   }
 
   // A repaired building: confetti, Bridgy's story chapter (and the finale with the last one).
@@ -450,7 +557,16 @@ export class GameScreen {
   greetCalendar() {
     if (this.destroyed || !this.game.calendar.state) return;
     this.showLuck();
+    this.greetFestival();
     this.calendarToast(!this.ui.firsts.includes('season'), true);
+  }
+
+  // Bridgy's greeting, once per festival (without the Festival square: only its bonus works).
+  greetFestival() {
+    const f = this.game.festivals.today;
+    if (!f || !this.first(`festival:${f.key}`)) return;
+    const extra = this.game.festivals.active ? '' : ` ${this.app.i18n.t('ui.festivalNeedSquare')}`;
+    this.bridgy.say([{ emotion: 'celebrating', text: `${f.greeting}${extra}` }], { key: `festival:${f.key}` });
   }
 
   // Bridgy's TV: today's luck, the season and the weather with live countdowns.
@@ -465,7 +581,18 @@ export class GameScreen {
       const nextSeason = SEASON_NAMES[(SEASON_NAMES.indexOf(s.season) + 1) % SEASON_NAMES.length];
       const crops = this.fastCrops(s.season);
       const recipe = this.game.village.weeklyRecipe();
+      const fest = s.festival;
+      const coming = nextFestival(this.game.config.events, s.day);
+      const total = (this.game.config.events.festival || {}).count;
       body.replaceChildren(
+        fest
+          ? h(
+              'div',
+              { class: 'tv-row' },
+              h('b', {}, `🎉 ${fest.icon} ${fest.name}`),
+              h('div', {}, this.game.festivals.active ? t('ui.festivalProgress', { n: this.game.festivals.count(fest.key), total, object: fest.objectName }) : t('ui.festivalNeedSquare')),
+            )
+          : '',
         s.luck ? h('div', { class: 'tv-row' }, h('b', {}, t('ui.tvLuck')), h('div', {}, s.luck.text)) : '',
         h(
           'div',
@@ -483,6 +610,7 @@ export class GameScreen {
           h('div', {}, this.weatherInfo(s.weather)),
         ),
         recipe ? h('div', { class: 'tv-row' }, h('b', {}, t('ui.tvRecipe')), h('div', {}, `${t(`machines.${recipe.machine}`)}՝ ${recipeText(this.app.i18n, recipe.item, recipe)}`)) : '',
+        coming ? h('div', { class: 'muted' }, t('ui.festivalNext', { icon: coming.icon, name: coming.name, n: coming.inDays })) : '',
         h('p', { class: 'muted tv-note' }, t('ui.tvSame')),
       );
     };
@@ -602,6 +730,7 @@ export class GameScreen {
   }
 
   handleKey(e) {
+    if (this.challenge) return; // (its editor has its own Ctrl+Enter)
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
       this.run();
@@ -627,7 +756,7 @@ export class GameScreen {
   openProfile() {
     this.save();
     openProfile(this.app, {
-      stats: { ...this.game.leaderStats(), breakdown: this.game.stats.breakdown() },
+      stats: { ...this.game.leaderStats(), breakdown: this.game.stats.breakdown(), parts: perfection(this.game).parts, stickers: [...this.game.stickers.earned] },
       sync: this.syncCloud({ now: true }),
       onLogout: () => this.exit(),
     });
@@ -816,6 +945,7 @@ export class GameScreen {
 
   destroy() {
     if (this.destroyed) return;
+    if (this.challenge) this.challenge.destroy();
     this.game.runner.stop('exit', true);
     this.destroyed = true;
     cancelAnimationFrame(this.raf);

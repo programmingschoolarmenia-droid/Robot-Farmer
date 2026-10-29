@@ -4,7 +4,7 @@ import { GameApi, ENTITY_NAMES, ITEM_NAMES, GROUND_NAMES, FISH_NAMES, MACHINE_NA
 import { SYNTAX_FEATURES } from '../lang/gate.js';
 import { SEASON_NAMES, WEATHER_NAMES } from '../engine/calendar.js';
 
-export const CONFIG_FILES = ['settings', 'research', 'texts', 'bridgy', 'aliases', 'guide', 'village'];
+export const CONFIG_FILES = ['settings', 'research', 'texts', 'bridgy', 'aliases', 'guide', 'village', 'events'];
 
 export async function loadConfig(base = 'config/') {
   const config = {};
@@ -56,9 +56,10 @@ export function validateConfig(config) {
   const T = 'texts.json';
   const G = 'guide.json';
   const V = 'village.json';
-  const { settings, research, texts, bridgy, aliases, guide, village } = config;
+  const E = 'events.json';
+  const { settings, research, texts, bridgy, aliases, guide, village, events } = config;
 
-  for (const [name, v] of Object.entries({ settings, research, texts, bridgy, aliases, guide, village })) {
+  for (const [name, v] of Object.entries({ settings, research, texts, bridgy, aliases, guide, village, events })) {
     if (!isObj(v)) err(`${name}.json`, '', 'Ֆայլը պետք է պարունակի JSON օբյեկտ { … }');
   }
   if (errors.length) return errors;
@@ -255,22 +256,25 @@ export function validateConfig(config) {
           }
       }
       if (c.luck !== undefined && !Array.isArray(c.luck)) err(S, 'calendar.luck', 'Պետք է լինի բախտերի ցուցակ');
-      else
-        (c.luck || []).forEach((l, i) => {
-          const p = `calendar.luck[${i}]`;
-          if (!isObj(l) || typeof l.text !== 'string') return err(S, p, 'Պետք է լինի { "text": "…", "yield": { "Carrot": 2 } }');
-          for (const [key, names] of [['yield', ITEM_NAMES], ['fish', FISH_NAMES]]) {
-            if (l[key] !== undefined && !isObj(l[key])) err(S, `${p}.${key}`, 'Պետք է լինի օբյեկտ');
-            else
-              for (const [name, n] of Object.entries(l[key] || {})) {
-                if (!names.includes(name)) err(S, `${p}.${key}.${name}`, `Անհայտ անուն «${name}»`);
-                else needNum(`${p}.${key}.${name}`, n, key === 'yield' ? { min: 1, int: true } : { min: 0 });
-              }
-          }
-          needNum(`${p}.growth`, l.growth, { min: 0.01, optional: true });
-          if (l.pumpkinDeath !== undefined && !(isNum(l.pumpkinDeath) && l.pumpkinDeath >= 0 && l.pumpkinDeath <= 1)) err(S, `${p}.pumpkinDeath`, 'Պետք է լինի 0-ից 1 թիվ');
-        });
+      else (c.luck || []).forEach((l, i) => checkLuck(S, `calendar.luck[${i}]`, l));
     }
+  }
+  // A luck of the day (also a festival's): { text, yield, fish, growth, pumpkinDeath, freeWater }.
+  function checkLuck(file, p, l) {
+    const bad = (path, message) => err(file, path, message);
+    if (!isObj(l) || typeof l.text !== 'string') return bad(p, 'Պետք է լինի { "text": "…", "yield": { "Carrot": 2 } }');
+    for (const [key, names] of [['yield', ITEM_NAMES], ['fish', FISH_NAMES]]) {
+      if (l[key] !== undefined && !isObj(l[key])) bad(`${p}.${key}`, 'Պետք է լինի օբյեկտ');
+      else
+        for (const [name, n] of Object.entries(l[key] || {})) {
+          const min = key === 'yield' ? 1 : 0;
+          if (!names.includes(name)) bad(`${p}.${key}.${name}`, `Անհայտ անուն «${name}»`);
+          else if (!isNum(n) || n < min || (key === 'yield' && !Number.isInteger(n))) bad(`${p}.${key}.${name}`, `Պետք է լինի ${min} կամ ավելի${key === 'yield' ? ' ամբողջ' : ''} թիվ`);
+        }
+    }
+    if (l.growth !== undefined && !(isNum(l.growth) && l.growth >= 0.01)) bad(`${p}.growth`, 'Պետք է լինի 0.01 կամ ավելի թիվ');
+    if (l.pumpkinDeath !== undefined && !(isNum(l.pumpkinDeath) && l.pumpkinDeath >= 0 && l.pumpkinDeath <= 1)) bad(`${p}.pumpkinDeath`, 'Պետք է լինի 0-ից 1 թիվ');
+    if (l.freeWater !== undefined && typeof l.freeWater !== 'boolean') bad(`${p}.freeWater`, 'Պետք է լինի true կամ false');
   }
   if (settings.leaderboard !== undefined) {
     const lb = settings.leaderboard;
@@ -386,11 +390,11 @@ export function validateConfig(config) {
     });
 
   // ---------------------------------------------------------------- village
-  const items = (path, v, { min = 0, int = false } = {}) => {
-    if (!isObj(v)) return err(V, path, 'Պետք է լինի օբյեկտ, օրինակ՝ { "Wood": 300 }');
+  const items = (path, v, { min = 0, int = false, file = V, names = ITEM_NAMES } = {}) => {
+    if (!isObj(v)) return err(file, path, 'Պետք է լինի օբյեկտ, օրինակ՝ { "Wood": 300 }');
     for (const [item, n] of Object.entries(v)) {
-      if (!ITEM_NAMES.includes(item)) err(V, `${path}.${item}`, `Անհայտ իր «${item}»`);
-      else if (!isNum(n) || n < min || (int && !Number.isInteger(n))) err(V, `${path}.${item}`, `Պետք է լինի ${min} կամ ավելի${int ? ' ամբողջ' : ''} թիվ`);
+      if (!names.includes(item)) err(file, `${path}.${item}`, `Անհայտ իր «${item}»`);
+      else if (!isNum(n) || n < min || (int && !Number.isInteger(n))) err(file, `${path}.${item}`, `Պետք է լինի ${min} կամ ավելի${int ? ' ամբողջ' : ''} թիվ`);
     }
   };
   if (village.research !== undefined && !ids.has(village.research)) err(V, 'research', `Անհայտ հետազոտություն «${village.research}»`);
@@ -456,6 +460,111 @@ export function validateConfig(config) {
       });
   }
   if (village.greenhouse !== undefined) items('greenhouse.cost', (village.greenhouse || {}).cost || {});
+
+  // ---------------------------------------------------------------- events (festivals, …)
+  const fest = isObj(events.festival) ? events.festival : null;
+  if (!fest) err(E, 'festival', 'Պարտադիր բաժին է');
+  else {
+    if (!buildingIds.has(fest.building)) err(E, 'festival.building', `Անհայտ շենք «${fest.building}» (տես village.json)`);
+    for (const key of ['count', 'hidden']) if (!Number.isInteger(fest[key]) || fest[key] < 1) err(E, `festival.${key}`, 'Պետք է լինի 1 կամ ավելի ամբողջ թիվ');
+  }
+  const festIds = new Set();
+  const md = (v) => typeof v === 'string' && /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(v);
+  if (!Array.isArray(events.festivals)) err(E, 'festivals', 'Պետք է լինի տոների ցուցակ');
+  else
+    events.festivals.forEach((f, i) => {
+      const p = `festivals[${i}]`;
+      if (!isObj(f) || typeof f.id !== 'string' || typeof f.name !== 'string') return err(E, p, 'Պետք է լինի { "id": "Easter", "name": "…", … }');
+      if (festIds.has(f.id)) err(E, `${p}.id`, `«${f.id}» id-ն կրկնվում է`);
+      festIds.add(f.id);
+      const easter = Array.isArray(f.easter) && f.easter.length === 2 && f.easter.every(Number.isInteger) && f.easter[0] <= f.easter[1];
+      if (!easter && !(md(f.from) && md(f.to))) err(E, p, 'Պետք է ունենա "from" և "to" ("MM-DD", օրինակ՝ "02-13") կամ "easter": [-1, 1]');
+      checkLuck(E, `${p}.luck`, f.luck);
+      for (const key of ['hat', 'goldHat']) if (!settingsHats.includes(f[key])) err(E, `${p}.${key}`, `Անհայտ գլխարկ «${f[key]}» (ավելացրու settings.json → hats)`);
+      if (f.splash !== undefined && !(isNum(f.splash) && f.splash >= 0 && f.splash <= 1)) err(E, `${p}.splash`, 'Պետք է լինի 0-ից 1 թիվ');
+      if (!Array.isArray(f.colors) || !f.colors.every((c) => typeof c === 'string')) err(E, `${p}.colors`, 'Պետք է լինի գույների ցուցակ, օրինակ՝ ["#e4572e", "#ffd23f"]');
+      for (const key of ['icon', 'object', 'objectName', 'greeting']) if (typeof f[key] !== 'string') err(E, `${p}.${key}`, 'Պետք է լինի տեքստ');
+    });
+  if (events.today !== undefined && events.today !== '' && !festIds.has(events.today)) err(E, 'today', `Անհայտ տոն «${events.today}»։ Թույլատրված են՝ ${[...festIds].join(', ')} կամ ""`);
+  const notes = isObj(events.notes) ? events.notes : null;
+  if (!notes) err(E, 'notes', 'Պարտադիր բաժին է');
+  else {
+    if (!(isNum(notes.chance) && notes.chance >= 0 && notes.chance <= 1)) err(E, 'notes.chance', 'Պետք է լինի 0-ից 1 թիվ');
+    if (!(Number.isInteger(notes.stars) && notes.stars >= 0)) err(E, 'notes.stars', 'Պետք է լինի 0 կամ դրական ամբողջ թիվ');
+    if (!settingsHats.includes(notes.hat)) err(E, 'notes.hat', `Անհայտ գլխարկ «${notes.hat}» (ավելացրու settings.json → hats)`);
+    const noteIds = new Set();
+    const cell = (v) => Number.isInteger(v) && v >= 0 && v < 64;
+    (Array.isArray(notes.list) ? notes.list : []).forEach((n, i) => {
+      const p = `notes.list[${i}]`;
+      if (!isObj(n) || typeof n.id !== 'string' || typeof n.text !== 'string' || typeof n.hint !== 'string') return err(E, p, 'Պետք է լինի { "id": "n01", "text": "…", "x": 1, "y": 2, "hint": "…" }');
+      if (noteIds.has(n.id)) err(E, `${p}.id`, `«${n.id}» id-ն կրկնվում է`);
+      noteIds.add(n.id);
+      if (!['math', 'code', 'cipher', 'fact'].includes(n.kind)) err(E, `${p}.kind`, 'Պետք է լինի math, code, cipher կամ fact');
+      if (n.code !== undefined && typeof n.code !== 'string') err(E, `${p}.code`, 'Պետք է լինի տեքստ');
+      if (n.fact !== undefined) {
+        if (!['sunflower', 'cactus', 'giant', 'ponds', 'gold'].includes(n.fact)) err(E, `${p}.fact`, 'Պետք է լինի sunflower, cactus, giant, ponds կամ gold');
+        for (const key of ['dx', 'dy']) if (n[key] !== undefined && !Number.isInteger(n[key])) err(E, `${p}.${key}`, 'Պետք է լինի ամբողջ թիվ');
+        if (n.needs !== undefined && !ids.has(n.needs)) err(E, `${p}.needs`, `Անհայտ հետազոտություն «${n.needs}»`);
+      } else if (!cell(n.x) || !cell(n.y)) err(E, p, 'Պետք է ունենա x և y (0-ից 63 ամբողջ թվեր) կամ "fact"');
+    });
+    if (!Array.isArray(notes.list) || !notes.list.length) err(E, 'notes.list', 'Պետք է լինի գրառումների ցուցակ');
+  }
+  // research levels of a test farm: { "Expand": 3 } (known nodes, 0 … their last level)
+  const levels = (path, v) => {
+    if (!isObj(v)) return err(E, path, 'Պետք է լինի օբյեկտ, օրինակ՝ { "Expand": 3 }');
+    for (const [id, lvl] of Object.entries(v)) {
+      const node = nodes.find((n) => n.id === id);
+      if (!node) err(E, `${path}.${id}`, `Անհայտ հետազոտություն «${id}»`);
+      else if (!Number.isInteger(lvl) || lvl < 0 || lvl > node.tiers.length) err(E, `${path}.${id}`, `Պետք է լինի 0-ից ${node.tiers.length} ամբողջ թիվ`);
+    }
+  };
+  const ch = isObj(events.challenge) ? events.challenge : null;
+  if (!ch) err(E, 'challenge', 'Պարտադիր բաժին է');
+  else {
+    if (!buildingIds.has(ch.building)) err(E, 'challenge.building', `Անհայտ շենք «${ch.building}» (տես village.json)`);
+    if (!(isNum(ch.limit) && ch.limit > 0)) err(E, 'challenge.limit', 'Պետք է լինի դրական թիվ (խաղի վայրկյաններ)');
+    if (!Array.isArray(ch.speeds) || !ch.speeds.length || !ch.speeds.every((v) => isNum(v) && v > 0)) err(E, 'challenge.speeds', 'Պետք է լինի արագությունների ցուցակ, օրինակ՝ [1, 2, 4, 8]');
+    if (!(Number.isInteger(ch.stars) && ch.stars >= 0)) err(E, 'challenge.stars', 'Պետք է լինի 0 կամ դրական ամբողջ թիվ');
+    if (!Array.isArray(ch.hats) || ch.hats.length !== 3 || !ch.hats.every((hat) => settingsHats.includes(hat))) err(E, 'challenge.hats', 'Պետք է լինի 3 հայտնի գլխարկ (1-ին, 2-րդ, 3-րդ տեղերի համար)');
+    if (!Array.isArray(ch.medals) || ch.medals.length !== 3 || !ch.medals.every((n) => Number.isInteger(n) && n >= 0)) err(E, 'challenge.medals', 'Պետք է լինի 3 ամբողջ թիվ, օրինակ՝ [3, 2, 1]');
+    levels('challenge.levels', ch.levels);
+  }
+  const GOALS = { items: ITEM_NAMES, harvest: [...ENTITY_NAMES, ...FISH_NAMES] };
+  const challengeIds = new Set();
+  if (!Array.isArray(events.challenges) || !events.challenges.length) err(E, 'challenges', 'Պետք է լինի առաջադրանքների ցուցակ');
+  else
+    events.challenges.forEach((c, i) => {
+      const p = `challenges[${i}]`;
+      if (!isObj(c) || typeof c.id !== 'string' || typeof c.name !== 'string' || typeof c.about !== 'string') return err(E, p, 'Պետք է լինի { "id": "…", "name": "…", "about": "…", "goal": { … }, "levels": { … } }');
+      if (challengeIds.has(c.id)) err(E, `${p}.id`, `«${c.id}» id-ն կրկնվում է`);
+      challengeIds.add(c.id);
+      const [kind, v] = isObj(c.goal) && Object.keys(c.goal).length === 1 ? Object.entries(c.goal)[0] : [];
+      if (GOALS[kind]) items(`${p}.goal.${kind}`, v, { min: 1, file: E, names: GOALS[kind] });
+      else if (!['giant', 'chain', 'dino'].includes(kind)) err(E, `${p}.goal`, 'Պետք է ունենա մեկ նպատակ՝ items, harvest, giant, chain կամ dino');
+      else if (!Number.isInteger(v) || v < 2) err(E, `${p}.goal.${kind}`, 'Պետք է լինի 2 կամ ավելի ամբողջ թիվ');
+      levels(`${p}.levels`, c.levels);
+      if (c.items !== undefined) items(`${p}.items`, c.items, { file: E });
+      if (c.seed !== undefined && !Number.isInteger(c.seed)) err(E, `${p}.seed`, 'Պետք է լինի ամբողջ թիվ');
+    });
+  const KINDS = ['feature', 'params', 'recursion', 'drones', 'codeWords', 'giant', 'chain', 'sunflowerBonus', 'dino', 'fishAll', 'fish', 'goldenFish', 'total', 'researchAll', 'village', 'requests', 'notes', 'festivalHats', 'challengeTop', 'perfection', 'flips', 'hats', 'eaten'];
+  const stickerIds = new Set();
+  (Array.isArray(events.stickers) ? events.stickers : []).forEach((st, i) => {
+    const p = `stickers[${i}]`;
+    if (!isObj(st) || typeof st.id !== 'string' || typeof st.name !== 'string' || typeof st.icon !== 'string' || typeof st.about !== 'string') return err(E, p, 'Պետք է լինի { "id": "…", "icon": "🔁", "name": "…", "about": "…", "when": { … } }');
+    if (stickerIds.has(st.id)) err(E, `${p}.id`, `«${st.id}» id-ն կրկնվում է`);
+    stickerIds.add(st.id);
+    const keys = isObj(st.when) ? Object.keys(st.when) : [];
+    if (keys.length !== 1 || !KINDS.includes(keys[0])) err(E, `${p}.when`, `Պետք է ունենա մեկ պայման՝ ${KINDS.join(', ')}`);
+    else if (keys[0] === 'feature' && !SYNTAX_FEATURES.includes(st.when.feature)) err(E, `${p}.when.feature`, `Անհայտ հնարավորություն «${st.when.feature}»`);
+    else if (keys[0] === 'fish' && !FISH_NAMES.includes(st.when.fish)) err(E, `${p}.when.fish`, `Անհայտ ձուկ «${st.when.fish}»`);
+    else if (keys[0] === 'total' && (!isObj(st.when.total) || !Object.keys(st.when.total).every((k) => ITEM_NAMES.includes(k)))) err(E, `${p}.when.total`, 'Պետք է լինի { "Hay": 1000000 } (հայտնի իրերով)');
+  });
+  const perf = isObj(events.perfection) ? events.perfection : null;
+  if (!perf) err(E, 'perfection', 'Պարտադիր բաժին է');
+  else {
+    for (const key of ['research', 'village']) if (!(isNum(perf[key]) && perf[key] >= 0)) err(E, `perfection.${key}`, 'Պետք է լինի 0 կամ դրական թիվ');
+    if (!settingsHats.includes(perf.hat)) err(E, 'perfection.hat', `Անհայտ գլխարկ «${perf.hat}» (ավելացրու settings.json → hats)`);
+  }
 
   // ---------------------------------------------------------------- aliases
   // Format: { canonical: [shownName, ...otherNames] }

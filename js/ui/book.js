@@ -8,7 +8,9 @@ const TABS = [
   ['commands', '📖', 'ui.helpCommands'],
   ['js', '🟨', 'ui.helpJs'],
   ['plants', '🌱', 'ui.helpPlants'],
+  ['notes', '📜', 'ui.helpNotes'],
 ];
+const NOTE_ICONS = { math: '🔢', code: '💻', cipher: '🔐', fact: '🌻' };
 
 export function openBook({ app, game, tab = 'commands' }) {
   const t = app.i18n.t;
@@ -19,7 +21,7 @@ export function openBook({ app, game, tab = 'commands' }) {
   const show = (id) => {
     for (const b of tabButtons) b.classList.toggle('active', b.dataset.tab === id);
     const { cards, locked } = buildCards(app, game, id);
-    list.replaceChildren(...cards, nothing, locked ? h('div', { class: 'book-locked' }, t('ui.bookLocked', { n: locked })) : '');
+    list.replaceChildren(...cards, nothing, locked ? h('div', { class: 'book-locked' }, t(id === 'notes' ? 'ui.notesLocked' : 'ui.bookLocked', { n: locked })) : '');
     filter();
   };
   const filter = () => {
@@ -52,6 +54,8 @@ function buildCards(app, game, tab) {
       .map(([name, c]) => ({ open: research.hasFunction(name), card: () => commandCard(app, game, name, c) }));
   } else if (tab === 'js') {
     entries = guide.js.map((topic) => ({ open: (topic.needs || []).every(unlocked), card: () => topicCard(app, game, topic) }));
+  } else if (tab === 'notes') {
+    entries = game.notes.list.map((n, i) => ({ open: game.notes.got.includes(n.id), card: () => noteCard(app, game, n, i + 1) }));
   } else {
     entries = guide.plants.map((p) => ({
       open: p.entity ? research.hasEntity(p.entity) : research.level(p.research) > 0,
@@ -75,6 +79,21 @@ function commandCard(app, game, name, c) {
     c.example ? section(t('ui.bookExample'), code(game, c.example)) : null,
     c.notes ? h('p', { class: 'book-note' }, `💡 ${c.notes}`) : null,
     node ? h('p', { class: 'book-from' }, `${game.village.building(node) ? '🏘' : '🔬'} ${t('ui.bookFrom', { name: app.i18n.nodeName(node) })}`) : null,
+  );
+}
+
+// A secret note in Bridgy's book: its riddle (and program) and whether its treasure was found.
+function noteCard(app, game, n, number) {
+  const t = app.i18n.t;
+  const notes = game.notes;
+  const state = notes.active === n.id ? 'active' : notes.status[n.id] || 'active';
+  const tag = { active: 'ui.noteActiveTag', solved: 'ui.noteSolvedTag', failed: 'ui.noteFailedTag' }[state];
+  return h(
+    'details',
+    { class: 'book-card', open: state === 'active' },
+    h('summary', {}, h('span', { class: 'book-title' }, `${NOTE_ICONS[n.kind] || '📜'} ${t('ui.noteTitle', { n: number })}`), h('span', { class: 'book-short' }, t(tag))),
+    h('p', {}, n.text),
+    n.code ? code(game, n.code) : null,
   );
 }
 

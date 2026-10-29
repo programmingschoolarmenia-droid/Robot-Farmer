@@ -2,6 +2,7 @@
 // With Firebase keys in config/settings.json → online, everything goes through the Firebase REST
 // APIs (Auth + Firestore, no SDK). Without keys, accounts live only in this browser.
 // The farm is always also kept in this browser, so the game keeps working without internet.
+import { weekKey } from '../core/util.js';
 
 export const NAME_RE = /^[A-Za-z0-9_]{3,16}$/;
 export const MIN_PASSWORD = 6;
@@ -20,20 +21,34 @@ export class AccountError extends Error {
 // The public leaderboard row of a player (players/{id}); `s` comes from Game.leaderStats().
 // Day and month points are stored under dated fields (d20261028, m202610), so a new day starts
 // an empty list without deleting anything; yesterday's field stays for the champion's crown.
+const MAX_CODE = 6000; // characters of challenge code kept in the row
 export function playerRow(name, s) {
   const row = { name, hat: s.hat, farm: s.farm, research: s.research, playSeconds: Math.floor(s.playSeconds), points: Math.floor(s.points), code: s.code, streak: s.streak, streakDay: s.day.key };
   for (const [prefix, periods] of [['d', [s.day, s.prevDay]], ['m', [s.month, s.prevMonth]]]) {
     for (const p of periods) if (p && p.key && p.points >= 1) row[prefix + p.key] = Math.floor(p.points);
   }
+  if (s.perfect >= 1) row.perfect = s.perfect; // Perfection %
+  if (s.festival && s.festival.found >= 1) row[`f${s.festival.key}`] = s.festival.found; // objects found in the latest festival
+  // the weekly challenge (this week's and last week's): the best time in tenths of a second and its code
+  for (const c of s.challenge ? [s.challenge, s.challenge.prev] : []) {
+    if (c && c.best >= 1) Object.assign(row, { [`c${c.week}`]: c.best, [`cc${c.week}`]: String(c.bestCode).slice(0, MAX_CODE) });
+  }
   return row;
 }
 
-// The row field a leaderboard tab ranks by (today = 'YYYYMMDD').
-export function boardField(tab, today) {
+// The row field a leaderboard list ranks by (today = 'YYYYMMDD'): points of the 'day', the
+// 'month' or 'all' time, 'code', 'perfect', this week's 'challenge' (lower is better, see
+// ASCENDING) or the running 'festival' (`festival` = its key, e.g. 'Easter2026').
+export function boardField(tab, today, festival = '') {
   if (tab === 'day') return `d${today}`;
   if (tab === 'month') return `m${today.slice(0, 6)}`;
-  return tab === 'code' ? 'code' : 'points';
+  if (tab === 'challenge') return `c${weekKey(today)}`;
+  if (tab === 'festival') return `f${festival}`;
+  return tab === 'code' || tab === 'perfect' ? tab : 'points';
 }
+
+// Lists where the smallest number is the best (the challenge times).
+export const ascending = (field) => /^c\d/.test(field);
 
 // Upgrades old save formats. (Only version 1 exists so far.)
 export function migrateSave(save) {
@@ -125,34 +140,45 @@ export class Accounts {
   }
 
   // { rows, place, rival } for the list ranked by `field` (only players with more than 0).
-  // With `me` ({ id, value }): my place and the closest player above me (null when nobody is).
-  // A list is reused for a minute (until my next save), so switching tabs costs nothing;
-  // `fresh` asks again.
+  // With `me` ({ id, value }): my place and the closest player above me (null when nobody is, and
+  // in a challenge list when I am not in it). A list is reused for a minute (until my next save),
+  // so switching tabs costs nothing; `fresh` asks again.
   async leaderboard(field, me = null, fresh = false) {
+    const asc = ascending(field);
     let c = this.cache.get(field);
     if (fresh || !c || Date.now() - c.at > 60000) {
-      c = { at: Date.now(), rows: await this.backend.query(field, 0, false, this.limit) };
+      c = { at: Date.now(), rows: await this.backend.query(field, 0, asc, this.limit) };
       this.cache.set(field, c);
     }
     const rows = c.rows;
     if (!me) return { rows, place: 0, rival: null };
     const i = rows.findIndex((r) => r.id === me.id);
-    if (i >= 0) return { rows, place: i + 1, rival: rows.slice(0, i).reverse().find((r) => r[field] > me.value) || null };
+    if (i >= 0) return { rows, place: i + 1, rival: rows.slice(0, i).reverse().find((r) => (asc ? r[field] < me.value : r[field] > me.value)) || null };
+    if (asc) return { rows, place: me.value > 0 ? await this.place(field, me.value) : 0, rival: null };
     const [above, rival] = await Promise.all([this.backend.count(field, me.value), this.backend.query(field, me.value, true, 1)]);
     return { rows, place: above + 1, rival: rival[0] || null };
   }
 
-  // My place (1 = first) in the list of `field` with `value`.
+  // My place (1 = first) in the list of `field` with `value`. The counts only ask «more than», so
+  // a challenge place is 1 + (all times) − (times of `value` or more); times are whole tenths.
   async place(field, value) {
-    return 1 + (await this.backend.count(field, value));
+    if (!ascending(field)) return 1 + (await this.backend.count(field, value));
+    const [all, from] = await Promise.all([this.backend.count(field, 0), this.backend.count(field, value - 1)]);
+    return 1 + all - from;
   }
 
-  // The #1 rows of yesterday's and last month's lists: { day, month } (null when empty).
-  champions(dayField, monthField) {
-    const key = `${dayField}/${monthField}`;
+  // The best `n` rows of a list (for the prizes of a finished week or festival).
+  top(field, n = 3) {
+    return this.backend.query(field, 0, ascending(field), n);
+  }
+
+  // The #1 rows of yesterday's, last month's and last week's challenge lists: { day, month, week }
+  // (null when empty).
+  champions(dayField, monthField, weekField) {
+    const key = `${dayField}/${monthField}/${weekField}`;
     if (!this.champs || this.champs.key !== key) {
-      const first = (f) => this.backend.query(f, 0, false, 1).then((rows) => rows[0] || null);
-      const entry = { key, promise: Promise.all([first(dayField), first(monthField)]).then(([day, month]) => ({ day, month })) };
+      const first = (f) => (f ? this.top(f, 1).then((rows) => rows[0] || null) : null);
+      const entry = { key, promise: Promise.all([first(dayField), first(monthField), first(weekField)]).then(([day, month, week]) => ({ day, month, week })) };
       entry.promise.catch(() => this.champs === entry && (this.champs = null)); // ask again next time
       this.champs = entry;
     }

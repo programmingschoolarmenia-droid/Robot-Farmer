@@ -249,9 +249,18 @@
   }
 }
 .player-pill {
-  max-width: 160px;
+  max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.player-pill .btn-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.perfect-label {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
 }
 
 /* Bridgy quick reactions (small speech bubbles under the help button) */

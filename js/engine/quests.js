@@ -141,7 +141,7 @@ export class QuestTracker {
     this.visited = new Set();
     const d = this.game.mainDrone;
     this.visited.add(`${d.x},${d.y}`);
-    const info = this.codeInfo(script);
+    const info = codeInfo(this.game.api, script);
     this.markGoal((goal) => {
       if (goal.type !== 'code') return false;
       if (goal.feature && !info.features.has(goal.feature)) return false;
@@ -149,64 +149,6 @@ export class QuestTracker {
       return true;
     });
     this.checkVisitAll();
-  }
-
-  // Which syntax features and functions a script (and its imports) uses.
-  codeInfo(scriptName) {
-    const features = new Set();
-    const calls = new Set();
-    const api = this.game.api;
-    const seen = new Set();
-    const visitScript = (name) => {
-      if (seen.has(name)) return;
-      seen.add(name);
-      const c = api.compiled.get(name);
-      if (!c || !c.ast) return;
-      walk(c.ast, (node) => {
-        switch (node.type) {
-          case 'WhileStatement':
-          case 'ForStatement':
-          case 'DoWhileStatement':
-          case 'ForOfStatement':
-            features.add('loops');
-            break;
-          case 'IfStatement':
-          case 'ConditionalExpression':
-            features.add('if');
-            break;
-          case 'BinaryExpression':
-          case 'LogicalExpression':
-          case 'UpdateExpression':
-            features.add('operators');
-            break;
-          case 'VariableDeclaration':
-            features.add('variables');
-            break;
-          case 'FunctionDeclaration':
-          case 'FunctionExpression':
-          case 'ArrowFunctionExpression':
-            features.add('functions');
-            break;
-          case 'ArrayExpression':
-            features.add('lists');
-            break;
-          case 'ObjectExpression':
-            features.add('objects');
-            break;
-          case 'ImportDeclaration':
-            features.add('import');
-            visitScript(api.resolveModuleName(node.source.value));
-            break;
-          case 'CallExpression':
-            if (node.callee.type === 'Identifier') calls.add(api.canonicalName(node.callee.name));
-            break;
-          default:
-            break;
-        }
-      });
-    };
-    visitScript(scriptName);
-    return { features, calls };
   }
 
   onMove(e) {
@@ -256,6 +198,72 @@ export class QuestTracker {
     const q = this.current();
     return { index: this.index, id: q ? q.id : null, baseline: this.baseline, satisfied: this.satisfied, hintTier: this.hintTier };
   }
+}
+
+// Which syntax features and game functions a script (and the scripts it imports) uses, and whether
+// it has a function with parameters or one that calls itself (stickers).
+export function codeInfo(api, scriptName) {
+  const features = new Set();
+  const calls = new Set();
+  let params = false;
+  let recursion = false;
+  const seen = new Set();
+  const visitScript = (name) => {
+    if (seen.has(name)) return;
+    seen.add(name);
+    const c = api.compiled.get(name);
+    if (!c || !c.ast) return;
+    walk(c.ast, (node) => {
+      switch (node.type) {
+        case 'WhileStatement':
+        case 'ForStatement':
+        case 'DoWhileStatement':
+        case 'ForOfStatement':
+          features.add('loops');
+          break;
+        case 'IfStatement':
+        case 'ConditionalExpression':
+          features.add('if');
+          break;
+        case 'BinaryExpression':
+        case 'LogicalExpression':
+        case 'UpdateExpression':
+          features.add('operators');
+          break;
+        case 'VariableDeclaration':
+          features.add('variables');
+          break;
+        case 'FunctionDeclaration':
+        case 'FunctionExpression':
+        case 'ArrowFunctionExpression':
+          features.add('functions');
+          if (node.params.length) params = true;
+          if (node.id) {
+            walk(node.body, (n) => {
+              if (n.type === 'CallExpression' && n.callee.type === 'Identifier' && n.callee.name === node.id.name) recursion = true;
+            });
+          }
+          break;
+        case 'ArrayExpression':
+          features.add('lists');
+          break;
+        case 'ObjectExpression':
+          features.add('objects');
+          break;
+        case 'ImportDeclaration':
+          features.add('import');
+          visitScript(api.resolveModuleName(node.source.value));
+          break;
+        case 'CallExpression':
+          if (node.callee.type === 'Identifier') calls.add(api.canonicalName(node.callee.name));
+          break;
+        default:
+          break;
+      }
+    });
+  };
+  visitScript(scriptName);
+  return { features, calls, params, recursion };
 }
 
 // The current quest of a save: found by its id; older saves counted the list without ADDED_LATER.
