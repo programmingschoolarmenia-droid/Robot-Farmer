@@ -33,6 +33,12 @@ export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-proj
     if (u.searchParams.has('key') && u.searchParams.get('key') !== apiKey) return fail(400, 'API key not valid. Please pass a valid API key.', { status: 'INVALID_ARGUMENT' });
 
     if (u.hostname === 'identitytoolkit.googleapis.com') {
+      if (u.pathname.endsWith('accounts:lookup')) {
+        const email = tokens.get(body.idToken);
+        if (!email) return fail(400, 'INVALID_ID_TOKEN');
+        if (!users.has(email)) return fail(400, 'USER_NOT_FOUND');
+        return json(200, { users: [{ email, disabled: !!users.get(email).disabled }] });
+      }
       const user = users.get(body.email);
       if (u.pathname.endsWith('accounts:signUp')) {
         if (user) return fail(400, 'EMAIL_EXISTS');

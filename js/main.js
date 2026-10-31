@@ -82,10 +82,10 @@ async function boot() {
     }
     loading.hidden = true;
     show(
-      new GameScreen(app, save, () => {
+      new GameScreen(app, save, (notice) => {
         app.screen = null;
         account.logout();
-        showLogin();
+        showLogin(notice);
       }),
     );
   }

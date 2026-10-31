@@ -285,7 +285,8 @@ Until you add Firebase keys, accounts and the leaderboard work **only inside one
    service cloud.firestore {
      match /databases/{database}/documents {
        function isOwner(name) {
-         return request.auth != null && request.auth.token.email == name + '@bridgys-farm.app';
+         return request.auth != null && request.auth.token.email == name + '@bridgys-farm.app'
+           && !exists(/databases/$(database)/documents/deleted/$(name));
        }
        match /players/{name} {
          allow read: if true;
@@ -309,6 +310,14 @@ Until you add Firebase keys, accounts and the leaderboard work **only inside one
 **same username** and a new password, and gets the same farm back (it is stored under the
 username). To remove a student completely, also delete `saves/username` and
 `players/username` in Firestore.
+
+**Delete a student:** Authentication → Users → ⋮ → *Delete account* (or *Disable account*),
+then delete `players/username` and `saves/username` in Firestore. Before every load and save
+the game asks Firebase whether the account still exists, so an open game stops saving at its
+next save (within `cloudSaveSeconds`), goes back to the login screen with «Այս հաշիվը ջնջված է»
+and forgets the farm in that browser. Nothing comes back.
+(Optional, to block a username for good: add a document `deleted/username` in Firestore; the
+rules above then refuse its saves even if the name is registered again.)
 
 The free plan (50 000 reads and 20 000 writes per day) is plenty for a school. The leaderboard
 needs no extra setup: every list is one query, a list is reused for a minute when students

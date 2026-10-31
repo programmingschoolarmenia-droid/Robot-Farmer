@@ -965,6 +965,7 @@ export class GameScreen {
         (e) => {
           this.cloudDirty = true;
           console.warn('Online save failed:', e);
+          if (e.code === 'deleted') return this.removed(e), false;
           if (keepalive) return false; // best effort while the page is hidden or closing
           if (!this.syncFailed && !this.destroyed) this.app.toast(`${t('ui.syncFailed')} ${accountErrorText(this.app.i18n, e)}`, 'warn');
           this.syncFailed = true;
@@ -981,6 +982,15 @@ export class GameScreen {
   leaveSave() {
     this.save();
     this.syncCloud({ now: true, keepalive: true });
+  }
+
+  // The teacher deleted this account: back to the login screen without saving anything.
+  removed(e) {
+    if (this.destroyed) return;
+    this.leaving = true;
+    this.game.runner.stop('exit', true);
+    this.destroy();
+    this.onExit(accountErrorText(this.app.i18n, e));
   }
 
   async exit() {

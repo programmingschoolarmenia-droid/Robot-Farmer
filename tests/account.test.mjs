@@ -164,10 +164,26 @@ test('firebase: accounts, farm sync between devices and the leaderboard over RES
     assert.equal(await codeOf(fresh.loadSave()), 'offline');
     fb.offline = false;
 
-    // The teacher deleted the account → log in again; a wrong API key is a setup problem.
+    // The teacher deleted the account: refused at once even with a fresh ID token, nothing is
+    // written back, and the browser forgets the session and its farm.
+    const tab = new Accounts(memory(), cfg);
+    await tab.login('aram', 'secret1');
+    tab.saveLocal({ game: { time: 13 } });
     fb.users.delete('aram@bridgys-farm.app');
-    phone.session.expires = 0;
-    assert.equal(await codeOf(phone.loadSave()), 'relogin');
+    fb.docs.delete('players/aram');
+    fb.docs.delete('saves/aram');
+    assert.equal(await codeOf(phone.saveOnline({ game: { time: 13 } }, stats())), 'deleted');
+    assert.equal(fb.docs.has('players/aram') || fb.docs.has('saves/aram'), false);
+    assert.equal(phone.session, null);
+    assert.equal(await codeOf(tab.loadSave()), 'deleted');
+    assert.deepEqual([tab.session, tab.adapter.get('save.v2.aram')], [null, null]);
+    assert.equal(await codeOf(phone.login('aram', 'secret1')), 'badLogin');
+    // A disabled account is refused the same way.
+    const kid = new Accounts(memory(), cfg);
+    await kid.register('kid_1', 'secret1');
+    fb.users.get('kid_1@bridgys-farm.app').disabled = true;
+    assert.equal(await codeOf(kid.saveOnline({}, stats())), 'deleted');
+    // A wrong API key is a setup problem.
     assert.equal(await codeOf(new Accounts(memory(), { ...cfg, apiKey: 'bad' }).register('newkid', 'secret1')), 'config');
   } finally {
     globalThis.fetch = realFetch;

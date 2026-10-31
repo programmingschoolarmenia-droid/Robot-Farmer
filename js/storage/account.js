@@ -119,6 +119,12 @@ export class Accounts {
     this.adapter.remove(SESSION_KEY);
   }
 
+  // The teacher deleted the account: this browser forgets its farm too.
+  forget(id) {
+    this.adapter.remove(saveKey(id));
+    if (this.session && this.session.id === id) this.logout();
+  }
+
   // The newer of this browser's copy and the online copy; null for a new farm.
   // Without internet the browser copy is used; with neither copy it throws (so a fresh farm
   // never overwrites an online one).
@@ -129,7 +135,8 @@ export class Accounts {
       remote = await this.backend.getSave(this.session);
       this.persist();
     } catch (e) {
-      if (!local || e.code === 'relogin') throw e;
+      if (e.code === 'deleted') this.forget(this.session.id);
+      if (!local || e.code === 'relogin' || e.code === 'deleted') throw e;
       console.warn('Online save not loaded, using this browser copy:', e);
     }
     const best = remote && (!local || (remote.updated || 0) > (local.updated || 0)) ? remote : local;
@@ -145,7 +152,12 @@ export class Accounts {
   async saveOnline(data, stats, keepalive = false) {
     const session = this.session;
     if (!session) return;
-    await this.backend.putSave(session, data, playerRow(session.name, stats), keepalive);
+    try {
+      await this.backend.putSave(session, data, playerRow(session.name, stats), keepalive);
+    } catch (e) {
+      if (e.code === 'deleted') this.forget(session.id);
+      throw e;
+    }
     this.cache.clear(); // my row changed
     if (this.session === session) this.persist();
   }
@@ -211,7 +223,7 @@ const FIREBASE_ERRORS = {
   CONFIGURATION_NOT_FOUND: 'config',
   PROJECT_NOT_FOUND: 'config',
   TOKEN_EXPIRED: 'relogin',
-  USER_NOT_FOUND: 'relogin',
+  USER_NOT_FOUND: 'deleted',
   INVALID_REFRESH_TOKEN: 'relogin',
   UNAUTHENTICATED: 'relogin',
   PERMISSION_DENIED: 'config',
@@ -281,8 +293,22 @@ class FirebaseBackend {
     return s.idToken;
   }
 
+  // A deleted account's ID token still works for up to an hour, so every load and save first
+  // asks Auth whether the account still exists (and is not disabled).
+  async check(s) {
+    const idToken = await this.token(s);
+    let r;
+    try {
+      r = await call(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${this.key}`, { body: { idToken } });
+    } catch (e) {
+      throw e.code === 'badLogin' ? new AccountError('deleted') : e; // USER_DISABLED
+    }
+    if (!r.users || !r.users.length || r.users[0].disabled) throw new AccountError('deleted');
+    return idToken;
+  }
+
   async getSave(s) {
-    const doc = await call(`${this.url}/saves/${s.id}`, { token: await this.token(s), missingOk: true });
+    const doc = await call(`${this.url}/saves/${s.id}`, { token: await this.check(s), missingOk: true });
     return doc && doc.fields ? JSON.parse(doc.fields.data.stringValue) : null;
   }
 
@@ -290,7 +316,7 @@ class FirebaseBackend {
   async putSave(s, data, row, keepalive) {
     const update = (collection, fields) => ({ update: { name: `${this.docs}/${collection}/${s.id}`, fields } });
     await call(`${this.url}:commit`, {
-      token: await this.token(s),
+      token: await this.check(s),
       keepalive,
       body: {
         writes: [
