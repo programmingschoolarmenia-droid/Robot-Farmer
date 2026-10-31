@@ -261,13 +261,13 @@ export class ResearchTree {
     const lvl = research.level(n.id);
     const max = n.tiers.length;
     const hidden = n.secret && state === 'locked';
-    const icon = h('div', { class: 'rd-icon' });
-    if (hidden) icon.append(pixelImg(this.app.sprites.url('icon:secret', 3)));
-    else if (n.icon) icon.append(pixelImg(this.app.sprites.url(`icon:${n.icon}`, 3)));
-    else icon.append(h('code', {}, n.label));
+    const pic = h('div', { class: 'rd-icon' });
+    if (hidden) pic.append(pixelImg(this.app.sprites.url('icon:secret', 3)));
+    else if (n.icon) pic.append(pixelImg(this.app.sprites.url(`icon:${n.icon}`, 3)));
+    else pic.append(h('code', {}, n.label));
     const parts = [
       h('button', { class: 'btn btn-ghost btn-sm rd-close', title: t('ui.close'), onclick: () => this.select(null) }, '✕'),
-      h('div', { class: 'rd-head' }, icon, h('div', {}, h('div', { class: 'rd-name' }, hidden ? t('ui.secret') : n.name), h('div', { class: 'rd-level' }, t('ui.level', { n: lvl, max })))),
+      h('div', { class: 'rd-head' }, pic, h('div', {}, h('div', { class: 'rd-name' }, hidden ? t('ui.secret') : n.name), h('div', { class: 'rd-level' }, t('ui.level', { n: lvl, max })))),
       h('div', { class: 'rd-desc' }, hidden ? '???' : n.description),
     ];
     const effect = !hidden && this.effectText(n);
