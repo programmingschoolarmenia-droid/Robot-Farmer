@@ -1,4 +1,6 @@
-// Runs player code on drones against game time: start / stop / pause / step.
+// Runs player code on drones against game time: start / stop / pause / step. On the ranch a drone
+// whose code ended but that listens for events (erb) waits for them like a real JavaScript program:
+// each event runs its handler when the drone is free, one after another.
 import { Interpreter, Y } from '../lang/interpreter.js';
 import { GameError, locOf } from '../lang/errors.js';
 import { codeFingerprints } from '../lang/codeWords.js';
@@ -74,6 +76,8 @@ export class Runner {
     d.result = undefined;
     d.idleTicks = 0;
     d.waitingFor = null;
+    d.listeners = new Map();
+    d.queue = [];
     this.drones = [d];
     this.nextDroneId = 1;
     this.entry = script.name;
@@ -130,7 +134,28 @@ export class Runner {
   }
 
   activeDroneCount() {
-    return this.drones.filter((d) => d.state === 'running' || d.state === 'waiting').length;
+    return this.drones.filter((d) => d.state === 'running' || d.state === 'waiting' || d.state === 'listening').length;
+  }
+
+  // An event for a drone (Ranch.signal): its handler runs now if the drone only listens, else later.
+  queueEvent(d, fn, data, t) {
+    d.queue.push({ fn, data, t });
+    if (d.state === 'listening') this.listen(d);
+  }
+
+  // A drone whose code ended and that has event handlers: the next event's handler, or wait for one.
+  listen(d) {
+    if (!d.listeners || !d.listeners.size || this.state === 'idle') return false;
+    const next = d.queue.shift();
+    if (!next) {
+      if (d.state !== 'listening' && d.id === 0) this.game.events.emit('runListen', { script: this.entry });
+      d.state = 'listening';
+      return true;
+    }
+    d.gen = d.interp.runFunction(next.fn, [next.data]);
+    d.time = Math.max(d.time, next.t);
+    d.state = 'running';
+    return true;
   }
 
   // Runs one drone until its next pause point. Returns the yielded value or 'done' / 'error'.
@@ -231,9 +256,10 @@ export class Runner {
   }
 
   droneFinished(d, value) {
+    d.gen = null;
+    if (this.listen(d)) return;
     d.state = 'done';
     d.result = value;
-    d.gen = null;
     for (const x of this.drones) {
       if (x.state === 'waiting' && x.waitingFor === d) {
         x.state = 'running';
@@ -241,7 +267,7 @@ export class Runner {
       }
     }
     if (d.id !== 0) this.game.events.emit('droneDone', { drone: d.id });
-    if (!this.drones.some((x) => x.state === 'running' || x.state === 'waiting')) {
+    if (!this.drones.some((x) => x.state === 'running' || x.state === 'waiting' || x.state === 'listening')) {
       const code = this.countCode();
       this.state = 'idle';
       this.stepTarget = null;
@@ -279,6 +305,9 @@ export class Runner {
     const max = this.game.maxDrones();
     if (this.activeDroneCount() >= max) return null;
     const d = new Drone(this.game, this.nextDroneId++, { x: parent.x, y: parent.y, hat: parent.hat });
+    if (parent.pen) Object.assign(d, { pen: parent.pen, hands: {} }); // a ranch area's helper
+    d.listeners = new Map();
+    d.queue = [];
     d.interp = this.makeInterpreter(d);
     d.interp.modules = parent.interp.modules;
     d.gen = d.interp.runFunction(fn, args.map((a) => a));

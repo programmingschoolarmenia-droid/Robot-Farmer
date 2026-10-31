@@ -102,7 +102,12 @@
       "Ghapama": ["Xapama", "Ղափամա"],
       "Grilled_Fish": ["Xorovac", "Խորոված"],
       "Star": ["Astx", "Աստղ"],
-      "Medal": ["Medal", "Մեդալ"]
+      "Medal": ["Medal", "Մեդալ"],
+      "Egg": ["Dzu", "Ձու"],
+      "Milk": ["Kat", "Կաթ"],
+      "Cheese": ["Panir", "Պանիր"],
+      "Butter": ["Karag", "Կարագ"],
+      "Nazook": ["Nazuk", "Նազուկ"]
     },
     "Machines": {
       "Mill": ["Jraxac", "Ջրաղաց"],
@@ -223,29 +228,53 @@
       "animals": ["kendaniner", "կենդանիներ"],
       "bring": ["berel", "բերել"],
       "orders": ["patverner", "պատվերներ"],
-      "deliver": ["hanznel", "հանձնել"]
+      "deliver": ["hanznel", "հանձնել"],
+      "on": ["erb", "երբ"],
+      "write": ["grel", "գրել"],
+      "read": ["kardal", "կարդալ"],
+      "sellAnimal": ["vacharelKendani", "վաճառելկենդանի"],
+      "heal": ["buzhel", "բուժել"],
+      "repair": ["norogel", "նորոգել"],
+      "rope": ["kapel", "կապել"],
+      "ship": ["tanel", "տանել"]
     },
     "namespaces": {
-      "Animals": ["Tesakner", "Տեսակներ"]
+      "Animals": ["Tesakner", "Տեսակներ"],
+      "Colors": ["Guyner", "Գույներ"]
     },
     "members": {
       "Items": {
         "Dram": ["Dram", "Դրամ"],
-        "Egg": ["Dzu", "Ձու"],
-        "Milk": ["Kat", "Կաթ"],
         "Grain": ["Hatik", "Հատիկ"],
-        "Bale": ["XotiHak", "ԽոտիՀակ"]
+        "Bale": ["XotiHak", "ԽոտիՀակ"],
+        "GoatMilk": ["AyciKat", "ԱյծիԿաթ"],
+        "Matsun": ["Macun", "Մածուն"],
+        "Omelet": ["Dzvacex", "Ձվածեղ"],
+        "Manure": ["Gomaxb", "Գոմաղբ"],
+        "Medicine": ["Dex", "Դեղ"],
+        "Plank": ["Taxtak", "Տախտակ"]
       },
       "Animals": {
         "Hen": ["Hav", "Հավ"],
-        "Cow": ["Kov", "Կով"]
+        "Cow": ["Kov", "Կով"],
+        "Goat": ["Ayc", "Այծ"]
+      },
+      "Colors": {
+        "White": ["Spitak", "Սպիտակ"],
+        "Brown": ["Daraguyn", "Դարչնագույն"],
+        "Black": ["Sev", "Սև"],
+        "Gold": ["Voskeguyn", "Ոսկեգույն"],
+        "Spotted": ["Xayt", "Խայտ"],
+        "Red": ["Karmir", "Կարմիր"]
       },
       "Machines": {
         "FeedTrough": ["Keraman", "Կերաման"],
         "WaterTrough": ["Jraman", "Ջրաման"],
         "Well": ["Jrhor", "Ջրհոր"],
         "Basket": ["Zambyux", "Զամբյուղ"],
-        "Stall": ["Krpak", "Կրպակ"]
+        "Stall": ["Krpak", "Կրպակ"],
+        "Dairy": ["Katnatun", "Կաթնատուն"],
+        "Stove": ["Vararan", "Վառարան"]
       }
     }
   }

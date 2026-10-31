@@ -211,6 +211,32 @@ export class SpriteBook {
     this.put('thing:Basket', wicker());
     this.put('thing:Stall', stall());
     this.put('icon:ranch', this.get('cow'));
+    this.put('goat', goat());
+    // coloured animals: 'hen:Brown', … (the plain sprite is the first colour)
+    const coat = { White: null, Spotted: null, Brown: ['#a8683f', '#c98d5f', '#7a4527'], Black: ['#3a3a44', '#55555f', '#26262c'], Gold: ['#f2b632', '#ffd96a', '#c98a14'], Red: ['#b4462c', '#d06a4e', '#8a2f1c'] };
+    const coatOf = { hen: [PAL.white, PAL.white, PAL.lightGrey], cow: [PAL.white, PAL.white, PAL.lightGrey], goat: [PAL.sand, PAL.sand, PAL.tan] };
+    for (const [animal, make] of Object.entries({ hen, cow, goat })) {
+      for (const [color, to] of Object.entries(coat)) {
+        if (!to) this.put(`${animal}:${color}`, this.get(animal));
+        else this.put(`${animal}:${color}`, recolored(make(), { [coatOf[animal][0]]: to[0], [coatOf[animal][2]]: to[2] }));
+      }
+    }
+    this.put('item:GoatMilk', recolored(milkCan(), { [PAL.sky]: PAL.lightGreen }));
+    this.put('item:Matsun', matsun());
+    this.put('item:Cheese', cheese());
+    this.put('item:Butter', butter());
+    this.put('item:Omelet', omelet());
+    this.put('item:Manure', manure());
+    this.put('item:Medicine', medicine());
+    this.put('item:Plank', plank());
+    this.put('item:Nazook', nazook());
+    this.put('thing:Dairy', dairy());
+    this.put('thing:Stove', stove());
+    this.put('weeds', weeds());
+    this.put('brokenBoard', brokenBoard());
+    this.put('ruinShed', ruinShed());
+
+    icons(this);
 
     // --- hats for the drone (seen from above) and for the leaderboard avatars (from the side)
     const hats = (settings && settings.hats) || {};
@@ -1155,6 +1181,841 @@ function stall() {
   p.shade(PAL.lightBrown, PAL.tan, PAL.brown);
   p.disc(5, 9, 1.4, '#f4ead0').disc(7.5, 9, 1.4, '#f4ead0');
   p.rect(10, 7, 3, 3, PAL.lightGrey);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// --- ruins of the ranch areas not bought yet
+
+function weeds() {
+  const p = new Pixels();
+  p.art(0, 0, [
+    '................',
+    '................',
+    '................',
+    '.......D........',
+    '...D...DL...D...',
+    '...DL.DD...DL...',
+    '....D.D.L..D....',
+    '.L..DDD.L.DD..D.',
+    '.LL..DD.LDD..DL.',
+    '..L..DD.DD..DD..',
+    '..DL.D.DD..DD...',
+    '...DDD.D..DD....',
+    '....DD.DDDD.....',
+    '.....DDDDD......',
+    '................',
+    '................',
+  ], { D: PAL.darkGreen, L: PAL.paleGreen });
+  return p;
+}
+
+function brokenBoard() {
+  const p = new Pixels();
+  p.polygon([[1, 9], [12, 5], [13, 7.5], [2, 11.5]], PAL.lightBrown);
+  p.polygon([[9, 12], [15, 10.5], [15.5, 12.5], [9.5, 14]], PAL.tan);
+  p.shade(PAL.lightBrown, PAL.tan, PAL.brown);
+  p.set(4, 9, PAL.darkBrown).set(10, 7, PAL.darkBrown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// A shed whose roof fell in: grey walls, a broken dark roof and a hole for a door.
+function ruinShed() {
+  const p = new Pixels();
+  p.rect(2, 7, 12, 8, PAL.lightBrown);
+  p.shade(PAL.lightBrown, PAL.tan, PAL.brown);
+  for (let x = 4; x < 14; x += 3) p.line(x, 8, x, 14, PAL.brown);
+  p.polygon([[1, 7.5], [6, 2], [9, 5], [8, 7.5]], PAL.soilDark);
+  p.polygon([[10, 7.5], [12, 4], [15, 7.5]], PAL.soil);
+  p.rect(6, 10, 4, 5, PAL.darkBrown);
+  p.line(9, 7, 11, 9, PAL.darkBrown);
+  p.set(12, 10, PAL.darkGreen).set(13, 13, PAL.darkGreen).set(3, 13, PAL.darkGreen);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// --- icons for the interface (buttons, chips, the leaderboard, stickers, festivals) --------------
+// Every picture the game shows next to a label; the name is what config files write in "icon".
+
+function icons(book) {
+  const put = (name, p) => book.put(`icon:${name}`, p);
+  const same = (name, sprite) => book.put(`icon:${name}`, book.get(sprite));
+  same('farm', 'item:Hay');
+  same('storage', 'thing:Basket');
+  same('star', 'item:Star');
+  same('research', 'item:Weird_Substance');
+  same('book', 'fest:book');
+  same('egg', 'item:Egg');
+  same('milk', 'item:Milk');
+  same('dram', 'item:Dram');
+  same('fish', 'fish:Carp');
+  same('iceFish', 'fish:Whitefish');
+  same('goldFish', 'fish:Golden_Fish');
+  same('gold', 'item:Gold');
+  same('paintedEgg', 'fest:egg');
+  same('drop', 'fest:drop');
+  same('tulip', 'fest:flower');
+  same('gift', 'fest:gift');
+  same('dish', 'item:Gata');
+  same('dino', 'dinoHead');
+  same('tree3', 'tree3');
+  same('cactus2', 'item:Cactus');
+  same('pumpkin2', 'pumpkinIcon');
+  same('hen', 'hen');
+  same('cow', 'cow');
+  same('trough', 'thing:FeedTrough');
+  same('water2', 'thing:WaterTrough');
+  same('stove', 'thing:Stove');
+  same('medicine', 'item:Medicine');
+  same('cheese', 'item:Cheese');
+  put('village', house());
+  put('gear', gear());
+  put('player', person());
+  put('tv', tv());
+  put('code', codeIcon());
+  put('flame', flame());
+  put('crown', crown());
+  put('cap', gradCap());
+  put('medal1', book.get('item:Medal'));
+  put('medal2', recolored(medal(), { [PAL.yellow]: PAL.lightGrey, [PAL.brightYellow]: PAL.white, [PAL.amber]: PAL.grey }));
+  put('medal3', recolored(medal(), { [PAL.yellow]: PAL.lightBrown, [PAL.brightYellow]: PAL.tan, [PAL.amber]: PAL.brown }));
+  put('tag', tag());
+  put('door', door());
+  put('bulb', bulb());
+  put('js', jsIcon());
+  put('sprout', sprout());
+  put('herb', herb());
+  put('scroll', scroll());
+  put('compass', compass());
+  put('bug', bug());
+  put('eye', eye());
+  put('cart', cart());
+  put('board', clipboard());
+  put('soon', cone());
+  put('lock', padlock());
+  put('check', check());
+  put('party', party());
+  put('confetti', confettiIcon());
+  put('blossom', blossom());
+  put('leaf', autumnLeaf());
+  put('snowflake', snowflake());
+  put('sun', sun());
+  put('rain', cloud(PAL.lightGrey, (p) => [[5, 12], [8, 13], [11, 12]].forEach(([x, y]) => p.line(x, y, x - 1, y + 2, PAL.sky))));
+  put('storm', cloud(PAL.grey, (p) => p.polygon([[9, 9], [6, 13], [8, 13], [6, 16], [11, 11], [9, 11], [10, 9]], PAL.yellow)));
+  put('snow', cloud(PAL.lightGrey, (p) => [[5, 12], [8, 14], [11, 12]].forEach(([x, y]) => p.set(x, y, PAL.white).set(x, y + 1, PAL.sky))));
+  put('tractor', tractor());
+  put('gem', gem());
+  put('fir', fir());
+  put('loop', loopIcon());
+  put('branch', branch());
+  put('box', box());
+  put('puzzle', puzzle());
+  put('sliders', sliders());
+  put('dolls', dolls());
+  put('folder', folder());
+  put('inbox', inbox());
+  put('key', key());
+  put('flip', flip());
+  put('workshop', workshop());
+  same('goat', 'goat');
+  put('sheep', sheep());
+  put('bee', bee());
+  put('buffalo', buffalo());
+  put('rabbit', rabbit());
+  put('market', book.get('thing:Stall'));
+  put('bigger', book.get('icon:expand'));
+  put('hands', handsIcon());
+  put('broom', broom());
+  put('heart', heart());
+  put('wagon', wagon());
+  put('bell', bell());
+  for (const [name, skin, hair, extra] of [
+    ['granny', '#f2c6a0', PAL.lightGrey, 'scarf'],
+    ['cook', '#e8b48a', PAL.darkBrown, 'cook'],
+    ['fisher', '#d9a27a', PAL.brown, 'hat'],
+    ['girl', '#f2c6a0', PAL.amber, 'bows'],
+  ]) book.put(`face:${name}`, face(skin, hair, extra));
+}
+
+function recolored(p, map) {
+  for (const [from, to] of Object.entries(map)) p.recolor(from, to);
+  return p;
+}
+
+function house() {
+  const p = new Pixels();
+  p.rect(3, 8, 10, 7, PAL.sand);
+  p.shade(PAL.sand, PAL.white, PAL.tan);
+  p.polygon([[1, 8.5], [8, 2], [15, 8.5]], PAL.brightRed);
+  p.shade(PAL.brightRed, null, PAL.red);
+  p.rect(11, 3, 2, 3, PAL.brown);
+  p.rect(7, 10, 3, 5, PAL.lightBrown);
+  p.rect(4, 10, 2, 2, PAL.sky);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function gear() {
+  const p = new Pixels();
+  for (let i = 0; i < 8; i++) {
+    const a = (i * Math.PI) / 4;
+    p.disc(8 + Math.cos(a) * 5.6, 8 + Math.sin(a) * 5.6, 1.5, PAL.grey);
+  }
+  p.disc(8, 8, 5, PAL.grey);
+  p.shade(PAL.grey, PAL.lightGrey, PAL.darkGrey);
+  p.disc(8, 8, 1.8, PAL.darkGrey);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function person() {
+  const p = new Pixels();
+  p.polygon([[2.5, 15.5], [4, 10], [12, 10], [13.5, 15.5]], PAL.blue);
+  p.shade(PAL.blue, PAL.sky, PAL.navy);
+  p.disc(8, 6, 3.3, '#f2c6a0');
+  p.rect(5, 2, 6, 2, PAL.brown);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function tv() {
+  const p = new Pixels();
+  p.line(5, 1, 7, 4, PAL.darkGrey).line(11, 1, 9, 4, PAL.darkGrey);
+  p.rect(1, 4, 14, 10, PAL.lightBrown);
+  p.shade(PAL.lightBrown, PAL.tan, PAL.brown);
+  p.rect(2, 5, 9, 8, PAL.sky);
+  p.rect(3, 6, 3, 2, PAL.pale);
+  p.disc(13, 7, 0.8, PAL.yellow).disc(13, 10, 0.8, PAL.darkGrey);
+  p.rect(3, 14, 2, 1, PAL.brown).rect(11, 14, 2, 1, PAL.brown);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function codeIcon() {
+  const p = new Pixels();
+  p.rect(1, 2, 14, 11, PAL.navy);
+  p.rect(6, 13, 4, 1, PAL.grey).rect(4, 14, 8, 1, PAL.grey);
+  p.line(5, 5, 3, 7, PAL.yellow).line(3, 7, 5, 9, PAL.yellow);
+  p.line(9, 4, 7, 10, PAL.white);
+  p.line(11, 5, 13, 7, PAL.yellow).line(13, 7, 11, 9, PAL.yellow);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function flame() {
+  const p = new Pixels();
+  p.polygon([[8, 0.5], [13, 7], [13, 12], [9.5, 15.5], [6.5, 15.5], [3, 12], [3, 7], [5.5, 9], [6, 4]], PAL.orange);
+  p.polygon([[8.5, 6], [11, 10.5], [10, 14.5], [6, 14.5], [5.5, 11], [7, 12]], PAL.yellow);
+  p.set(8, 13, PAL.brightYellow).set(8, 12, PAL.brightYellow);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function crown() {
+  const p = new Pixels();
+  p.polygon([[1.5, 13.5], [1.5, 4.5], [5, 8.5], [8, 2.5], [11, 8.5], [14.5, 4.5], [14.5, 13.5]], PAL.yellow);
+  p.shade(PAL.yellow, PAL.brightYellow, PAL.amber);
+  p.rect(2, 11, 12, 2, PAL.amber);
+  p.set(5, 11, PAL.brightRed).set(8, 11, PAL.sky).set(11, 11, PAL.brightRed);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function gradCap() {
+  const p = new Pixels();
+  p.rect(4, 8, 8, 4, PAL.darkGrey);
+  p.polygon([[0.5, 6.5], [8, 3], [15.5, 6.5], [8, 10]], PAL.outline);
+  p.polygon([[2, 6.5], [8, 4], [14, 6.5], [8, 9]], PAL.darkGrey);
+  p.line(13, 7, 13, 12, PAL.yellow).rect(12, 12, 2, 2, PAL.yellow);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function tag() {
+  const p = new Pixels();
+  p.polygon([[1.5, 2.5], [9, 2.5], [15, 8.5], [8.5, 15], [1.5, 8]], PAL.yellow);
+  p.shade(PAL.yellow, PAL.brightYellow, PAL.amber);
+  p.disc(5, 6, 1.2, PAL.white);
+  p.line(7, 9, 10, 12, PAL.amber);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function door() {
+  const p = new Pixels();
+  p.rect(3, 1, 10, 14, PAL.darkBrown);
+  p.rect(4, 2, 8, 13, PAL.lightBrown);
+  p.shade(PAL.lightBrown, PAL.tan, PAL.brown);
+  p.line(8, 3, 8, 14, PAL.brown);
+  p.disc(10.5, 9, 0.8, PAL.yellow);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function bulb() {
+  const p = new Pixels();
+  p.disc(8, 6.5, 5, PAL.yellow);
+  p.rect(6, 10, 4, 2, PAL.yellow);
+  p.shade(PAL.yellow, PAL.brightYellow, PAL.amber);
+  p.rect(6, 12, 4, 2, PAL.lightGrey);
+  p.rect(7, 14, 2, 1, PAL.grey);
+  p.set(6, 4, PAL.white).set(5, 5, PAL.white);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function jsIcon() {
+  const p = new Pixels();
+  p.rect(1, 1, 14, 14, PAL.yellow);
+  p.art(3, 6, [
+    '..JJ.SSSS',
+    '...J.S...',
+    '...J.SSSS',
+    'J..J....S',
+    '.JJ..SSSS',
+  ], { J: PAL.outline, S: PAL.outline });
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function sprout() {
+  const p = new Pixels();
+  p.ellipse(8, 14, 6, 1.6, PAL.soil);
+  p.line(8, 7, 8, 13, PAL.green);
+  p.ellipse(5, 7, 3.2, 1.8, PAL.lightGreen).ellipse(11, 5.5, 3.2, 1.8, PAL.lightGreen);
+  p.shade(PAL.lightGreen, PAL.paleGreen, PAL.green);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function herb() {
+  const p = new Pixels();
+  p.line(8, 4, 8, 15, PAL.green);
+  for (const [x, y] of [[5, 6], [11, 5], [5, 10], [11, 9], [8, 2.5]]) p.ellipse(x, y, 2.6, 1.5, PAL.lightGreen);
+  p.shade(PAL.lightGreen, PAL.paleGreen, PAL.green);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function scroll() {
+  const p = new Pixels();
+  p.rect(3, 3, 10, 10, PAL.sand);
+  p.rect(2, 1.5, 12, 2, PAL.tan).rect(2, 12.5, 12, 2, PAL.tan);
+  for (let y = 5; y < 12; y += 2) p.line(5, y, y % 4 ? 10 : 11, y, PAL.lightBrown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function compass() {
+  const p = new Pixels();
+  p.disc(8, 8, 7, PAL.yellow);
+  p.disc(8, 8, 5.4, PAL.white);
+  p.polygon([[8, 3], [10, 8], [6, 8]], PAL.brightRed);
+  p.polygon([[8, 13], [10, 8], [6, 8]], PAL.darkGrey);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function bug() {
+  const p = new Pixels();
+  for (const y of [7, 10, 13]) p.line(2, y - 1, 14, y + 1, PAL.outline);
+  p.ellipse(8, 9.5, 5, 5.5, PAL.brightRed);
+  p.shade(PAL.brightRed, null, PAL.red);
+  p.line(8, 5, 8, 15, PAL.outline);
+  p.disc(8, 3.5, 2.4, PAL.outline);
+  for (const [x, y] of [[5.5, 8], [10.5, 8], [5.5, 12], [10.5, 12]]) p.disc(x, y, 0.8, PAL.outline);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function eye() {
+  const p = new Pixels();
+  p.ellipse(8, 8, 7, 4.2, PAL.white);
+  p.disc(8, 8, 2.8, PAL.sky);
+  p.disc(8, 8, 1.3, PAL.outline);
+  p.set(7, 7, PAL.white);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function cart() {
+  const p = new Pixels();
+  p.line(0, 2, 2, 2, PAL.darkGrey).line(2, 2, 4, 10, PAL.darkGrey);
+  p.polygon([[3, 4], [15, 4], [13, 10], [4.5, 10]], PAL.yellow);
+  p.shade(PAL.yellow, PAL.brightYellow, PAL.amber);
+  for (const x of [6, 9, 12]) p.line(x, 5, x - 0.5, 9, PAL.amber);
+  p.line(4, 12, 13, 12, PAL.darkGrey);
+  p.disc(5.5, 14, 1.3, PAL.darkGrey).disc(12, 14, 1.3, PAL.darkGrey);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function clipboard() {
+  const p = new Pixels();
+  p.rect(2, 2, 12, 14, PAL.lightBrown);
+  p.rect(3, 4, 10, 11, PAL.white);
+  for (let y = 6; y < 14; y += 2) p.line(5, y, 11, y, PAL.lightGrey);
+  p.rect(5, 1, 6, 3, PAL.grey);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function cone() {
+  const p = new Pixels();
+  p.polygon([[7, 1], [9, 1], [12.5, 13], [3.5, 13]], PAL.orange);
+  p.rect(5, 5, 6, 2, PAL.white).rect(4, 9, 8, 2, PAL.white);
+  p.rect(2, 13, 12, 2, PAL.orange);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function padlock() {
+  const p = new Pixels();
+  p.rect(4, 2, 2, 6, PAL.grey).rect(10, 2, 2, 6, PAL.grey).rect(5, 1, 6, 2, PAL.grey);
+  p.rect(2, 7, 12, 8, PAL.yellow);
+  p.shade(PAL.yellow, PAL.brightYellow, PAL.amber);
+  p.disc(8, 10, 1.2, PAL.darkBrown).rect(7.5, 10, 1, 3, PAL.darkBrown);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function check() {
+  const p = new Pixels();
+  for (const d of [0, 1, 2]) p.line(2, 8 + d, 6, 12 + d, PAL.lightGreen).line(6, 12 + d, 13, 4 + d, PAL.lightGreen);
+  p.outline(PAL.deepGreen);
+  return p;
+}
+
+function party() {
+  const p = new Pixels();
+  p.polygon([[1, 15], [4.5, 5], [11, 11.5]], PAL.yellow);
+  p.line(3, 11, 6, 13, PAL.brightRed).line(4, 8, 8.5, 12, PAL.brightRed);
+  for (const [x, y, c] of [[9, 3, PAL.pink], [13, 5, PAL.sky], [11, 1, PAL.lightGreen], [14, 9, PAL.brightRed], [7, 2, PAL.amber]]) p.rect(x, y, 2, 1, c);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function confettiIcon() {
+  const p = new Pixels();
+  const c = [PAL.pink, PAL.sky, PAL.lightGreen, PAL.brightRed, PAL.yellow, PAL.purple];
+  const at = [[2, 2], [7, 1], [12, 3], [4, 6], [9, 5], [14, 7], [1, 10], [6, 9], [11, 10], [3, 13], [8, 13], [13, 13]];
+  at.forEach(([x, y], i) => p.rect(x, y, i % 2 ? 2 : 1, i % 2 ? 1 : 2, c[i % c.length]));
+  return p;
+}
+
+function blossom() {
+  const p = new Pixels();
+  for (let i = 0; i < 5; i++) {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+    p.disc(8 + Math.cos(a) * 3.8, 8 + Math.sin(a) * 3.8, 2.8, '#f7a8c4');
+  }
+  p.disc(8, 8, 1.8, PAL.yellow);
+  p.outline(PAL.pink);
+  return p;
+}
+
+function autumnLeaf() {
+  const p = new Pixels();
+  p.polygon([[8, 1], [11, 4], [14.5, 4], [13, 8], [15, 11], [10, 11], [8, 14], [6, 11], [1, 11], [3, 8], [1.5, 4], [5, 4]], PAL.orange);
+  p.shade(PAL.orange, PAL.amber, PAL.brightRed);
+  p.line(8, 4, 8, 15, PAL.brown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function snowflake() {
+  const p = new Pixels();
+  p.line(8, 1, 8, 15, PAL.white).line(2, 4, 14, 12, PAL.white).line(2, 12, 14, 4, PAL.white);
+  for (const [x, y] of [[8, 3], [8, 13]]) p.line(x - 2, y - (y < 8 ? 1 : -1), x + 2, y - (y < 8 ? 1 : -1), PAL.white);
+  p.disc(8, 8, 1.4, PAL.pale);
+  p.outline(PAL.sky);
+  return p;
+}
+
+function sun() {
+  const p = new Pixels();
+  for (let i = 0; i < 8; i++) {
+    const a = (i * Math.PI) / 4;
+    p.line(8 + Math.cos(a) * 5, 8 + Math.sin(a) * 5, 8 + Math.cos(a) * 7, 8 + Math.sin(a) * 7, PAL.amber);
+  }
+  p.disc(8, 8, 4.2, PAL.yellow);
+  p.shade(PAL.yellow, PAL.brightYellow, PAL.amber);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function cloud(color, below) {
+  const p = new Pixels();
+  p.disc(5, 7.5, 3, color).disc(9, 5.5, 3.8, color).disc(12, 8, 2.6, color).rect(3, 8, 10, 2.5, color);
+  p.shade(color, PAL.white, PAL.grey);
+  p.outline(PAL.outline);
+  below(p);
+  return p;
+}
+
+function tractor() {
+  const p = new Pixels();
+  p.rect(2, 7, 10, 4, PAL.brightRed);
+  p.rect(7, 3, 4, 5, PAL.brightRed);
+  p.rect(8, 4, 2, 2, PAL.sky);
+  p.rect(3, 4, 1, 3, PAL.darkGrey);
+  p.shade(PAL.brightRed, null, PAL.red);
+  p.disc(10, 12, 3.2, PAL.darkGrey).disc(10, 12, 1.2, PAL.lightGrey);
+  p.disc(4, 13, 2, PAL.darkGrey);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function gem() {
+  const p = new Pixels();
+  p.polygon([[4, 2.5], [12, 2.5], [15, 6.5], [8, 15], [1, 6.5]], PAL.cyan);
+  p.polygon([[4, 2.5], [12, 2.5], [15, 6.5], [1, 6.5]], PAL.pale);
+  p.line(5.5, 6.5, 8, 14, PAL.sky).line(10.5, 6.5, 8, 14, PAL.sky);
+  p.outline(PAL.navy);
+  return p;
+}
+
+function fir() {
+  const p = new Pixels();
+  p.rect(7, 13, 2, 3, PAL.brown);
+  for (const [y, w] of [[3, 3], [6, 5], [9, 7]]) p.polygon([[8, y - 2], [8 + w, y + 4], [8 - w, y + 4]], PAL.green);
+  p.shade(PAL.green, PAL.lightGreen, PAL.darkGreen);
+  for (const [x, y, c] of [[6, 7, PAL.brightRed], [10, 10, PAL.yellow], [5, 11, PAL.sky]]) p.set(x, y, c);
+  p.set(8, 0, PAL.yellow).set(8, 1, PAL.yellow);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function loopIcon() {
+  const p = new Pixels();
+  p.disc(8, 8, 6.2, PAL.sky);
+  p.disc(8, 8, 3.6, null);
+  p.rect(9, 0, 7, 8, null);
+  p.polygon([[9, 1], [14.5, 4.5], [9, 8]], PAL.sky);
+  p.outline(PAL.navy);
+  return p;
+}
+
+function branch() {
+  const p = new Pixels();
+  for (const d of [0, 1]) p.line(7 + d, 15, 7 + d, 8, PAL.lightGreen).line(7 + d, 8, 3 + d, 4, PAL.lightGreen).line(7 + d, 8, 11 + d, 4, PAL.lightGreen);
+  p.polygon([[1, 1.5], [6, 2], [2, 6]], PAL.lightGreen).polygon([[15, 1.5], [10, 2], [14, 6]], PAL.lightGreen);
+  p.outline(PAL.deepGreen);
+  return p;
+}
+
+function box() {
+  const p = new Pixels();
+  p.polygon([[1.5, 5], [8, 2], [14.5, 5], [8, 8]], PAL.tan);
+  p.polygon([[1.5, 5], [8, 8], [8, 15], [1.5, 12]], PAL.lightBrown);
+  p.polygon([[14.5, 5], [8, 8], [8, 15], [14.5, 12]], PAL.brown);
+  p.line(4.5, 3.5, 11, 6.5, PAL.sand);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function puzzle() {
+  const p = new Pixels();
+  p.rect(2, 5, 10, 10, PAL.sky);
+  p.disc(7, 4, 2, PAL.sky).disc(13, 10, 2, PAL.sky);
+  p.shade(PAL.sky, PAL.pale, PAL.blue);
+  p.outline(PAL.navy);
+  return p;
+}
+
+function sliders() {
+  const p = new Pixels();
+  for (const [y, x] of [[3, 5], [8, 11], [13, 7]]) {
+    p.line(1, y, 14, y, PAL.grey);
+    p.rect(x - 1, y - 2, 3, 5, PAL.yellow);
+  }
+  p.outline(PAL.outline);
+  return p;
+}
+
+function dolls() {
+  const p = new Pixels();
+  p.ellipse(5.5, 10, 4.5, 5.5, PAL.brightRed).disc(5.5, 4, 3, PAL.brightRed);
+  p.disc(5.5, 4.5, 1.8, '#f2c6a0');
+  p.ellipse(12, 12, 3, 3.6, PAL.yellow).disc(12, 7.8, 2, PAL.yellow);
+  p.set(12, 8, '#f2c6a0');
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function folder() {
+  const p = new Pixels();
+  p.rect(1, 3, 6, 3, PAL.amber);
+  p.rect(1, 5, 14, 10, PAL.yellow);
+  p.shade(PAL.yellow, PAL.brightYellow, PAL.amber);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function inbox() {
+  const p = new Pixels();
+  p.rect(1, 9, 14, 6, PAL.grey);
+  p.rect(4, 9, 8, 2, PAL.darkGrey);
+  p.rect(7, 1, 2, 5, PAL.sky).polygon([[4, 5], [12, 5], [8, 9.5]], PAL.sky);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function key() {
+  const p = new Pixels();
+  p.disc(4.5, 5, 3.5, PAL.yellow);
+  p.disc(4.5, 5, 1.4, null);
+  p.line(7, 7, 14, 14, PAL.yellow).line(7, 8, 13, 14, PAL.yellow);
+  p.rect(10, 12, 2, 2, PAL.yellow).rect(12, 10, 2, 2, PAL.yellow);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// A drone turning a somersault (the acrobat sticker).
+function flip() {
+  return recolored(loopIcon(), { [PAL.sky]: PAL.orange, [PAL.navy]: PAL.outlineBrown });
+}
+
+function workshop() {
+  const p = new Pixels();
+  p.rect(2, 6, 12, 9, PAL.lightBrown);
+  p.shade(PAL.lightBrown, PAL.tan, PAL.brown);
+  p.polygon([[1, 6.5], [8, 1.5], [15, 6.5]], PAL.grey);
+  p.rect(11, 1, 2, 4, PAL.darkGrey);
+  p.rect(6, 9, 4, 6, PAL.darkBrown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function goat() {
+  const p = new Pixels();
+  p.art(0, 0, [
+    '................',
+    '...........K.K..',
+    '..........KWWK..',
+    '..........WEWW..',
+    '..........WWWWP.',
+    '.W.......WWWW...',
+    '..WWWWWWWWWW....',
+    '..WWWWWWWWWW....',
+    '..WWWWWWWWWG....',
+    '..GWWWWWWWWG....',
+    '...W.W...W.W....',
+    '...W.W...W.W....',
+    '...K.K...K.K....',
+    '................',
+    '................',
+    '................',
+  ], { W: PAL.sand, G: PAL.tan, K: PAL.darkGrey, P: '#f4a6a6', E: PAL.outline });
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function sheep() {
+  const p = new Pixels();
+  for (const [x, y] of [[4, 8], [7, 6.5], [10, 7], [6, 10], [10, 10]]) p.disc(x, y, 3, PAL.white);
+  p.shade(PAL.white, null, PAL.lightGrey);
+  p.ellipse(13, 7, 2, 2.5, PAL.darkGrey);
+  p.rect(4, 12, 1, 3, PAL.darkGrey).rect(10, 12, 1, 3, PAL.darkGrey);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function bee() {
+  const p = new Pixels();
+  p.ellipse(6, 4.5, 3, 2.4, PAL.white).ellipse(10, 4.5, 3, 2.4, PAL.white);
+  p.ellipse(8, 10, 6, 4, PAL.yellow);
+  for (const x of [6, 9]) p.rect(x, 6, 2, 8, PAL.outline);
+  p.disc(13.5, 9.5, 1.6, PAL.outline);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function buffalo() {
+  const p = new Pixels();
+  p.ellipse(7, 9, 6, 4, PAL.darkGrey).disc(12.5, 7, 2.6, PAL.darkGrey);
+  p.line(11, 4, 10, 2, PAL.lightGrey).line(14, 4, 15, 2, PAL.lightGrey);
+  p.rect(3, 12, 1, 3, PAL.outline).rect(9, 12, 1, 3, PAL.outline);
+  p.set(13, 7, PAL.white);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function rabbit() {
+  const p = new Pixels();
+  p.ellipse(6.5, 3.5, 1.2, 3.2, PAL.white).ellipse(9.5, 3.5, 1.2, 3.2, PAL.white);
+  p.disc(8, 8, 3.4, PAL.white);
+  p.ellipse(8, 12.5, 4.5, 3, PAL.white);
+  p.shade(PAL.white, null, PAL.lightGrey);
+  p.set(6.5, 7.5, PAL.outline).set(9.5, 7.5, PAL.outline).set(8, 9, '#f4a6a6');
+  p.outline(PAL.outline);
+  return p;
+}
+
+function handsIcon() {
+  const p = new Pixels();
+  p.ellipse(5, 9, 4, 5, '#f2c6a0').ellipse(11, 9, 4, 5, '#f2c6a0');
+  p.shade('#f2c6a0', '#fbe0c8', '#d9a27a');
+  p.line(8, 5, 8, 14, '#d9a27a');
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function broom() {
+  const p = new Pixels();
+  p.line(12, 1, 7, 9, PAL.lightBrown).line(13, 1, 8, 9, PAL.lightBrown);
+  p.polygon([[5, 8], [10, 10], [8, 15.5], [1, 13]], PAL.yellow);
+  p.shade(PAL.yellow, null, PAL.amber);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function heart() {
+  const p = new Pixels();
+  p.disc(5, 6, 3.5, PAL.brightRed).disc(11, 6, 3.5, PAL.brightRed).polygon([[1.6, 7], [14.4, 7], [8, 14.5]], PAL.brightRed);
+  p.shade(PAL.brightRed, '#f7a8c4', PAL.red);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function wagon() {
+  const p = new Pixels();
+  p.rect(1, 5, 12, 6, PAL.lightBrown);
+  p.shade(PAL.lightBrown, PAL.tan, PAL.brown);
+  p.rect(2, 3, 10, 3, PAL.yellow);
+  p.line(13, 9, 15, 7, PAL.brown);
+  p.disc(4, 12.5, 2.3, PAL.darkBrown).disc(10, 12.5, 2.3, PAL.darkBrown);
+  p.outline(PAL.outline);
+  return p;
+}
+
+// A villager's face for the order lists: skin, hair and one thing that tells them apart.
+function face(skin, hair, extra) {
+  const p = new Pixels();
+  p.rect(3, 13, 10, 3, extra === 'cook' ? PAL.white : extra === 'fisher' ? PAL.green : PAL.purple);
+  p.disc(8, 8, 5, skin);
+  p.ellipse(8, 4.5, 5.5, 2.6, hair);
+  if (extra === 'scarf') p.ellipse(8, 4, 6.5, 3, PAL.brightRed).rect(2, 6, 2, 5, PAL.brightRed).rect(12, 6, 2, 5, PAL.brightRed);
+  if (extra === 'cook') p.rect(4, 0, 8, 4, PAL.white).rect(3, 3, 10, 1, PAL.lightGrey);
+  if (extra === 'hat') p.rect(3, 2, 10, 2, PAL.olive || PAL.darkGreen).rect(1, 4, 14, 1, PAL.darkGreen);
+  if (extra === 'bows') p.disc(3, 5, 1.6, PAL.pink).disc(13, 5, 1.6, PAL.pink);
+  p.set(6, 8, PAL.outline).set(10, 8, PAL.outline);
+  p.line(7, 11, 9, 11, PAL.soilLight);
+  if (extra === 'scarf') p.set(5, 7, PAL.grey).set(11, 7, PAL.grey);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// --- the workshop and its goods
+
+function matsun() {
+  const p = new Pixels();
+  p.polygon([[3, 6], [13, 6], [12, 14], [4, 14]], PAL.lightBrown);
+  p.shade(PAL.lightBrown, PAL.tan, PAL.brown);
+  p.ellipse(8, 6, 5, 1.8, PAL.white);
+  p.rect(4, 9, 8, 1, PAL.sand);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function cheese() {
+  const p = new Pixels();
+  p.polygon([[1.5, 9], [12, 4], [14.5, 9], [14.5, 13], [1.5, 13]], PAL.yellow);
+  p.shade(PAL.yellow, PAL.brightYellow, PAL.amber);
+  for (const [x, y] of [[5, 10], [10, 11], [12, 7]]) p.disc(x, y, 1, PAL.amber);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function butter() {
+  const p = new Pixels();
+  p.rect(2, 9, 12, 5, PAL.lightGrey);
+  p.polygon([[3, 9], [5, 5], [13, 5], [12, 9]], '#fff2a8');
+  p.rect(3, 7, 9, 2, '#fff2a8');
+  p.shade('#fff2a8', PAL.white, PAL.yellow);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function omelet() {
+  const p = new Pixels();
+  p.ellipse(8, 10, 7, 4, PAL.lightGrey);
+  p.ellipse(8, 9.5, 5.5, 3, '#fff2a8');
+  p.disc(7, 9, 1.8, PAL.yellow).disc(10, 10, 1.2, PAL.yellow);
+  p.set(5, 10, PAL.lightGreen).set(11, 8, PAL.lightGreen);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function manure() {
+  const p = new Pixels();
+  p.ellipse(8, 12, 6, 2.5, PAL.soilDark).ellipse(8, 9.5, 4.2, 2, PAL.soil).ellipse(8, 7.5, 2.4, 1.5, PAL.soilLight);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function medicine() {
+  const p = new Pixels();
+  p.rect(4, 5, 8, 10, PAL.white);
+  p.shade(PAL.white, null, PAL.lightGrey);
+  p.rect(5, 2, 6, 3, PAL.brightRed);
+  p.rect(7, 7, 2, 6, PAL.brightRed).rect(5, 9, 6, 2, PAL.brightRed);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function plank() {
+  const p = new Pixels();
+  p.polygon([[1, 10], [13, 3], [15, 6], [3, 13]], PAL.tan);
+  p.shade(PAL.tan, PAL.sand, PAL.lightBrown);
+  p.line(4, 10, 12, 5, PAL.lightBrown);
+  p.set(4, 11, PAL.darkGrey).set(12, 5, PAL.darkGrey);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function nazook() {
+  const p = new Pixels();
+  p.rect(1, 6, 14, 6, PAL.tan);
+  p.shade(PAL.tan, PAL.sand, PAL.lightBrown);
+  for (const x of [5, 10]) p.line(x, 6, x - 1, 11, PAL.lightBrown);
+  p.line(2, 9, 13, 9, '#fff2a8');
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// The dairy: a churn and a cheese press on a table.
+function dairy() {
+  const p = new Pixels();
+  p.rect(1, 11, 14, 2, PAL.lightBrown).rect(2, 13, 2, 3, PAL.brown).rect(12, 13, 2, 3, PAL.brown);
+  p.polygon([[3, 4], [7, 4], [7.5, 11], [2.5, 11]], PAL.tan);
+  p.shade(PAL.tan, PAL.sand, PAL.lightBrown);
+  p.line(5, 0, 5, 4, PAL.brown);
+  p.rect(9, 7, 5, 4, PAL.yellow).rect(9, 5, 5, 2, PAL.grey);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function stove() {
+  const p = new Pixels();
+  p.rect(2, 5, 12, 10, PAL.grey);
+  p.shade(PAL.grey, PAL.lightGrey, PAL.darkGrey);
+  p.rect(4, 9, 8, 4, PAL.darkGrey);
+  p.rect(5, 10, 6, 2, PAL.orange).set(7, 10, PAL.yellow);
+  p.rect(10, 1, 2, 4, PAL.darkGrey);
+  p.ellipse(6, 4.5, 3, 1, PAL.darkGrey);
+  p.outline(PAL.outline);
+  return p;
+}
+
+function bell() {
+  const p = new Pixels();
+  p.polygon([[8, 2], [12, 6], [13, 12], [3, 12], [4, 6]], PAL.yellow);
+  p.shade(PAL.yellow, PAL.brightYellow, PAL.amber);
+  p.rect(2, 12, 12, 2, PAL.amber);
+  p.disc(8, 14.5, 1.3, PAL.amber);
+  p.rect(7, 0, 2, 2, PAL.amber);
   p.outline(PAL.outlineBrown);
   return p;
 }

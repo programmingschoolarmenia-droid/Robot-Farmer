@@ -815,3 +815,16 @@
 .symbol-bar {
   display: none;
 }
+
+/* pictures from the sprite book next to labels (dom.js → icon) */
+img.ico-img {
+  width: 1.3em;
+  height: 1.3em;
+  image-rendering: pixelated;
+  vertical-align: -0.28em;
+  flex: none;
+}
+.btn img.ico-img {
+  width: 22px;
+  height: 22px;
+}

@@ -446,12 +446,17 @@ export class Game {
     const cfg = ((this.config.village || {}).boosts || {})[item];
     if (!cfg) return { ok: false, reason: 'notDish' };
     if (this.inventory.get(item) < 1) return { ok: false, reason: 'none' };
-    if (cfg.kind === 'growth') this.world.syncAll(t); // plants grew at the old speed up to now
     this.inventory.add(item, -1, 'eat');
-    const b = this.boosts[cfg.kind];
-    this.boosts[cfg.kind] = { item, multiplier: cfg.multiplier, until: Math.max(b ? b.until : 0, t) + cfg.seconds };
-    this.events.emit('boost', { kind: cfg.kind, item, until: this.boosts[cfg.kind].until });
+    this.addBoost(cfg.kind, item, cfg.multiplier, cfg.seconds, t);
     return { ok: true };
+  }
+
+  // A boost of `kind` for `seconds` of game time from t (eating or buying again adds more). item: its picture.
+  addBoost(kind, item, multiplier, seconds, t = this.time) {
+    if (kind === 'growth') this.world.syncAll(t); // plants grew at the old speed up to now
+    const b = this.boosts[kind];
+    this.boosts[kind] = { item, multiplier, until: Math.max(b ? b.until : 0, t) + seconds };
+    this.events.emit('boost', { kind, item, until: this.boosts[kind].until });
   }
 
   // Multiplier of an eaten dish's boost: 'speed' | 'growth' | 'goldenFish' (1 without one).

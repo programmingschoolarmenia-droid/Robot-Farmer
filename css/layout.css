@@ -609,7 +609,7 @@
   color: var(--ink-faint);
   font-size: 0.85rem;
 }
-/* 📺 season · weather (opens Bridgy's TV) */
+/* TV · season · weather (opens Bridgy's TV) */
 .calendar-chip {
   gap: 4px;
   padding: 2px 8px;
@@ -801,7 +801,7 @@
 }
 .ranch-shop-card {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
@@ -817,8 +817,12 @@
   opacity: 0.65;
 }
 .ranch-shop-icon {
-  font-size: 1.6rem;
   text-align: center;
+}
+.ranch-shop-icon img {
+  width: 36px;
+  height: 36px;
+  image-rendering: pixelated;
 }
 .ranch-shop-text {
   display: grid;

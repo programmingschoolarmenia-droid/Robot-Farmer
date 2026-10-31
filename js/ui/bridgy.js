@@ -1,6 +1,6 @@
 // Bridgy: the mascot's dialogs (portrait bottom-left + text box), lessons, hints,
 // error explanations, the help menu and quick reaction bubbles.
-import { h, highlightCode } from './dom.js';
+import { h, icon, highlightCode } from './dom.js';
 
 export class Bridgy {
   constructor({ app, codeKind, onShowLine, getHelpContext }) {
@@ -265,14 +265,14 @@ export class Bridgy {
   explainError(err, described) {
     const t = this.i18n.t;
     const nodes = [];
-    if (described.suggestion) nodes.push(h('div', { class: 'bridgy-suggest' }, '💡 ', described.suggestion));
+    if (described.suggestion) nodes.push(h('div', { class: 'bridgy-suggest' }, icon(this.app.sprites, 'bulb'), ' ', described.suggestion));
     if (described.where) {
       nodes.push(
         h(
           'div',
           { style: { display: 'flex', gap: '10px', alignItems: 'center' } },
           h('span', { class: 'bridgy-error-where' }, described.where),
-          err.loc && this.onShowLine ? h('button', { class: 'btn btn-sm', onclick: () => this.onShowLine(err) }, '👀 ', t('ui.showLine')) : null,
+          err.loc && this.onShowLine ? h('button', { class: 'btn btn-sm', onclick: () => this.onShowLine(err) }, icon(this.app.sprites, 'eye'), ' ', t('ui.showLine')) : null,
         ),
       );
     }
@@ -289,7 +289,7 @@ export class Bridgy {
     const tier = h('span', { class: 'bridgy-hint-tier' }, `${t('ui.hint')} ${hint.tier + 1}/${quest.hints.length}`);
     const page = { emotion: 'thinking', who, text: who && intro ? this.friendText(who, hint.text) : hint.text, node: tier };
     if (!hint.last) {
-      page.buttons = [{ label: `💡 ${t('ui.moreHint')}`, class: 'btn-gold', onClick: () => this.helpHint(true, who, false) }];
+      page.buttons = [{ label: [icon(this.app.sprites, 'bulb'), ` ${t('ui.moreHint')}`], class: 'btn-gold', onClick: () => this.helpHint(true, who, false) }];
     }
     this.say([page], { key: 'hint', replaceSame: true, interrupt: true });
   }
@@ -312,35 +312,36 @@ export class Bridgy {
     const ctx = this.getHelpContext();
     const q = ctx.quests.current();
     const friend = (id) => (!ctx.ranch && this.friend(id) ? id : undefined);
+    const label = (name, text) => [icon(this.app.sprites, name), ` ${text}`];
     const options = [
       {
-        label: `🧭 ${t('ui.helpWhatNow')}`,
+        label: label('compass', t('ui.helpWhatNow')),
         onClick: () => {
           const who = friend('nshan');
           const text = q ? `${q.title}. ${q.text}` : t('ui.allQuestsDone');
           this.say([{ emotion: 'happy', who, text: who ? this.friendText(who, text) : text }], { key: 'menu', replaceSame: true, interrupt: true });
         },
       },
-      { label: `💡 ${t('ui.helpHint')}`, onClick: () => this.helpHint(true, friend('erik')) },
+      { label: label('bulb', t('ui.helpHint')), onClick: () => this.helpHint(true, friend('erik')) },
       ctx.note && {
-        label: `📜 ${t('ui.helpNote')}`,
+        label: label('scroll', t('ui.helpNote')),
         onClick: () => {
           const who = this.friend('erik') ? 'erik' : undefined;
           this.say([{ emotion: 'thinking', who, text: who ? this.friendText(who, ctx.note.hint) : ctx.note.hint }], { key: 'menu', replaceSame: true, interrupt: true });
         },
       },
-      { label: `📖 ${t('ui.helpCommands')}`, onClick: () => this.openBook('commands') },
-      { label: `🟨 ${t('ui.helpJs')}`, onClick: () => this.openBook('js') },
-      !ctx.ranch && { label: `🌱 ${t('ui.helpPlants')}`, onClick: () => this.openBook('plants') },
-      ctx.hasNotes && { label: `📜 ${t('ui.helpNotes')}`, onClick: () => this.openBook('notes') },
+      { label: label('book', t('ui.helpCommands')), onClick: () => this.openBook('commands') },
+      { label: label('js', t('ui.helpJs')), onClick: () => this.openBook('js') },
+      !ctx.ranch && { label: label('sprout', t('ui.helpPlants')), onClick: () => this.openBook('plants') },
+      ctx.hasNotes && { label: label('scroll', t('ui.helpNotes')), onClick: () => this.openBook('notes') },
       {
-        label: `🐞 ${t('ui.helpLastError')}`,
+        label: label('bug', t('ui.helpLastError')),
         onClick: () => {
           if (ctx.lastError) ctx.explainLastError();
           else this.say([{ emotion: 'celebrating', text: t('ui.helpNoError') }], { key: 'menu', replaceSame: true, interrupt: true });
         },
       },
-      { label: `👋 ${t('ui.helpClose')}`, onClick: () => this.end() },
+      { label: t('ui.helpClose'), onClick: () => this.end() },
     ].filter(Boolean);
     this.say([{ emotion: 'happy', text: this.pick('helpIntro') || t('ui.helpButton'), options }], { key: 'menu', replaceSame: true, interrupt: true });
   }

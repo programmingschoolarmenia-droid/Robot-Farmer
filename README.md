@@ -28,7 +28,7 @@ step is needed.
 * **Change the game** (prices, speeds, plants, texts, Bridgy's lessons and quests): see
   [`config/README.md`](config/README.md).
 * **Prepare a lesson quickly:** set `"unlockAll": true` in `config/settings.json → dev`.
-* **The village** («🏘 Գյուղ», after the «Plant» research): students rebuild a ruined village
+* **The village** («Գյուղ», after the «Plant» research): students rebuild a ruined village
   building by building with the items they gather, villagers post 3 requests a day that pay
   ⭐ stars, and the repaired buildings unlock kitchen machines on the farm (mill, jam pot,
   tonir: flour, jam, lavash, gata, ghapama…), dishes that boost the drone, and greenhouse glass.
@@ -39,8 +39,8 @@ step is needed.
   hunt hidden objects with `hototel()` for festival hats. The School opens a weekly coding
   challenge on a test farm that is the same for everyone (fastest time wins, the top 3 get hats
   and 🏅 medals). Villagers also give secret code notes (`gtnel()` digs out their treasure), the
-  Profile has a sticker album, and «🌟 %» shows how much of the game a student has done.
-* **Bridgy's ranch** («🐄 Ռանչո», a research that appears after 70 research levels): a second
+  Profile has a sticker album, and the Perfection star (%) shows how much of the game a student has done.
+* **Bridgy's ranch** («Ռանչո», a research that appears after 70 research levels): a second
   world on its own screen (the farm waits meanwhile). Every area — the henhouse, the cowshed, the
   market — has its own drone and its own code tab; the big ▶ runs them all. Animals walk, get
   hungry, thirsty, dirty and sad, and give eggs or milk only when they are cared for, so the code
@@ -48,13 +48,17 @@ step is needed.
   `kendaniner()` lists them) and unloads everything in the basket. The market's drone sells for ֏
   at prices that change every day (the same for everyone), buys feed, brings hay from the farm
   (10 000 → 1 bale) and delivers villagers' orders; ֏ buys new areas, animals, bigger pens, drone
-  upgrades and the ranch commands in the 🛒 shop. Everything is in
-  [`config/ranch.json`](config/README.md) (goats, sheep and carpets, bees, buffalo, rabbits and
-  the workshop are «soon»).
+  upgrades and the ranch commands in the shop. The workshop makes matsun, cheese, butter and omelets
+  by hand; drones answer events with `erb()` (handlers run only when the drone is free, as in real
+  JavaScript) and share a board (`grel()` / `kardal()`); eggs hatch and happy cows get calves that
+  keep a parent's colour; dirt makes animals sick (medicine and `buzhel()`); goats butt the fence and
+  run away through holes (`norogel()` with a plank, `kapel()` brings them back); manure and goods go
+  to the farm with `tanel()`. Everything is in [`config/ranch.json`](config/README.md) (sheep and
+  carpets, bees, buffalo and rabbits are «soon»).
 * **Seasons, weather and the luck of the day** follow the real clock, the same for every
   student: with the default 15-minute seasons, each hour is spring (:00), summer (:15), autumn
   (:30) and winter (:45). Plants grow faster in their favourite season, rain waters the whole
-  farm, lightning makes a plant give ×3, and every day has its own luck. The 📺 button above the
+  farm, lightning makes a plant give ×3, and every day has its own luck. The TV button above the
   farm shows it all; see [`config/README.md`](config/README.md) → `calendar`.
 * **Accounts and the leaderboard:** students register with a username and a password.
   Their farm is saved in their account. The leaderboard's two dropdowns choose what (points for

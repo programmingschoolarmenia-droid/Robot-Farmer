@@ -1,5 +1,5 @@
 // Full-screen research tree (layout from config/research.json, shape like the user's photo).
-import { h, pixelImg, mobileQuery } from './dom.js';
+import { h, icon, pixelImg, mobileQuery } from './dom.js';
 import { formatCount } from '../core/util.js';
 
 const CARD_W = 100;
@@ -282,9 +282,9 @@ export class ResearchTree {
       parts.push(tagSection(t('ui.unlocksHats'), g.hats, (x) => i18n.hat(x)));
     }
     if (state === 'maxed') {
-      parts.push(h('div', { class: 'rd-note' }, '✅ ', t('ui.maxed')));
+      parts.push(h('div', { class: 'rd-note' }, icon(this.app.sprites, 'check'), ' ', t('ui.maxed')));
     } else if (state === 'soon') {
-      parts.push(h('div', { class: 'rd-note' }, '🚧 ', t('ui.soonHint')));
+      parts.push(h('div', { class: 'rd-note' }, icon(this.app.sprites, 'soon'), ' ', t('ui.soonHint')));
     } else {
       const cost = research.nextCost(n.id);
       const inv = this.game.inventory;
@@ -310,9 +310,9 @@ export class ResearchTree {
       );
       if (state === 'locked') {
         const names = (n.parents || []).filter((p) => research.level(p) === 0).map((p) => `«${research.node(p).name}»`);
-        if (names.length) parts.push(h('div', { class: 'rd-note' }, '🔒 ', t('ui.lockedNeed', { parents: names.join(', ') })));
+        if (names.length) parts.push(h('div', { class: 'rd-note' }, icon(this.app.sprites, 'lock'), ' ', t('ui.lockedNeed', { parents: names.join(', ') })));
         const have = research.totalLevels();
-        if (have < (n.minLevels || 0)) parts.push(h('div', { class: 'rd-note' }, '🔒 ', t('ui.lockedLevels', { n: n.minLevels, have })));
+        if (have < (n.minLevels || 0)) parts.push(h('div', { class: 'rd-note' }, icon(this.app.sprites, 'lock'), ' ', t('ui.lockedLevels', { n: n.minLevels, have })));
       }
       const btn = h(
         'button',

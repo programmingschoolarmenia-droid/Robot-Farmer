@@ -1,5 +1,5 @@
 // The main game screen: wires the engine to the farm view, editor, Bridgy and panels.
-import { h, pixelImg, mobileQuery, sizeFarm } from './dom.js';
+import { h, icon, pixelImg, mobileQuery, sizeFarm, CALENDAR_ICONS } from './dom.js';
 import { Game, SAVE_VERSION } from '../engine/game.js';
 import { QuestTracker } from '../engine/quests.js';
 import { FarmView } from './farmView.js';
@@ -22,7 +22,6 @@ import { SEASON_NAMES } from '../engine/calendar.js';
 import { nextFestival, lastFestival } from '../engine/festivals.js';
 import { weekTask, givePrize } from '../engine/challenge.js';
 
-const CALENDAR_ICONS = { Spring: '🌸', Summer: '🌻', Autumn: '🍂', Winter: '❄️', Sunny: '☀️', Rain: '🌧️', Storm: '⛈️', Heat: '🔥', Snow: '🌨️' };
 
 // Warnings Bridgy explains in a dialog the first time they happen.
 const TEACH_WARNINGS = new Set(['plant_wrongGround', 'plant_cost', 'plant_entityLocked', 'hatLocked', 'indexOutOfRange', 'notEnoughItem']);
@@ -101,19 +100,19 @@ export class GameScreen {
     // Phone tabs (hidden on wide screens by CSS); the storage tab repeats the research badge.
     this.tabBadge = h('span', { class: 'badge', hidden: true });
     this.tabButtons = [
-      ['farm', '🌾', t('ui.farm')],
+      ['farm', icon(app.sprites, 'farm'), t('ui.farm')],
       ['code', '</>', t('ui.codeTab')],
-      ['storage', '🧺', t('ui.inventory')],
-    ].map(([id, icon, label]) =>
-      h('button', { class: 'btn mobile-tab', dataset: { tab: id }, onclick: () => this.setTab(id) }, h('span', { class: 'ico' }, icon), label, id === 'storage' ? this.tabBadge : null),
+      ['storage', icon(app.sprites, 'storage'), t('ui.inventory')],
+    ].map(([id, ico, label]) =>
+      h('button', { class: 'btn mobile-tab', dataset: { tab: id }, onclick: () => this.setTab(id) }, h('span', { class: 'ico' }, ico), label, id === 'storage' ? this.tabBadge : null),
     );
     this.farmSizeLabel = h('span', { class: 'muted' });
     this.calendarChip = h('button', { class: 'btn btn-sm calendar-chip', title: t('ui.tvButton'), hidden: true, onclick: () => this.openTv() });
     this.boostChips = h('span', { class: 'boost-chips' });
     this.villageBadge = h('span', { class: 'badge', hidden: true });
     this.perfectLabel = h('span', { class: 'perfect-label' });
-    this.villageBtn = h('button', { class: 'btn village-button', hidden: true, onclick: () => this.openVillage() }, '🏘 ', t('ui.villageButton'), this.villageBadge);
-    this.ranchBtn = h('button', { class: 'btn ranch-button', hidden: true, onclick: () => this.openRanch() }, '🐄 ', t('ui.ranchButton'));
+    this.villageBtn = h('button', { class: 'btn village-button', hidden: true, onclick: () => this.openVillage() }, icon(app.sprites, 'village'), ' ', t('ui.villageButton'), this.villageBadge);
+    this.ranchBtn = h('button', { class: 'btn ranch-button', hidden: true, onclick: () => this.openRanch() }, icon(app.sprites, 'ranch'), ' ', t('ui.ranchButton'));
     this.farmStage = h('div', { class: 'farm-stage' });
     this.codePanel = h('section', { class: 'panel code-panel' });
     this.inventoryList = h('ul', { class: 'inventory-list' });
@@ -133,18 +132,18 @@ export class GameScreen {
           h('img', { src: app.config.bridgy.avatar || 'assets/bridgy/bridgy-head.png', alt: '' }),
           h('span', { class: 'btn-label' }, t('ui.helpButton')),
         ),
-        h('button', { class: 'btn btn-icon', title: t('ui.settingsButton'), onclick: () => this.openSettings() }, '⚙'),
-        h('button', { class: 'btn player-pill', title: t('ui.profileTitle'), onclick: () => this.openProfile() }, '👤', h('span', { class: 'btn-label' }, app.account.user.name), this.perfectLabel),
+        h('button', { class: 'btn btn-icon', title: t('ui.settingsButton'), onclick: () => this.openSettings() }, icon(app.sprites, 'gear')),
+        h('button', { class: 'btn player-pill', title: t('ui.profileTitle'), onclick: () => this.openProfile() }, icon(app.sprites, 'player'), h('span', { class: 'btn-label' }, app.account.user.name), this.perfectLabel),
       ),
       h(
         'main',
         { class: 'game-main' },
-        h('section', { class: 'panel farm-panel' }, h('div', { class: 'panel-head' }, '🌾 ', t('ui.farm'), h('span', { class: 'spacer' }), this.boostChips, this.calendarChip, this.farmSizeLabel), this.farmStage),
+        h('section', { class: 'panel farm-panel' }, h('div', { class: 'panel-head' }, icon(app.sprites, 'farm'), ' ', t('ui.farm'), h('span', { class: 'spacer' }), this.boostChips, this.calendarChip, this.farmSizeLabel), this.farmStage),
         this.codePanel,
         (this.sidePanel = h(
           'aside',
           { class: 'side-panel' },
-          h('section', { class: 'panel grow' }, h('div', { class: 'panel-head' }, '🧺 ', t('ui.inventory')), this.inventoryList),
+          h('section', { class: 'panel grow' }, h('div', { class: 'panel-head' }, icon(app.sprites, 'storage'), ' ', t('ui.inventory')), this.inventoryList),
           this.villageBtn,
           this.ranchBtn,
           this.researchBtn,
@@ -249,7 +248,7 @@ export class GameScreen {
   }
 
   updatePerfection() {
-    this.perfectLabel.textContent = `🌟 ${perfection(this.game).percent}%`;
+    this.perfectLabel.replaceChildren(icon(this.app.sprites, 'star'), ` ${perfection(this.game).percent}%`);
   }
 
   // ------------------------------------------------------------------ events
@@ -304,7 +303,7 @@ export class GameScreen {
     on('sticker', (e) => {
       const list = this.game.stickers.list.filter((s) => e.ids.includes(s.id));
       app.audio.play('unlock');
-      this.bridgy.toast(t('ui.stickerEarned', { list: list.map((s) => `${s.icon} ${s.name}`).join(', ') }), 7000);
+      this.bridgy.toast(t('ui.stickerEarned', { list: list.map((s) => s.name).join(', ') }), 7000);
     });
     on('questComplete', (e) => this.onQuestComplete(e));
     on('questProgress', () => {
@@ -402,7 +401,7 @@ export class GameScreen {
 
   // ------------------------------------------------------------------ village
 
-  // «🏘 Գյուղ» appears after its research (village.json → research); the badge counts requests that
+  // «Գյուղ» appears after its research (village.json → research); the badge counts requests that
   // can be done now (or shows ! when a building can get everything it still needs).
   updateVillageButton() {
     const game = this.game;
@@ -421,14 +420,14 @@ export class GameScreen {
 
   // ------------------------------------------------------------------ ranch
 
-  // «🐄 Ռանչո» appears with the ranch's research (research.json → grants.panels: ["ranch"]).
+  // «Ռանչո» appears with the ranch's research (research.json → grants.panels: ["ranch"]).
   updateRanchButton() {
     const shown = this.game.research.hasPanel('ranch');
     if (shown && this.ranchBtn.hidden && this.first('ranchNew')) this.bridgy.toast(this.app.i18n.t('ui.ranchNew'), 7000);
     this.ranchBtn.hidden = !shown;
   }
 
-  // The ranch's screen: only the open world runs, so the farm waits (no frames, no keys) until «🌾 Ֆերմա».
+  // The ranch's screen: only the open world runs, so the farm waits (no frames, no keys) until «Ֆերմա».
   openRanch() {
     if (this.ranchScreen || this.challenge) return;
     this.villageView.close();
@@ -537,7 +536,7 @@ export class GameScreen {
     this.save();
   }
 
-  // Chips with the eaten dishes' boosts and their seconds left, next to 📺.
+  // Chips with the eaten dishes' boosts and their seconds left, next to the TV chip.
   updateBoostChips() {
     const game = this.game;
     this.boostChips.replaceChildren(
@@ -549,11 +548,12 @@ export class GameScreen {
 
   // ------------------------------------------------------------------ calendar (seasons, weather, luck)
 
-  // «📺 🍂 Աշուն 🌧️» in the farm panel's head; it opens Bridgy's TV.
+  // TV, season and weather pictures in the farm panel's head; it opens Bridgy's TV.
   updateCalendarChip() {
     const s = this.game.calendar.state;
     this.calendarChip.hidden = !s;
-    if (s) this.calendarChip.replaceChildren(`📺 ${CALENDAR_ICONS[s.season]}`, h('span', { class: 'btn-label' }, this.app.i18n.t(`seasons.${s.season}`)), CALENDAR_ICONS[s.weather]);
+    const ico = (name) => icon(this.app.sprites, name);
+    if (s) this.calendarChip.replaceChildren(ico('tv'), ico(CALENDAR_ICONS[s.season]), h('span', { class: 'btn-label' }, this.app.i18n.t(`seasons.${s.season}`)), ico(CALENDAR_ICONS[s.weather]));
   }
 
   // The plants that grow fast in a season (settings.json → entities.X.seasons).
@@ -569,7 +569,7 @@ export class GameScreen {
     const t = this.app.i18n.t;
     const crops = this.fastCrops(season);
     const name = t(`seasons.${season}`);
-    const text = `${CALENDAR_ICONS[season]} ${crops ? t('ui.seasonStart', { season: name, crops }) : t('ui.seasonStartPlain', { season: name })}`;
+    const text = crops ? t('ui.seasonStart', { season: name, crops }) : t('ui.seasonStartPlain', { season: name });
     return season === 'Winter' ? `${text} ${t('ui.winterInfo')}` : text;
   }
 
@@ -580,7 +580,7 @@ export class GameScreen {
 
   weatherText(weather) {
     const t = this.app.i18n.t;
-    return `${CALENDAR_ICONS[weather]} ${t('ui.weatherFirst', { weather: t(`weathers.${weather}`), info: this.weatherInfo(weather) })}`;
+    return t('ui.weatherFirst', { weather: t(`weathers.${weather}`), info: this.weatherInfo(weather) });
   }
 
   // Bridgy announces today's luck once a day.
@@ -622,6 +622,7 @@ export class GameScreen {
   // Bridgy's TV: today's luck, the season and the weather with live countdowns.
   openTv() {
     const t = this.app.i18n.t;
+    const ico = (name) => icon(this.app.sprites, name);
     const body = h('div', { class: 'tv' });
     const render = () => {
       const s = this.game.calendar.state;
@@ -639,7 +640,7 @@ export class GameScreen {
           ? h(
               'div',
               { class: 'tv-row' },
-              h('b', {}, `🎉 ${fest.icon} ${fest.name}`),
+              h('b', {}, ico(fest.icon), ` ${fest.name}`),
               h('div', {}, this.game.festivals.active ? t('ui.festivalProgress', { n: this.game.festivals.count(fest.key), total, object: fest.objectName }) : t('ui.festivalNeedSquare')),
             )
           : '',
@@ -647,26 +648,26 @@ export class GameScreen {
         h(
           'div',
           { class: 'tv-row' },
-          h('b', {}, `${CALENDAR_ICONS[s.season]} ${t(`seasons.${s.season}`)}`),
-          next(s.seasonEnds, `${CALENDAR_ICONS[nextSeason]} ${t(`seasons.${nextSeason}`)}`),
+          h('b', {}, ico(CALENDAR_ICONS[s.season]), ` ${t(`seasons.${s.season}`)}`),
+          next(s.seasonEnds, t(`seasons.${nextSeason}`)),
           crops ? h('div', {}, t('ui.tvFast', { crops })) : '',
           s.season === 'Winter' ? h('div', {}, t('ui.winterInfo')) : '',
         ),
         h(
           'div',
           { class: 'tv-row' },
-          h('b', {}, `${CALENDAR_ICONS[s.weather]} ${t(`weathers.${s.weather}`)}`),
-          next(s.weatherEnds, `${CALENDAR_ICONS[s.next]} ${t(`weathers.${s.next}`)}`),
+          h('b', {}, ico(CALENDAR_ICONS[s.weather]), ` ${t(`weathers.${s.weather}`)}`),
+          next(s.weatherEnds, t(`weathers.${s.next}`)),
           h('div', {}, this.weatherInfo(s.weather)),
         ),
         recipe ? h('div', { class: 'tv-row' }, h('b', {}, t('ui.tvRecipe')), h('div', {}, `${t(`machines.${recipe.machine}`)}՝ ${recipeText(this.app.i18n, recipe.item, recipe)}`)) : '',
-        coming ? h('div', { class: 'muted' }, t('ui.festivalNext', { icon: coming.icon, name: coming.name, n: coming.inDays })) : '',
+        coming ? h('div', { class: 'muted' }, t('ui.festivalNext', { name: coming.name, n: coming.inDays })) : '',
         h('p', { class: 'muted tv-note' }, t('ui.tvSame')),
       );
     };
     render();
     const timer = setInterval(render, 1000);
-    openModal({ title: `📺 ${t('ui.tvTitle')}`, body, className: 'tv-modal', onClose: () => clearInterval(timer) });
+    openModal({ title: [ico('tv'), ` ${t('ui.tvTitle')}`], body, className: 'tv-modal', onClose: () => clearInterval(timer) });
   }
 
   explainError(err) {
@@ -903,7 +904,7 @@ export class GameScreen {
     if (index > this.tier) {
       this.app.audio.play('quest');
       if (this.prefs.animations !== false && !this.prefs.lowGraphics) this.app.confetti.burst(window.innerWidth / 2, window.innerHeight / 3, 90);
-      this.bridgy.toast(this.app.i18n.t('ui.tierUp', { icon: tier.icon, name: tier.name }), 6000);
+      this.bridgy.toast(this.app.i18n.t('ui.tierUp', { name: tier.name }), 6000);
     }
     this.tier = index;
   }

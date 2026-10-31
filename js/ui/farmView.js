@@ -1,12 +1,12 @@
 // Draws the farm on a canvas: meadow, fence, ground, plants, drones and juicy effects.
-import { h } from './dom.js';
+import { h, icon } from './dom.js';
 import { formatCount } from '../core/util.js';
 
 const MAX_TILE_CSS = 80;
 const MEADOW_TILE_CSS = 48;
 const SWAY = new Set(['Grass', 'Bush', 'Tree', 'Carrot', 'Sunflower']);
 // Colour laid over the meadow and the ground in each season (spring keeps the plain colours).
-const SEASON_TINT = { Summer: 'rgba(255, 210, 90, 0.10)', Autumn: 'rgba(205, 110, 35, 0.20)', Winter: 'rgba(236, 244, 255, 0.62)' };
+export const SEASON_TINT = { Summer: 'rgba(255, 210, 90, 0.10)', Autumn: 'rgba(205, 110, 35, 0.20)', Winter: 'rgba(236, 244, 255, 0.62)' };
 const PARTICLE_COLORS = {
   Grass: ['#ffd541', '#f9a31b', '#9cdb43'],
   Bush: ['#59c135', '#14a02e', '#df3e23'],
@@ -529,7 +529,7 @@ export class FarmView {
     ctx.fillRect(r.x + p * 3, r.y + p * 3, p * 3, p);
   }
 
-  // ⚡ on a plant charged by lightning (its harvest is bigger).
+  // A bolt on a plant charged by lightning (its harvest is bigger).
   drawCharge(ctx, r, t) {
     const p = Math.max(2, r.s / 16);
     const x = r.x + r.s * 0.7;
@@ -821,18 +821,18 @@ export class FarmView {
       if (item && e.progress < 1) lines.push(h('div', { class: 'bar' }, h('span', { style: { width: `${Math.floor(e.progress * 100)}%` } })));
     } else if (e) {
       let name = i18n.entity(e.type);
-      if (e.type === 'Sunflower') name += ` · ${e.data.petals} 🌼`;
+      if (e.type === 'Sunflower') name += ` · ${i18n.t('ui.petals', { n: e.data.petals })}`;
       if (e.type === 'Cactus') name += ` · ${e.data.size}`;
       if (e.data.giant) name += ` · ${e.data.giant.size}×${e.data.giant.size}`;
       lines.push(h('div', {}, name, e.progress < 1 ? ` · ${Math.floor(e.progress * 100)}%` : ' ✓'));
       if (e.type !== 'Dead_Pumpkin') lines.push(h('div', { class: 'bar' }, h('span', { style: { width: `${Math.floor(e.progress * 100)}%` } })));
     }
-    if (tile.water > 0.01) lines.push(h('div', {}, `💧 ${Math.round(tile.water * 100)}%`));
+    if (tile.water > 0.01) lines.push(h('div', {}, icon(this.sprites, 'water'), ` ${Math.round(tile.water * 100)}%`));
     if (tile.glass) lines.push(h('div', {}, i18n.t('ui.glassTip')));
     const world = this.game.world;
     if (e && world.polycultureLevel() > 0) {
       const c = world.companionOf(tile);
-      if (c) lines.push(h('div', {}, `🤝 ${i18n.entity(c.type)} (${c.x}, ${c.y})`));
+      if (c) lines.push(h('div', {}, icon(this.sprites, 'polyculture'), ` ${i18n.entity(c.type)} (${c.x}, ${c.y})`));
     }
     this.tip.replaceChildren(...lines);
     this.tip.hidden = false;

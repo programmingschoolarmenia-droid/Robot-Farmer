@@ -13,6 +13,7 @@ export const ENTITY_NAMES = ['Grass', 'Bush', 'Tree', 'Carrot', 'Pumpkin', 'Dead
 export const ITEM_NAMES = [
   'Hay', 'Wood', 'Carrot', 'Pumpkin', 'Power', 'Water', 'Fertilizer', 'Weird_Substance', 'Cactus', 'Bone', 'Gold', 'Fish',
   'Flour', 'Jam', 'Lavash', 'Gata', 'Ghapama', 'Grilled_Fish', 'Star', 'Medal',
+  'Egg', 'Milk', 'Cheese', 'Butter', 'Nazook', // ranch goods sent to the farm (ranch.json → ship), nazook from them
 ];
 export const GROUND_NAMES = ['Grassland', 'Soil', 'Pond'];
 export const FISH_NAMES = ['Carp', 'Barbel', 'Trout', 'Golden_Fish', 'Whitefish', 'Catfish'];
@@ -299,6 +300,11 @@ export class GameApi {
       I.action(c.actionSuccess ?? 200, true);
       this.game.afterAction(I.drone);
     } else I.action(c.actionFail ?? 1, false);
+  }
+
+  // The runner of the drone's program (a ranch area has its own).
+  runnerOf() {
+    return this.game.runner;
   }
 
   getter(I) {
@@ -692,7 +698,7 @@ export class GameApi {
       api.needArgs(args, 1, 'spawnDrone', node);
       const fn = args[0];
       if (!isCallable(fn)) throw new GameError('badArg', { fn: 'spawnDrone', index: 1, expected: 'function', got: typeKey(fn), gotText: formatValue(fn, true) }, node);
-      const d = game.runner.spawnDrone(I.drone, fn, args.slice(1), api.now(I));
+      const d = api.runnerOf(I).spawnDrone(I.drone, fn, args.slice(1), api.now(I));
       api.act(I, !!d);
       return d ? new DroneHandle(d) : null;
     });
@@ -728,7 +734,7 @@ export class GameApi {
 
     this.def('numDrones', (I) => {
       api.getter(I);
-      return game.runner.activeDroneCount();
+      return api.runnerOf(I).activeDroneCount();
     });
 
     this.def('maxDrones', (I) => {

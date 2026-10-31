@@ -1,5 +1,5 @@
 // Settings window: sounds, font size, low graphics, grid; log out.
-import { h } from './dom.js';
+import { h, icon } from './dom.js';
 import { openModal } from './modal.js';
 
 export function openSettings({ app, prefs, onChange, onLogout }) {
@@ -55,17 +55,17 @@ export function openSettings({ app, prefs, onChange, onLogout }) {
   renderSeg();
   const row = (label, control) => h('div', { class: 'setting-row' }, h('span', {}, label), control);
   openModal({
-    title: `⚙ ${t('ui.settingsTitle')}`,
+    title: [icon(app.sprites, 'gear'), ` ${t('ui.settingsTitle')}`],
     body: [
-      row(`🔊 ${t('ui.sfx')}`, range('sfxVolume')),
-      row(`🎵 ${t('ui.music')}`, range('musicVolume')),
-      row(`🤖 ${t('ui.blips')}`, toggle('blips')),
-      row(`🔤 ${t('ui.fontSize')}`, seg),
-      row(`🐢 ${t('ui.lowGraphics')}`, toggle('lowGraphics')),
-      row(`▦ ${t('ui.showGrid')}`, toggle('showGrid')),
+      row(t('ui.sfx'), range('sfxVolume')),
+      row(t('ui.music'), range('musicVolume')),
+      row(t('ui.blips'), toggle('blips')),
+      row(t('ui.fontSize'), seg),
+      row(t('ui.lowGraphics'), toggle('lowGraphics')),
+      row(t('ui.showGrid'), toggle('showGrid')),
     ],
     buttons: [
-      { label: `🚪 ${t('ui.logout')}`, class: 'btn-danger', onClick: (close) => (close(), onLogout()) },
+      { label: t('ui.logout'), class: 'btn-danger', onClick: (close) => (close(), onLogout()) },
       { label: t('ui.close'), class: 'btn-primary', onClick: (close) => close() },
     ],
   });

@@ -1,5 +1,5 @@
 // Control bar, inventory panel and the quest card.
-import { h, pixelImg } from './dom.js';
+import { h, icon, pixelImg } from './dom.js';
 import { formatCount, formatClock } from '../core/util.js';
 
 export class Controls {
@@ -131,7 +131,7 @@ export class QuestBar {
     this.title = h('div', { class: 'quest-title' });
     this.text = h('div', { class: 'quest-text' });
     this.progress = h('div', { class: 'quest-progress' });
-    this.hintBtn = h('button', { class: 'btn btn-gold btn-sm', onclick: onHint, title: t('ui.hint') }, '💡', h('span', { class: 'btn-label' }, t('ui.hint')));
+    this.hintBtn = h('button', { class: 'btn btn-gold btn-sm', onclick: onHint, title: t('ui.hint') }, icon(app.sprites, 'bulb'), h('span', { class: 'btn-label' }, t('ui.hint')));
     this.el = h(
       'div',
       { class: 'quest-card', onclick: (e) => !e.target.closest('button') && onOpen && onOpen() },
@@ -154,7 +154,7 @@ export class QuestBar {
     const q = this.quests.current();
     const i18n = this.app.i18n;
     if (!q) {
-      this.title.textContent = '🏆';
+      this.title.replaceChildren(icon(this.app.sprites, 'trophy'));
       this.text.textContent = i18n.t('ui.allQuestsDone');
       this.progress.replaceChildren();
       this.hintBtn.hidden = true;
@@ -168,6 +168,7 @@ export class QuestBar {
       const p = this.quests.goalProgress(goal, i);
       const done = p.done;
       const chip = h('span', { class: `chip ${done ? 'done' : ''}` });
+      const ico = (name) => icon(this.app.sprites, name);
       switch (goal.type) {
         case 'gain':
         case 'have':
@@ -177,31 +178,31 @@ export class QuestBar {
           chip.append(`${i18n.entity(goal.entity)} ${p.value}/${p.target}`);
           break;
         case 'research':
-          chip.append(`${this.game.isRanch ? '🛒' : '🔬'} ${done ? '✓' : `${p.value}/${p.target}`}`);
+          chip.append(ico(this.game.isRanch ? 'cart' : 'research'), ` ${done ? '✓' : `${p.value}/${p.target}`}`);
           break;
         case 'earn':
           chip.append(pixelImg(this.app.sprites.url('item:Dram', 2)), `${formatCount(p.value)}/${formatCount(p.target)}`);
           break;
         case 'order':
-          chip.append(`📜 ${p.value}/${p.target}`);
+          chip.append(ico('scroll'), ` ${p.value}/${p.target}`);
           break;
         case 'code':
           chip.append(`</> ${goal.feature ? i18n.feature(goal.feature).split(' ')[0] : `${goal.fn}()`} ${done ? '✓' : ''}`);
           break;
         case 'visitAll':
-          chip.append(`🗺 ${done ? '✓' : ''}`);
+          chip.append(ico('maze'), ` ${done ? '✓' : ''}`);
           break;
         case 'giant':
-          chip.append(`🎃 ${goal.size}×${goal.size} ${done ? '✓' : ''}`);
+          chip.append(ico('pumpkin'), ` ${goal.size}×${goal.size} ${done ? '✓' : ''}`);
           break;
         case 'use':
           chip.append(pixelImg(this.app.sprites.url(`item:${goal.item}`, 2)), `${p.value}/${p.target}`);
           break;
         case 'chain':
-          chip.append(`🌵 ×${goal.size} ${done ? '✓' : ''}`);
+          chip.append(ico('cactus'), ` ×${goal.size} ${done ? '✓' : ''}`);
           break;
         case 'pond':
-          chip.append(`🌊 ${done ? '✓' : '…'}`);
+          chip.append(ico('water'), ` ${done ? '✓' : '…'}`);
           break;
         case 'fish':
           chip.append(pixelImg(this.app.sprites.url(`fish:${goal.fish}`, 2)), `${p.value}/${p.target}`);

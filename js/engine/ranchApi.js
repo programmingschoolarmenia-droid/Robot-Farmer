@@ -1,19 +1,39 @@
 // The ranch's commands (config/aliases.json → ranch gives their Armenian names). The registry,
 // aliases, compile, gate and interpreter host are the farm's (GameApi); a drone works only in its own
-// area (I.drone.pen), in the area's coordinates, and fences stop it.
+// area (I.drone.pen), in the area's coordinates, and fences stop it. Its helpers (norDron) belong to
+// the area's runner.
 import { GameApi } from './api.js';
 import { DIRECTIONS } from './world.js';
-import { makeObject, typeKey, formatValue } from '../lang/values.js';
+import { makeObject, typeKey, formatValue, isCallable, isUserObject, EnumValue } from '../lang/values.js';
 import { GameError } from '../lang/errors.js';
 
 // Farm commands the ranch does not have.
 const FARM_ONLY = [
   'plant', 'canHarvest', 'till', 'getGroundType', 'changeHat', 'useItem', 'getWater', 'measure', 'swap', 'getCost', 'unlock', 'numUnlocked',
-  'digPond', 'findTreasure', 'festivalDistance', 'catchFish', 'getSeason', 'getWeather', 'getNextWeather', 'make', 'eat', 'buildGreenhouse',
-  'getCompanion', 'spawnDrone', 'waitFor', 'hasFinished', 'numDrones', 'maxDrones',
+  'digPond', 'findTreasure', 'festivalDistance', 'catchFish', 'getSeason', 'getWeather', 'getNextWeather', 'eat', 'buildGreenhouse',
+  'getCompanion',
 ];
-export const RANCH_THINGS = ['FeedTrough', 'WaterTrough', 'Well', 'Basket', 'Stall'];
+export const RANCH_THINGS = ['FeedTrough', 'WaterTrough', 'Well', 'Basket', 'Stall', 'Dairy', 'Stove'];
 const TROUGHS = ['FeedTrough', 'WaterTrough'];
+// What erb() listens for: an egg laid, a cow ready, an animal got hungry, a trough got empty, a machine
+// finished, a hole in the fence, something written on the board.
+export const RANCH_EVENTS = ['dzu', 'kat', 'sovac', 'datark', 'patrast', 'ancq', 'grum'];
+
+// Board values are kept as plain JSON (numbers, text, true/false, lists and objects); enum values
+// such as Irer.Dzu are kept by their name.
+function toJson(v) {
+  if (Array.isArray(v)) return v.map(toJson);
+  if (isUserObject(v)) return { obj: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, toJson(x)])) };
+  if (v instanceof EnumValue) return { enum: v.group, name: v.name };
+  return typeof v === 'number' || typeof v === 'string' || typeof v === 'boolean' ? v : null;
+}
+
+function fromJson(v, api) {
+  if (Array.isArray(v)) return v.map((x) => fromJson(x, api));
+  if (v && v.obj) return Object.assign(makeObject(), Object.fromEntries(Object.entries(v.obj).map(([k, x]) => [k, fromJson(x, api)])));
+  if (v && v.enum) return (api.enums[v.enum] && api.enums[v.enum].get(v.name)) || null;
+  return v;
+}
 
 export class RanchApi extends GameApi {
   aliasConfig() {
@@ -30,7 +50,12 @@ export class RanchApi extends GameApi {
     this.makeEnum(aliases, 'Items', [...Object.keys(cfg.items || {}), 'Water']);
     this.makeEnum(aliases, 'Animals', Object.keys(cfg.animals || {}));
     this.makeEnum(aliases, 'Machines', RANCH_THINGS);
+    this.makeEnum(aliases, 'Colors', [...new Set(Object.values(cfg.animals || {}).flatMap((a) => [...(a.colors || []), ...(a.rare ? [a.rare] : [])]))]);
     this.buildConstants(aliases);
+  }
+
+  runnerOf(I) {
+    return I.drone.pen.runner;
   }
 
   // What is on the drone's square: an egg (Irer.Dzu), else a thing (Sarqer.Keraman, …), else an animal.
@@ -134,9 +159,14 @@ export class RanchApi extends GameApi {
     this.def('harvest', (I, args, node) => {
       const pen = here(I);
       const d = I.drone;
-      if (!pen.ground[`${d.x},${d.y}`]) return fail(I);
+      const machine = pen.objectAt(d.x, d.y);
+      if (!pen.ground[`${d.x},${d.y}`] && !(machine && machine.ready)) return fail(I);
       if (space(I) < 1) return fail(I, 'ranch_handsFull', { n: ranch.handsCapacity() }, node);
-      const item = pen.takeGround(d.x, d.y);
+      let item;
+      if (machine && machine.ready) {
+        item = machine.ready;
+        machine.ready = null;
+      } else item = pen.takeGround(d.x, d.y);
       hold(I, item, 1);
       api.act(I, true);
       ranch.events.emit('pickup', { pen: pen.id, x: d.x, y: d.y, item });
@@ -163,8 +193,7 @@ export class RanchApi extends GameApi {
       const o = pen.objectAt(I.drone.x, I.drone.y);
       const at = o && o.type;
       if (at !== 'Basket' && at !== 'Well') return fail(I, 'ranch_takeWhere', {}, node);
-      const feed = ((cfg().items || {})[item] || {}).feed;
-      if ((at === 'Well') !== (item === 'Water') || (at === 'Basket' && !feed)) return fail(I, 'ranch_takeWhat', { item }, node);
+      if ((at === 'Well') !== (item === 'Water') || item === 'Dram') return fail(I, 'ranch_takeWhat', { item }, node);
       const have = at === 'Well' ? Infinity : Math.floor(ranch.inventory.get(item));
       const n = Math.min(want, space(I), have);
       if (space(I) < 1) return fail(I, 'ranch_handsFull', { n: ranch.handsCapacity() }, node);
@@ -178,6 +207,23 @@ export class RanchApi extends GameApi {
     this.def('fill', (I, args, node) => {
       const pen = here(I);
       const o = pen.objectAt(I.drone.x, I.drone.y);
+      const recipes = o && (cfg().machines || {})[o.type];
+      if (recipes) {
+        // a machine takes from the hands what its recipes need
+        const wanted = new Set(Object.values(recipes).flatMap((r) => Object.keys(r.in)));
+        let n = 0;
+        o.inside = o.inside || {};
+        for (const [item, k] of Object.entries(hands(I))) {
+          if (!wanted.has(item)) continue;
+          o.inside[item] = (o.inside[item] || 0) + k;
+          drop(I, item, k);
+          n += k;
+        }
+        if (!n) return fail(I, 'ranch_machineWants', { machine: o.type }, node) || 0;
+        api.act(I, true);
+        ranch.events.emit('fill', { pen: pen.id, x: o.x, y: o.y, item: 'Milk', n });
+        return n;
+      }
       if (!o || !TROUGHS.includes(o.type)) return fail(I, 'ranch_noTrough', {}, node) || 0;
       const item = o.type === 'WaterTrough' ? 'Water' : pen.animalCfg && pen.animalCfg.feed;
       const n = Math.min(hands(I)[item] || 0, ((cfg().troughs || {}).capacity ?? 10) - o.amount);
@@ -216,9 +262,11 @@ export class RanchApi extends GameApi {
       const type = api.needEnum(args[0], 'Machines', 'build', 1, node);
       const pen = here(I);
       const d = I.drone;
-      if (!TROUGHS.includes(type)) return fail(I, 'ranch_cantBuild', { machine: type }, node);
+      const kind = (ranch.shopItem(type) || {}).kind;
+      if (kind !== 'trough' && kind !== 'machine') return fail(I, 'ranch_cantBuild', { machine: type }, node);
       if (!ranch.tokens[type]) return fail(I, 'ranch_noToken', { machine: type }, node);
       if (pen.objectAt(d.x, d.y) || pen.ground[`${d.x},${d.y}`]) return fail(I, 'ranch_occupied', {}, node);
+      if ((kind === 'machine') !== !pen.cfg.animal) return fail(I, 'ranch_wrongArea', { machine: type }, node);
       ranch.tokens[type]--;
       pen.objects.push({ type, x: d.x, y: d.y, amount: 0 });
       api.act(I, true);
@@ -235,8 +283,9 @@ export class RanchApi extends GameApi {
       return n > 0;
     });
 
+    // a dirty square gives manure for the farm (straight into the storage)
     this.def('clear', (I) => {
-      here(I).clean(I.drone.x, I.drone.y);
+      if (here(I).clean(I.drone.x, I.drone.y) >= ((cfg().needs || {}).dirty ?? 60) && (cfg().items || {}).Manure) ranch.inventory.add('Manure', 1, 'clean');
       api.act(I, true);
       ranch.events.emit('clean', { pen: I.drone.pen.id, x: I.drone.x, y: I.drone.y });
     });
@@ -260,9 +309,113 @@ export class RanchApi extends GameApi {
           carav: Math.round(a.thirst),
           tramadrutyun: Math.round(a.mood),
           patrast: a.prod >= 1 && !cfg().animals[a.type].lays,
+          guyn: a.color ? api.enums.Colors.get(a.color) : null,
+          dzag: here(I).young(a, api.now(I)),
+          hivand: !!a.sick,
         });
         return o;
       });
+    });
+
+    // --- care: medicine, the fence and the runaways
+    this.def('heal', (I, args, node) => {
+      const pen = here(I);
+      const doses = hands(I).Medicine || 0;
+      if (!doses) return fail(I, 'ranch_noMedicine', {}, node);
+      const n = pen.heal(I.drone.x, I.drone.y, doses);
+      if (!n) return fail(I);
+      drop(I, 'Medicine', n);
+      api.act(I, true);
+      ranch.events.emit('heal', { pen: pen.id, x: I.drone.x, y: I.drone.y });
+      ranch.counts.healed += n;
+      ranch.main.events.emit('ranch', { healed: n });
+      return true;
+    });
+
+    this.def('repair', (I, args, node) => {
+      const pen = here(I);
+      if (!pen.holeAt(I.drone.x, I.drone.y)) return fail(I);
+      if (!hands(I).Plank) return fail(I, 'ranch_noPlank', {}, node);
+      pen.repair(I.drone.x, I.drone.y);
+      drop(I, 'Plank', 1);
+      api.act(I, true);
+      ranch.events.emit('build', { pen: pen.id, x: I.drone.x, y: I.drone.y, type: 'Plank' });
+      return true;
+    });
+
+    // On the edge, with no hole left: the drone goes out and leads one runaway back on a rope.
+    this.def(
+      'rope',
+      function* rope(I, args, node) {
+        const pen = here(I);
+        const d = I.drone;
+        if (!pen.runaways.length) return fail(I, 'ranch_noRunaway', {}, node);
+        if (!pen.sides(d.x, d.y).length) return fail(I, 'ranch_ropeEdge', {}, node);
+        if (pen.holes().length) return fail(I, 'ranch_ropeHole', {}, node);
+        const seconds = (cfg().needs || {}).ropeSeconds ?? 6;
+        I.ticks += Math.max(1, Math.round(seconds * d.tickRate()));
+        yield 2; // Y.ACTION
+        ranch.afterAction(d);
+        pen.sync(api.now(I));
+        const a = pen.runaways.shift();
+        if (!a) return false;
+        Object.assign(a, { x: d.x, y: d.y, mood: Math.max(a.mood, 50), timer: 4 });
+        pen.animals.push(a);
+        ranch.events.emit('returned', { pen: pen.id, id: a.id, x: d.x, y: d.y });
+        ranch.counts.returned++;
+        ranch.main.events.emit('ranch', { returned: a.id });
+        return true;
+      },
+      { gen: true },
+    );
+
+    // --- the workshop: a machine on the drone's square makes a recipe from what was put in it
+    this.def('make', (I, args, node) => {
+      api.needArgs(args, 1, 'make', node);
+      const item = api.needEnum(args[0], 'Items', 'make', 1, node);
+      const pen = here(I);
+      const o = pen.objectAt(I.drone.x, I.drone.y);
+      const recipes = o && (cfg().machines || {})[o.type];
+      if (!recipes) return fail(I, 'ranch_noMachine', {}, node);
+      const r = recipes[item];
+      if (!r) return fail(I, 'ranch_noRecipe', { item, machine: o.type }, node);
+      if (o.making || o.ready) return fail(I, 'ranch_machineBusy', { machine: o.type }, node);
+      const inside = o.inside || {};
+      const missing = Object.fromEntries(Object.entries(r.in).filter(([it, n]) => (inside[it] || 0) < n).map(([it, n]) => [it, n - (inside[it] || 0)]));
+      if (Object.keys(missing).length) return fail(I, 'ranch_machineMissing', { item, cost: missing }, node);
+      for (const [it, n] of Object.entries(r.in)) {
+        inside[it] -= n;
+        if (!inside[it]) delete inside[it];
+      }
+      o.inside = inside;
+      o.making = item;
+      o.until = api.now(I) + r.seconds;
+      api.act(I, true);
+      ranch.events.emit('make', { pen: pen.id, x: o.x, y: o.y, item });
+      return true;
+    });
+
+    // --- events and the shared board
+    this.def('on', (I, args, node) => {
+      api.needArgs(args, 2, 'on', node);
+      if (!RANCH_EVENTS.includes(args[0])) throw new GameError('badArg', { fn: 'on', index: 1, expected: 'event', got: typeKey(args[0]), gotText: formatValue(args[0], true) }, node);
+      if (!isCallable(args[1])) throw new GameError('badArg', { fn: 'on', index: 2, expected: 'function', got: typeKey(args[1]), gotText: formatValue(args[1], true) }, node);
+      api.getter(I);
+      I.drone.listeners.set(args[0], args[1]);
+    });
+
+    this.def('write', (I, args, node) => {
+      api.needArgs(args, 2, 'write', node);
+      if (typeof args[0] !== 'string') throw new GameError('badArg', { fn: 'write', index: 1, expected: 'string', got: typeKey(args[0]), gotText: formatValue(args[0], true) }, node);
+      if (isCallable(args[1])) throw new GameError('badArg', { fn: 'write', index: 2, expected: 'value', got: typeKey(args[1]), gotText: formatValue(args[1], true) }, node);
+      api.getter(I);
+      ranch.write(args[0], toJson(args[1]), api.now(I));
+    });
+
+    this.def('read', (I, args, node) => {
+      api.needArgs(args, 1, 'read', node);
+      api.getter(I);
+      return fromJson(ranch.read(String(args[0])), api);
     });
 
     // --- the market's drone: prices, selling, buying feed, the farm's cart, the villagers' orders
@@ -289,7 +442,7 @@ export class RanchApi extends GameApi {
       const item = api.needEnum(args[0], 'Items', 'buy', 1, node);
       const n = count(args[1] ?? 1, 'buy', node);
       if (!market(I, node)) return 0;
-      const r = ranch.buyFeed(item, n);
+      const r = ranch.buyItem(item, n);
       if (!r.ok) return fail(I, 'ranch_cantBuy', { item }, node) || 0;
       if (r.n < n) ranch.warn('ranch_noMoney', { n: n * ranch.price(item) }, node, I.drone);
       api.act(I, r.n > 0);
@@ -308,11 +461,32 @@ export class RanchApi extends GameApi {
       return r.n;
     });
 
+    this.def('sellAnimal', (I, args, node) => {
+      api.needArgs(args, 1, 'sellAnimal', node);
+      if (!market(I, node)) return 0;
+      const r = ranch.sellAnimal(Number(args[0]));
+      if (!r.ok) return fail(I, `ranch_sellAnimal_${r.reason}`, { n: args[0] }, node) || 0;
+      api.act(I, true);
+      return r.dram;
+    });
+
+    this.def('ship', (I, args, node) => {
+      api.needArgs(args, 1, 'ship', node);
+      const item = api.needEnum(args[0], 'Items', 'ship', 1, node);
+      const n = count(args[1], 'ship', node);
+      if (!market(I, node)) return 0;
+      const r = ranch.ship(item, n);
+      if (!r.ok) return fail(I, 'ranch_cantShip', { item }, node) || 0;
+      api.act(I, r.n > 0);
+      return r.n;
+    });
+
     this.def('orders', (I) => {
       api.getter(I);
       return ranch.orders().list.map((q) => {
         const o = makeObject();
         Object.assign(o, { anun: ranch.villager(q.who).name, irer: api.itemObject(q.items), gin: q.pay, katarvac: q.done });
+        if (q.animal) o.kendani = Object.assign(makeObject(), { tesak: api.enums.Animals.get(q.animal.type), guyn: api.enums.Colors.get(q.animal.color) });
         return o;
       });
     });

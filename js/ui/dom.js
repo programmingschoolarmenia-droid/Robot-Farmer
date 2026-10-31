@@ -45,6 +45,14 @@ export function pixelImg(src, cls = '', alt = '') {
   return h('img', { src, class: `pixel ${cls}`.trim(), alt, draggable: 'false' });
 }
 
+// The pictures of the seasons and the weathers (calendar.js names).
+export const CALENDAR_ICONS = { Spring: 'blossom', Summer: 'sunflower', Autumn: 'leaf', Winter: 'snowflake', Sunny: 'sun', Rain: 'rain', Storm: 'storm', Heat: 'flame', Snow: 'snow' };
+
+// A small picture from the sprite book next to a label (icon:<name>, or any sprite name with a «:»).
+export function icon(sprites, name, cls = '') {
+  return pixelImg(sprites.url(name.includes(':') ? name : `icon:${name}`, 2), `ico-img ${cls}`.trim());
+}
+
 // Highlights a small code sample for Bridgy's dialog (very small JS tokenizer).
 const KEYWORDS = new Set([
   'while', 'for', 'if', 'else', 'let', 'const', 'var', 'function', 'return', 'true', 'false', 'null', 'undefined',

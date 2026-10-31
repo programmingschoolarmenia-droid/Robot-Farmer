@@ -16,7 +16,7 @@ export class Inventory {
     if (!amount) return;
     const v = this.get(item) + amount;
     this.items.set(item, Math.max(0, v));
-    if (amount > 0) this.game.stats.recordGain(item, amount);
+    if (amount > 0 && source !== 'transfer') this.game.stats.recordGain(item, amount); // (a move between storages is no harvest)
     this.game.events.emit('items', { item, amount, total: this.get(item), source });
   }
 

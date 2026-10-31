@@ -1,7 +1,9 @@
 // Bridgy's ranch (config/ranch.json): a second world opened by the «Ռանչո» research. Its areas
 // (pens with animals and the market) lie on one map, each with its own drone and script; the ranch
-// has its own storage with ֏, a shop (areas, animals, bigger pens, troughs, drone upgrades and the
-// ranch commands themselves), prices that change every day for everyone, and the villagers' orders.
+// has its own storage with ֏, a shop (areas, animals, bigger pens, troughs and machines, drone upgrades,
+// the ranch commands themselves and boosts for the farm), prices that change every day for everyone,
+// the villagers' orders and a board the drones share (grel / kardal). Drones that listen for events
+// (erb) get them from their area (Pen.signal) or from the board.
 // Only the open world runs: the ranch moves while its screen calls update() and waits otherwise.
 // Its goods count as normal points (they are gathered into the main game's Stats).
 // For Runner, Drone, Inventory, the API and QuestTracker the ranch looks like a game: it has config,
@@ -11,6 +13,7 @@ import { Events } from '../core/events.js';
 import { Rng } from '../core/rng.js';
 import { dayKey, dayNumber } from '../core/util.js';
 import { locOf } from '../lang/errors.js';
+import { makeObject } from '../lang/values.js';
 import { Inventory } from './inventory.js';
 import { Drone } from './drone.js';
 import { Runner } from './runner.js';
@@ -23,6 +26,7 @@ const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Da
 const FREE = new Set(['canMove', 'build']);
 // Shop items bought once (or level by level): they count for Perfection. Animals and troughs repeat.
 const LASTING = new Set(['area', 'size', 'upgrade', 'command']);
+const MAX_QUEUE = 50; // events waiting for one drone
 
 export class Ranch {
   constructor(main, saved = {}) {
@@ -42,11 +46,12 @@ export class Ranch {
     this.ordersDone = s.ordersDone || 0;
     this.board = s.board || null; // today's orders: { day, list: [{ who, line, items, pay, done }] }
     this.nextAnimal = s.nextAnimal || 1;
+    this.shared = s.shared || {}; // the board the drones share: { name: value } (plain JSON values)
+    this.counts = { born: 0, healed: 0, returned: 0, events: 0, ...(s.counts || {}) }; // for the stickers
     this.functionGate = new Map();
     for (const item of this.shop) for (const f of item.grants || []) this.functionGate.set(f, item.id);
     const layout = (this.cfg.map && this.cfg.map.layout) || [];
-    const cell = this.areaSize + 1;
-    this.world = { width: 1 + cell * ((layout[0] || []).length || 1), height: 1 + cell * (layout.length || 1) };
+    this.world = { width: (layout[0] || []).length || 1, height: layout.length || 1 }; // places per row, rows
     this.scripts = (s.scripts || []).map((x) => ({ name: x.name, code: x.code }));
     this.pens = new Map();
     for (const id of this.areaIds()) if (this.isOpen(id)) this.openArea(id, (s.pens || {})[id]);
@@ -84,20 +89,15 @@ export class Ranch {
 
   // ---------------------------------------------------------------- the map and its areas
 
-  get areaSize() {
-    return (this.cfg.map && this.cfg.map.area) || 7;
-  }
-
   areaIds() {
     return ((this.cfg.map && this.cfg.map.layout) || []).flat();
   }
 
-  // Map square of an area's (0, 0): areas are laid out in rows (the first row on top), one path apart.
-  origin(id) {
+  // Where an area lies on the map: its column and row (the first row on top).
+  cell(id) {
     const layout = this.cfg.map.layout;
     const row = layout.findIndex((r) => r.includes(id));
-    const cell = this.areaSize + 1;
-    return { x: 1 + layout[row].indexOf(id) * cell, y: 1 + (layout.length - 1 - row) * cell };
+    return { col: layout[row].indexOf(id), row };
   }
 
   isOpen(id) {
@@ -201,8 +201,45 @@ export class Ranch {
     return 1;
   }
 
+  // Drones in each area (the shop's «one more drone» adds one everywhere).
   maxDrones() {
-    return 1;
+    return 1 + this.level('Drones');
+  }
+
+  // How the season and the weather change the animals (ranch.json → seasons; 1 = no change).
+  seasonFactors() {
+    const st = this.main.calendar.state;
+    const out = { hunger: 1, thirst: 1, dirt: 1, breed: 1 };
+    if (!st) return out;
+    const c = this.cfg.seasons || {};
+    for (const part of [c[st.season], c[st.weather]]) for (const [k, v] of Object.entries(part || {})) out[k] *= v;
+    return out;
+  }
+
+  // An event for the drones listening for it (erb) in one area, or everywhere (penId null).
+  signal(penId, name, data, t) {
+    for (const p of penId ? [this.pens.get(penId)] : this.pens.values()) {
+      if (!p || p.runner.state === 'idle') continue;
+      for (const d of p.runner.drones) {
+        const fn = d.listeners && d.listeners.get(name);
+        if (!fn) continue;
+        if (d.queue.length >= MAX_QUEUE) this.warn('ranch_eventsFull', { n: MAX_QUEUE }, null, d);
+        else {
+          this.counts.events++;
+          p.runner.queueEvent(d, fn, Object.assign(makeObject(), data), t);
+        }
+      }
+    }
+  }
+
+  // The shared board (copies go in and out, so a drone never changes another one's value).
+  write(name, value, t) {
+    this.shared[name] = value === undefined ? null : JSON.parse(JSON.stringify(value));
+    this.signal(null, 'grum', { anun: name }, t);
+  }
+
+  read(name) {
+    return Object.prototype.hasOwnProperty.call(this.shared, name) ? JSON.parse(JSON.stringify(this.shared[name])) : null;
   }
 
   afterAction(drone) {
@@ -272,6 +309,7 @@ export class Ranch {
   }
 
   update(realDt) {
+    this.main.calendar.update(this.main.time);
     const g = this.config.settings.game || {};
     const dt = Math.min(realDt, g.maxFrameSeconds ?? 0.1) * this.speed;
     this.main.playSeconds += Math.min(realDt, 0.25);
@@ -303,6 +341,7 @@ export class Ranch {
         }
       }
       if (!best) break;
+      this.wake(runners, best.time);
       owner.stepDrone(best);
       if ((++steps & 31) === 0 && nowMs() > deadline) {
         let t = target;
@@ -311,7 +350,20 @@ export class Ranch {
       }
     }
     for (const r of runners) if (r.state === 'running') for (const d of r.drones) if (d.state === 'waiting' && d.time < target) d.time = target;
-    return target;
+    this.wake(runners, target);
+    return this.wakeTime(runners, target);
+  }
+
+  // Areas whose drones only listen are brought up to t, so their events come in time order.
+  wake(runners, t) {
+    for (const r of runners) if (r.state === 'running' && r.drones.some((d) => d.state === 'listening')) r.root.pen.sync(t);
+  }
+
+  // A handler that an event started behind `target` still has to run: time stops there this frame.
+  wakeTime(runners, target) {
+    let t = target;
+    for (const r of runners) if (r.state === 'running') for (const d of r.drones) if (d.state === 'running') t = Math.min(t, d.time);
+    return t;
   }
 
   syncAll() {
@@ -364,7 +416,8 @@ export class Ranch {
       this.openArea(id);
       for (let i = 0; i < (item.animals || 0); i++) this.addAnimal(this.cfg.areas[id].animal);
     } else if (item.kind === 'animal') this.addAnimal(item.animal);
-    else if (item.kind === 'trough') this.tokens[id] = (this.tokens[id] || 0) + 1;
+    else if (item.kind === 'trough' || item.kind === 'machine') this.tokens[id] = (this.tokens[id] || 0) + 1;
+    else if (item.kind === 'boost') this.main.addBoost(item.boost.kind, 'Dram', item.boost.multiplier, item.boost.seconds);
     if (item.grants) this.api.compiled.clear();
     this.inventory.add('Dram', -cost, 'shop');
     this.events.emit('shop', { id, item, level: this.level(id) });
@@ -412,10 +465,10 @@ export class Ranch {
     return { ok: true, n: k, dram };
   }
 
-  // Feed for ֏: as much as there is money for.
-  buyFeed(item, n) {
+  // Feed, medicine or planks for ֏: as much as there is money for.
+  buyItem(item, n) {
     const c = (this.cfg.items || {})[item];
-    if (!c || !c.buy || !c.feed) return { ok: false };
+    if (!c || !c.buy) return { ok: false };
     const price = this.price(item);
     const k = Math.min(n, Math.floor(this.inventory.get('Dram') / price));
     if (k > 0) {
@@ -438,6 +491,46 @@ export class Ranch {
     return { ok: true, n: k, need: cost };
   }
 
+  // Ranch goods to the farm's storage (ranch.json → ship: e.g. one Manure → 3 Fertilizer). A move,
+  // not a harvest: the farm's points do not count them again.
+  ship(item, n) {
+    const to = (this.cfg.ship || {})[item];
+    if (!to) return { ok: false };
+    const k = Math.min(n, Math.floor(this.inventory.get(item)));
+    if (k > 0) {
+      this.inventory.add(item, -k, 'ship');
+      for (const [it, m] of Object.entries(to)) this.main.inventory.add(it, k * m, 'transfer');
+    }
+    return { ok: true, n: k };
+  }
+
+  // What a villager pays for a grown animal: its price, more for the rare colour.
+  animalPrice(a) {
+    const c = this.cfg.animals[a.type];
+    return Math.round((c.price || 0) * (c.rare && a.color === c.rare ? ((this.cfg.needs || {}).rarePrice ?? 1) : 1));
+  }
+
+  // Finds an animal by id in every area: { pen, a }.
+  findAnimal(id) {
+    for (const pen of this.pens.values()) {
+      const a = pen.animals.find((x) => x.id === id);
+      if (a) return { pen, a };
+    }
+    return null;
+  }
+
+  sellAnimal(id) {
+    const f = this.findAnimal(id);
+    if (!f) return { ok: false, reason: 'noAnimal' };
+    f.pen.sync(this.time);
+    if (f.pen.young(f.a, this.time)) return { ok: false, reason: 'young' };
+    const dram = this.animalPrice(f.a);
+    f.pen.animals.splice(f.pen.animals.indexOf(f.a), 1);
+    this.earn(dram, 'animal');
+    this.events.emit('sold', { item: 'Dram', n: 1, dram, animal: f.a.type });
+    return { ok: true, dram };
+  }
+
   earn(dram, source) {
     this.inventory.add('Dram', dram, source);
     const day = this.today();
@@ -457,7 +550,7 @@ export class Ranch {
   }
 
   villager(i) {
-    return (((this.config.village || {}).requests || {}).villagers || [])[i] || { name: '?', face: '🙂' };
+    return (((this.config.village || {}).requests || {}).villagers || [])[i] || { name: '?', face: 'girl' };
   }
 
   // How many animals give `item` (orders ask only for what the ranch makes).
@@ -485,8 +578,17 @@ export class Ranch {
       const pick = goods.length > 1 && rng.chance(0.5) ? goods : [goods[rng.int(0, goods.length - 1)]];
       const items = {};
       for (const item of pick) items[item] = Math.max(1, Math.round(o.base[item] * Math.max(1, this.producers(item) / 2) * rng.range(0.7, 1.3)));
-      const value = Object.entries(items).reduce((a, [item, n]) => a + n * (this.cfg.items[item].sell || 0), 0);
-      list.push({ who, line: rng.int(0, Math.max(0, (o.lines || []).length - 1)), items, pay: Math.round(value * (o.pay ?? 1.5)), done: false });
+      let value = Object.entries(items).reduce((a, [item, n]) => a + n * (this.cfg.items[item].sell || 0), 0);
+      const q = { who, line: rng.int(0, Math.max(0, (o.lines || []).length - 1)), items, pay: 0, done: false };
+      const kinds = [...this.pens.values()].filter((p) => p.animalCfg && (p.animalCfg.colors || []).length).map((p) => p.cfg.animal);
+      if (kinds.length && rng.chance(o.animals ?? 0)) {
+        const type = kinds[rng.int(0, kinds.length - 1)];
+        const colors = this.cfg.animals[type].colors;
+        q.animal = { type, color: colors[rng.int(0, colors.length - 1)] };
+        value += this.animalPrice(q.animal);
+      }
+      q.pay = Math.round(value * (o.pay ?? 1.5));
+      list.push(q);
     }
     return { day, list };
   }
@@ -499,6 +601,15 @@ export class Ranch {
       const missing = Object.fromEntries(this.inventory.missing(q.items).map((m) => [m.item, m.need - Math.floor(m.have)]));
       return { ok: false, reason: 'missing', missing };
     }
+    let found = null;
+    if (q.animal) {
+      const pen = this.penOf(q.animal.type);
+      if (pen) pen.sync(this.time);
+      const a = pen && pen.animals.find((x) => x.color === q.animal.color && !pen.young(x, this.time));
+      if (!a) return { ok: false, reason: 'noAnimal' };
+      found = { pen, a };
+    }
+    if (found) found.pen.animals.splice(found.pen.animals.indexOf(found.a), 1);
     this.inventory.pay(q.items, 'order');
     q.done = true;
     this.ordersDone++;
@@ -522,6 +633,8 @@ export class Ranch {
       ordersDone: this.ordersDone,
       board: this.board,
       nextAnimal: this.nextAnimal,
+      shared: this.shared,
+      counts: this.counts,
       scripts: this.scripts.map((x) => ({ name: x.name, code: x.code })),
       activeScript: this.activeScript,
       pens,

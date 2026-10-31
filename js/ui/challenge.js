@@ -2,7 +2,7 @@
 // task, the top 10, my place and last week's best solution) and the challenge page, a clear full
 // screen like the game: the test farm, its own editor, console, storage and controls. The main
 // farm waits while it is open, and every ▶ starts a fresh test farm.
-import { h, sizeFarm, mobileQuery, highlightCode } from './dom.js';
+import { h, icon, sizeFarm, mobileQuery, highlightCode } from './dom.js';
 import { FarmView } from './farmView.js';
 import { EditorPanel } from './editor.js';
 import { Controls, InventoryPanel } from './panels.js';
@@ -12,7 +12,7 @@ import { championsOf } from './account.js';
 import { testGame, watchGoal, rollWeek, recordResult, CHALLENGE_SCRIPT } from '../engine/challenge.js';
 import { formatTenths, dayNumber, keyOfDay, weekKey } from '../core/util.js';
 
-const MEDALS = ['🥇', '🥈', '🥉'];
+const MEDALS = ['medal1', 'medal2', 'medal3'];
 
 // The School's panel part: `task` = this week's (weekTask), onStart opens the challenge page.
 export function schoolPanel(app, game, task, today, onStart) {
@@ -27,7 +27,7 @@ export function schoolPanel(app, game, task, today, onStart) {
     ({ rows, place }) =>
       top.replaceWith(
         rows.length
-          ? h('ol', { class: 'challenge-top' }, rows.slice(0, 10).map((r, i) => h('li', { class: r.id === me ? 'me' : '' }, h('span', {}, MEDALS[i] || `${i + 1}.`), h('span', { class: 'board-name' }, r.name), h('b', {}, formatTenths(r[field])))))
+          ? h('ol', { class: 'challenge-top' }, rows.slice(0, 10).map((r, i) => h('li', { class: r.id === me ? 'me' : '' }, h('span', {}, MEDALS[i] ? icon(app.sprites, MEDALS[i]) : `${i + 1}.`), h('span', { class: 'board-name' }, r.name), h('b', {}, formatTenths(r[field])))))
           : h('div', { class: 'board-note' }, t('ui.leadersEmptyChallenge')),
         place ? h('div', { class: 'board-place' }, t('ui.challengePlace', { place })) : '',
       ),
@@ -78,18 +78,18 @@ export class ChallengeScreen {
     this.timeChip = h('span', { class: 'chip challenge-chip', title: t('ui.challengeTime') });
     this.bestChip = h('span', { class: 'chip challenge-chip', title: t('ui.challengeBestTitle') });
     this.tabButtons = [
-      ['farm', '🌾', t('ui.farm')],
+      ['farm', icon(app.sprites, 'farm'), t('ui.farm')],
       ['code', '</>', t('ui.codeTab')],
-      ['storage', '🧺', t('ui.inventory')],
-    ].map(([id, icon, label]) => h('button', { class: 'btn mobile-tab', dataset: { tab: id }, onclick: () => this.setTab(id) }, h('span', { class: 'ico' }, icon), label));
-    this.sidePanel = h('aside', { class: 'side-panel' }, h('section', { class: 'panel grow' }, h('div', { class: 'panel-head' }, '🧺 ', t('ui.inventory')), this.inventoryList));
+      ['storage', icon(app.sprites, 'storage'), t('ui.inventory')],
+    ].map(([id, ico, label]) => h('button', { class: 'btn mobile-tab', dataset: { tab: id }, onclick: () => this.setTab(id) }, h('span', { class: 'ico' }, ico), label));
+    this.sidePanel = h('aside', { class: 'side-panel' }, h('section', { class: 'panel grow' }, h('div', { class: 'panel-head' }, icon(app.sprites, 'storage'), ' ', t('ui.inventory')), this.inventoryList));
     this.el = h(
       'section',
       { class: 'screen screen-game screen-challenge' },
       h(
         'header',
         { class: 'topbar' },
-        h('div', { class: 'challenge-task' }, h('b', {}, `🎓 ${task.name}`), h('span', {}, task.about)),
+        h('div', { class: 'challenge-task' }, h('b', {}, icon(app.sprites, 'cap'), ` ${task.name}`), h('span', {}, task.about)),
         this.bestChip,
         this.timeChip,
         h('button', { class: 'btn', title: t('ui.challengeBack'), onclick: () => this.close() }, '⬅', h('span', { class: 'btn-label' }, t('ui.challengeBack'))),
@@ -97,7 +97,7 @@ export class ChallengeScreen {
       h(
         'main',
         { class: 'game-main' },
-        h('section', { class: 'panel farm-panel' }, h('div', { class: 'panel-head' }, '🎓 ', t('ui.challengeFarm')), this.stage),
+        h('section', { class: 'panel farm-panel' }, h('div', { class: 'panel-head' }, icon(app.sprites, 'cap'), ' ', t('ui.challengeFarm')), this.stage),
         this.codePanel,
         this.sidePanel,
       ),
@@ -156,7 +156,7 @@ export class ChallengeScreen {
 
   updateBest() {
     const best = this.main.challenge.best;
-    this.bestChip.textContent = `🏅 ${best ? formatTenths(best) : '—'}`;
+    this.bestChip.replaceChildren(icon(this.app.sprites, 'medal1'), ` ${best ? formatTenths(best) : '—'}`);
   }
 
   // The console and the editor follow the test farm's runs.

@@ -40,7 +40,7 @@ export class Stickers {
     on('noteSolved', ['notes']);
     on('research', ['researchAll', 'perfection']);
     on('challengePrize', ['challengeTop']);
-    on('ranch', ['total', 'ranchEarned', 'ranchOrders', 'perfection']);
+    on('ranch', ['total', 'ranchEarned', 'ranchOrders', 'ranchCount', 'perfection']);
     game.events.on('flip', () => {
       this.seen.flips++;
       this.check(['flips']);
@@ -111,6 +111,8 @@ export class Stickers {
         return g.ranch.earned.total >= v;
       case 'ranchOrders':
         return g.ranch.ordersDone >= v;
+      case 'ranchCount': // { "born": 1 }: babies born, animals healed, runaways brought back, events answered
+        return Object.entries(v).every(([k, n]) => (g.ranch.counts[k] || 0) >= n);
       case 'perfection':
         return perfection(g).percent >= v;
       case 'flips':

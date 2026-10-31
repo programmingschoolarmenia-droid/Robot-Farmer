@@ -9,7 +9,7 @@ export class DebugPanel {
     const t = app.i18n.t;
     this.body = h('div', { class: 'debug-body' });
     this.status = h('span', { class: 'muted' });
-    this.el = h('section', { class: 'panel debug-panel', hidden: true }, h('div', { class: 'panel-head' }, '🔍 ', t('ui.debugTitle'), h('span', { class: 'spacer' }), this.status), this.body);
+    this.el = h('section', { class: 'panel debug-panel', hidden: true }, h('div', { class: 'panel-head' }, t('ui.debugTitle'), h('span', { class: 'spacer' }), this.status), this.body);
     container.append(this.el);
     this.lastKey = '';
   }
@@ -44,7 +44,7 @@ export class DebugPanel {
     this.lastKey = key;
     this.status.textContent = t('ui.atLine', { line });
     const parts = [];
-    if (stack.length) parts.push(h('div', { class: 'debug-stack' }, '📚 ', stack.join(' → ')));
+    if (stack.length) parts.push(h('div', { class: 'debug-stack' }, stack.join(' → ')));
     if (rows.length) parts.push(...rows);
     else parts.push(h('div', { class: 'debug-empty' }, t('ui.debugNoVars')));
     this.body.replaceChildren(...parts);

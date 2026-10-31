@@ -1,7 +1,7 @@
 // The village screen: a map of the village across the river (each building is a picture in
 // assets/village, <icon>.png and its ruin <icon>-ruin.png), each building's needs, unlocks, recipes
 // and story, and the villagers' requests.
-import { h, pixelImg } from './dom.js';
+import { h, icon, pixelImg } from './dom.js';
 import { formatCount } from '../core/util.js';
 
 const W = 480; // the background canvas (16:10, like the map)
@@ -46,7 +46,7 @@ export class VillageView {
       h(
         'div',
         { class: 'research-head' },
-        h('span', { class: 'village-icon' }, '🏘'),
+        h('span', { class: 'village-icon' }, icon(this.app.sprites, 'village')),
         h('h2', {}, t('ui.villageTitle')),
         this.items,
         h('span', { class: 'spacer' }),
@@ -88,13 +88,14 @@ export class VillageView {
     );
     const spots = village.buildings.map((b) => {
       const state = village.state(b.id);
-      const badge = state === 'repaired' ? '✓' : state === 'soon' ? '🚧' : state === 'locked' ? '🔒' : `${this.percent(b)}%${this.canGive(b) ? ' 🔨' : ''}`;
+      const ico = (name) => icon(sprites, name);
+      const badge = state === 'repaired' ? '✓' : state === 'soon' ? ico('soon') : state === 'locked' ? ico('lock') : [`${this.percent(b)}%`, this.canGive(b) ? ico('hands') : ''];
       return this.spot(b, h('img', { src: art(b, state), alt: '' }), b.name, badge, b.id, state);
     });
     const r = village.cfg.requests || {};
     if (village.requestsOpen) {
       const left = village.requests().list.filter((q) => !q.done).length;
-      spots.push(this.spot({ x: r.x ?? 44, y: r.y ?? 36, w: r.w ?? 9 }, h('img', { src: 'assets/village/board.png', alt: '' }), this.app.i18n.t('ui.villageBoard'), left ? `📜 ${left}` : '✓', 'board', 'repaired'));
+      spots.push(this.spot({ x: r.x ?? 44, y: r.y ?? 36, w: r.w ?? 9 }, h('img', { src: 'assets/village/board.png', alt: '' }), this.app.i18n.t('ui.villageBoard'), left ? [icon(sprites, 'scroll'), ` ${left}`] : '✓', 'board', 'repaired'));
     }
     this.map.replaceChildren(...[...this.map.children].slice(0, 2), ...spots);
     this.panel.replaceChildren(...(this.selected === 'board' ? this.board() : this.buildingPanel(village.building(this.selected))));
@@ -148,7 +149,7 @@ export class VillageView {
       parts.push(h('div', { class: 'rd-section' }, h('h4', {}, t('ui.villageNeeds')), ...rows));
       if (state === 'open') {
         const canGive = this.canGive(b);
-        parts.push(h('button', { class: 'btn btn-run', title: t('ui.villageGiveTitle'), disabled: !canGive, onclick: () => this.give(b.id) }, '🤲 ', t('ui.villageGive')));
+        parts.push(h('button', { class: 'btn btn-run', title: t('ui.villageGiveTitle'), disabled: !canGive, onclick: () => this.give(b.id) }, icon(this.app.sprites, 'hands'), ' ', t('ui.villageGive')));
         if (!canGive) parts.push(h('div', { class: 'rd-note' }, t('ui.villageNothing')));
       }
     }
@@ -174,7 +175,7 @@ export class VillageView {
     const out = (g.functions || []).map((f) => `${this.game.api.displayName(f)}()`);
     for (const m of g.machines || []) out.push(String(this.game.api.enums.Machines.get(m)));
     for (const hat of g.hats || []) out.push(i18n.hat(hat));
-    if ((this.village.cfg.requests || {}).building === b.id) out.push(`📜 ${i18n.t('ui.villageBoard')}`);
+    if ((this.village.cfg.requests || {}).building === b.id) out.push(i18n.t('ui.villageBoard'));
     return out;
   }
 
@@ -194,13 +195,13 @@ export class VillageView {
         h(
           'div',
           { class: `village-request${q.done ? ' done' : ''}` },
-          v.portrait ? h('img', { class: 'village-face', src: v.portrait, alt: '' }) : h('span', { class: 'village-face' }, v.face),
+          h('img', { class: 'village-face pixel', src: v.portrait || sprites.url(`face:${v.face}`, 3), alt: '' }),
           h(
             'div',
             {},
             h('b', {}, v.name),
             h('div', {}, text),
-            h('div', { class: 'village-reward' }, pixelImg(sprites.url(`item:${q.item}`, 2), '', ''), `${formatCount(Math.floor(this.game.inventory.get(q.item)))} / ${formatCount(q.amount)} · ⭐ ${r.stars ?? 1}`),
+            h('div', { class: 'village-reward' }, pixelImg(sprites.url(`item:${q.item}`, 2), '', ''), `${formatCount(Math.floor(this.game.inventory.get(q.item)))} / ${formatCount(q.amount)} · `, icon(sprites, 'star'), ` ${r.stars ?? 1}`),
           ),
           q.done ? h('span', { class: 'village-done' }, t('ui.requestsDone')) : h('button', { class: 'btn btn-run btn-sm', disabled: !enough, onclick: () => this.deliver(i) }, t('ui.villageGive')),
         ),

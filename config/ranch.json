@@ -1,8 +1,7 @@
 {
-  "_readme": "Բրիջիի ռանչոն։ research՝ ռանչոն բացող հետազոտությունը։ map՝ մեկ վայրի չափը (area) և վայրերի դասավորությունը քարտեզի վրա։ start՝ ինչով է սկսվում ռանչոն։ areas՝ վայրերը (դրոնն ու կոդի ներդիրը՝ script, չափերը՝ sizes, սկզբի իրերի տեղերը՝ objects, available: false՝ «շուտով»)։ animals՝ կենդանիները. needs-ը քանի միավոր է աճում քաղցը, ծարավը և վանդակի աղտը ամեն վայրկյանում, every՝ քանի վայրկյանում է տալիս ձու կամ կաթ (ուրախ կենդանին), space՝ քանի վանդակ է պետք մեկ կենդանուն, step՝ քանի վայրկյանը մեկ է քայլում։ needs՝ ընդհանուր կանոններ (seek՝ այս քաղցից/ծարավից սկսում է գնալ ամանի մոտ, fill՝ որքան է իջնում ուտելիս/խմելիս, unhappy՝ այս քաղցից/ծարավից տխրում է, dirty՝ այս աղտից տխրում է, sad՝ այս տրամադրությունից ցածր ոչինչ չի տալիս)։ items՝ ապրանքները (sell՝ վաճառքի գինը ֏-ով, buy՝ գնման գինը, feed՝ կեր է), prices.spread՝ գինն ամեն օր փոխվում է այսքան մասով (0.3 = ±30%)։ cart՝ ֆերմայից քանի իր է պետք ռանչոյի մեկ կերի համար։ orders՝ գյուղացիների պատվերները։ hands՝ դրոնի ձեռքը ըստ «Մեծ ձեռքեր»-ի մակարդակի։ shop՝ խանութը (cost կամ costs՝ գինը ֏-ով, needs՝ նախ պետք է գնել այն, grants՝ բացվող հրամանները)։",
+  "_readme": "Բրիջիի ռանչոն։ research՝ ռանչոն բացող հետազոտությունը։ map.layout՝ վայրերի դասավորությունը քարտեզի վրա (3×3, առաջին շարքը վերևում)։ start՝ ինչով է սկսվում ռանչոն։ areas՝ վայրերը (դրոնն ու կոդի ներդիրը՝ script, չափերը՝ sizes, սկզբի իրերի տեղերը՝ objects, available: false՝ «շուտով»)։ animals՝ կենդանիները. needs-ը քանի միավոր է աճում քաղցը, ծարավը և վանդակի աղտը ամեն վայրկյանում, every՝ քանի վայրկյանում է տալիս ձու կամ կաթ (ուրախ կենդանին), space՝ քանի վանդակ է պետք մեկ կենդանուն, step՝ քանի վայրկյանը մեկ է քայլում։ needs՝ ընդհանուր կանոններ (seek՝ այս քաղցից/ծարավից սկսում է գնալ ամանի մոտ, fill՝ որքան է իջնում ուտելիս/խմելիս, unhappy՝ այս քաղցից/ծարավից տխրում է, dirty՝ այս աղտից տխրում է, sad՝ այս տրամադրությունից ցածր ոչինչ չի տալիս)։ items՝ ապրանքները (sell՝ վաճառքի գինը ֏-ով, buy՝ գնման գինը, feed՝ կեր է), prices.spread՝ գինն ամեն օր փոխվում է այսքան մասով (0.3 = ±30%)։ cart՝ ֆերմայից քանի իր է պետք ռանչոյի մեկ կերի համար։ orders՝ գյուղացիների պատվերները։ hands՝ դրոնի ձեռքը ըստ «Մեծ ձեռքեր»-ի մակարդակի։ shop՝ խանութը (cost կամ costs՝ գինը ֏-ով, needs՝ նախ պետք է գնել այն, grants՝ բացվող հրամանները)։",
   "research": "Ranch",
   "map": {
-    "area": 7,
     "layout": [
       ["Hens", "Cows", "Sheep"],
       ["Market", "Workshop", "Goats"],
@@ -16,57 +15,88 @@
   },
   "areas": {
     "Hens": {
-      "icon": "🐔",
+      "icon": "hen",
       "name": "Հավանոց",
       "script": "havanoc",
       "animal": "Hen",
       "sizes": [4, 5, 6, 7],
       "objects": { "Basket": [0, 0], "Well": [3, 0], "FeedTrough": [0, 3], "WaterTrough": [3, 3] },
-      "code": "// 🐔 Հավանոց։ Այս դրոնն աշխատում է միայն հավանոցում։\n// Զամբյուղը (0, 0) վանդակում է, ջրհորը՝ (3, 0)։\n\n"
+      "code": "// Հավանոց։ Այս դրոնն աշխատում է միայն հավանոցում։\n// Զամբյուղը (0, 0) վանդակում է, ջրհորը՝ (3, 0)։\n\n"
     },
     "Cows": {
-      "icon": "🐄",
+      "icon": "cow",
       "name": "Գոմ",
       "script": "gom",
       "animal": "Cow",
       "sizes": [5, 6, 7],
       "objects": { "Basket": [0, 0], "Well": [4, 0], "FeedTrough": [0, 4], "WaterTrough": [4, 4] },
-      "code": "// 🐄 Գոմ։ Կովերը քայլում են. գտիր նրանց և կթիր։\n\n"
+      "code": "// Գոմ։ Կովերը քայլում են. գտիր նրանց և կթիր։\n\n"
     },
     "Market": {
-      "icon": "🏪",
+      "icon": "market",
       "name": "Շուկա",
       "script": "shuka",
       "sizes": [3],
       "objects": { "Stall": [1, 1] },
-      "code": "// 🏪 Շուկա։ Այստեղից վաճառում ես և գնում։\n// Այսօրվա գինը՝ gin(Irer.Dzu)։\n\n"
+      "code": "// Շուկա։ Այստեղից վաճառում ես և գնում։\n// Այսօրվա գինը՝ gin(Irer.Dzu)։\n\n"
     },
-    "Workshop": { "icon": "🏭", "name": "Արհեստանոց", "available": false },
-    "Sheep": { "icon": "🐑", "name": "Փարախ", "available": false },
-    "Goats": { "icon": "🐐", "name": "Այծանոց", "available": false },
-    "Bees": { "icon": "🐝", "name": "Մեղվանոց", "available": false },
-    "Buffalo": { "icon": "🐃", "name": "Գոմեշանոց", "available": false },
-    "Rabbits": { "icon": "🐇", "name": "Ճագարանոց", "available": false }
+    "Workshop": {
+      "icon": "workshop",
+      "name": "Արհեստանոց",
+      "script": "arhestanoc",
+      "sizes": [4, 5],
+      "objects": { "Basket": [0, 0], "Dairy": [3, 1] },
+      "code": "// Արհեստանոց։ Այստեղ կաթից մածուն, պանիր և կարագ են պատրաստում։\n// Զամբյուղը (0, 0) վանդակում է, կաթնատունը՝ (3, 1)։\n\n"
+    },
+    "Sheep": { "icon": "sheep", "name": "Փարախ", "available": false },
+    "Goats": {
+      "icon": "goat",
+      "name": "Այծանոց",
+      "script": "aycanoc",
+      "animal": "Goat",
+      "sizes": [5, 6, 7],
+      "objects": { "Basket": [0, 0], "Well": [4, 0], "FeedTrough": [0, 4], "WaterTrough": [4, 4] },
+      "code": "// Այծանոց։ Այծերը կաթ են տալիս, բայց հրում են ցանկապատը։\n\n"
+    },
+    "Bees": { "icon": "bee", "name": "Մեղվանոց", "available": false },
+    "Buffalo": { "icon": "buffalo", "name": "Գոմեշանոց", "available": false },
+    "Rabbits": { "icon": "rabbit", "name": "Ճագարանոց", "available": false }
   },
   "animals": {
-    "Hen": { "feed": "Grain", "product": "Egg", "lays": true, "every": 60, "space": 4, "step": 2, "needs": { "hunger": 0.5, "thirst": 0.6, "dirt": 0.25 } },
-    "Cow": { "feed": "Bale", "product": "Milk", "lays": false, "every": 120, "space": 8, "step": 4, "needs": { "hunger": 0.4, "thirst": 0.5, "dirt": 0.5 } }
+    "Hen": { "feed": "Grain", "product": "Egg", "lays": true, "every": 60, "space": 4, "step": 2, "needs": { "hunger": 0.5, "thirst": 0.6, "dirt": 0.25 }, "colors": ["White", "Brown", "Black"], "rare": "Gold", "hatch": 90, "grow": 120, "price": 25 },
+    "Cow": { "feed": "Bale", "product": "Milk", "lays": false, "every": 120, "space": 8, "step": 4, "needs": { "hunger": 0.4, "thirst": 0.5, "dirt": 0.5 }, "colors": ["Spotted", "Brown", "Black"], "rare": "Red", "breed": 300, "grow": 240, "price": 120 },
+    "Goat": { "feed": "Bale", "product": "GoatMilk", "lays": false, "every": 90, "space": 6, "step": 2, "needs": { "hunger": 0.45, "thirst": 0.5, "dirt": 0.4 }, "colors": ["White", "Brown", "Black"], "rare": "Gold", "breed": 240, "grow": 180, "price": 90, "butt": 0.25 }
   },
-  "needs": { "seek": 50, "fill": 60, "unhappy": 70, "dirty": 60, "sad": 25, "petBoost": 25, "petSeconds": 60, "moodSpeed": 2 },
+  "needs": { "seek": 50, "fill": 60, "unhappy": 70, "dirty": 60, "sad": 25, "petBoost": 25, "petSeconds": 60, "moodSpeed": 2, "happy": 70, "rareChance": 0.05, "rarePrice": 3, "sickDirt": 70, "sickSeconds": 60, "runaway": 15, "fenceHit": 25, "ropeSeconds": 6 },
+  "seasons": { "Spring": { "breed": 2 }, "Summer": { "thirst": 1.5 }, "Winter": { "hunger": 1.5 }, "Rain": { "dirt": 1.5 } },
+  "machines": {
+    "Dairy": { "Matsun": { "in": { "Milk": 1 }, "seconds": 20 }, "Cheese": { "in": { "Milk": 3 }, "seconds": 60 }, "Butter": { "in": { "Milk": 4 }, "seconds": 45 } },
+    "Stove": { "Omelet": { "in": { "Egg": 2, "Butter": 1 }, "seconds": 30 } }
+  },
   "troughs": { "capacity": 10 },
   "items": {
     "Dram": {},
     "Egg": { "sell": 4 },
     "Milk": { "sell": 15 },
     "Grain": { "buy": 1, "feed": true },
-    "Bale": { "buy": 6, "feed": true }
+    "Bale": { "buy": 6, "feed": true },
+    "GoatMilk": { "sell": 20 },
+    "Matsun": { "sell": 24 },
+    "Cheese": { "sell": 55 },
+    "Butter": { "sell": 70 },
+    "Omelet": { "sell": 100 },
+    "Manure": {},
+    "Medicine": { "buy": 10 },
+    "Plank": { "buy": 8 }
   },
   "prices": { "spread": 0.3 },
-  "cart": { "Bale": { "Hay": 10000 } },
+  "cart": { "Bale": { "Hay": 10000 }, "Plank": { "Wood": 10000 } },
+  "ship": { "Manure": { "Fertilizer": 3 }, "Egg": { "Egg": 1 }, "Milk": { "Milk": 1 }, "Cheese": { "Cheese": 1 }, "Butter": { "Butter": 1 } },
   "orders": {
     "perDay": 3,
     "pay": 1.6,
-    "base": { "Egg": 6, "Milk": 2 },
+    "base": { "Egg": 6, "Milk": 2, "GoatMilk": 2 },
+    "animals": 0.3,
     "lines": [
       "Վաղը տոն է. ինձ պետք է {list}։ Կվճարեմ {pay} ֏։",
       "Թոռներս եկել են. կբերե՞ս {list}։ {pay} ֏ եմ տալիս։",
@@ -76,27 +106,37 @@
   },
   "hands": [3, 5, 10, 20],
   "shop": [
-    { "id": "Cows", "kind": "area", "icon": "🐄", "name": "Գոմ", "about": "Վերանորոգում է գոմը։ Ներսում արդեն 2 կով կա, և բացվում է kitel() հրամանը։", "cost": 300, "animals": 2, "grants": ["milk"] },
-    { "id": "Hen", "kind": "animal", "animal": "Hen", "icon": "🐔", "name": "Հավ", "about": "Եվս մեկ հավ հավանոցում, եթե տեղ կա։", "cost": 30 },
-    { "id": "Cow", "kind": "animal", "animal": "Cow", "icon": "🐄", "name": "Կով", "about": "Եվս մեկ կով գոմում, եթե տեղ կա։", "cost": 150, "needs": "Cows" },
-    { "id": "HensBig", "kind": "size", "area": "Hens", "icon": "📐", "name": "Մեծ հավանոց", "about": "Հավանոցը մեծանում է մեկ վանդակով (5×5, 6×6, 7×7)։ Ավելի շատ հավի տեղ կլինի։", "costs": [100, 250, 600] },
-    { "id": "CowsBig", "kind": "size", "area": "Cows", "icon": "📐", "name": "Մեծ գոմ", "about": "Գոմը մեծանում է մեկ վանդակով (6×6, 7×7)։", "costs": [300, 700], "needs": "Cows" },
-    { "id": "FeedTrough", "kind": "trough", "icon": "🥣", "name": "Կերաման", "about": "Եվս մեկ կերաման։ Դիր այն ցանկացած դատարկ վանդակում՝ karucel(Sarqer.Keraman)։", "cost": 25 },
-    { "id": "WaterTrough", "kind": "trough", "icon": "💧", "name": "Ջրաման", "about": "Եվս մեկ ջրաման։ Դիր այն karucel(Sarqer.Jraman)-ով։", "cost": 25 },
-    { "id": "Speed", "kind": "upgrade", "icon": "⚡", "name": "Արագ դրոններ", "about": "Ռանչոյի բոլոր դրոնները դառնում են 1.5 անգամ արագ։", "costs": [120, 300, 800, 2000] },
-    { "id": "Hands", "kind": "upgrade", "icon": "🤲", "name": "Մեծ ձեռքեր", "about": "Դրոնը ձեռքում պահում է ավելի շատ՝ 5, հետո 10, հետո 20։", "costs": [80, 250, 700] },
-    { "id": "buy", "kind": "command", "icon": "🛒", "about": "Շուկայի դրոնը գնում է կեր՝ հատիկ կամ խոտի հակ։", "cost": 15, "grants": ["buy"] },
-    { "id": "pet", "kind": "command", "icon": "🤗", "about": "Շոյում է դրոնի տակ կանգնած կենդանիներին. նրանք ուրախանում են։", "cost": 40, "grants": ["pet"] },
-    { "id": "clean", "kind": "command", "icon": "🧹", "about": "Մաքրում է վանդակը և ասում, թե որքան է այն աղտոտ։", "cost": 50, "grants": ["clear", "dirt"] },
-    { "id": "animals", "kind": "command", "icon": "📋", "about": "Վայրի բոլոր կենդանիների ցուցակը. ամեն կենդանի օբյեկտ է։", "cost": 80, "grants": ["animals"] },
-    { "id": "cart", "kind": "command", "icon": "🛻", "about": "Սայլը ֆերմայից բերում է խոտի հակեր (10 000 չոր խոտ → 1 հակ)։", "cost": 60, "grants": ["bring"] },
-    { "id": "orders", "kind": "command", "icon": "📜", "about": "Գյուղացիների պատվերները. նրանք վճարում են շուկայից ավելի շատ։", "cost": 60, "grants": ["orders", "deliver"] },
-    { "id": "Workshop", "kind": "area", "icon": "🏭", "name": "Արհեստանոց", "about": "Մածուն, պանիր, կարագ և ձվածեղ։", "available": false },
-    { "id": "Goats", "kind": "area", "icon": "🐐", "name": "Այծանոց", "about": "Այծերը կաթ են տալիս և հրում են ցանկապատը։", "available": false },
-    { "id": "Sheep", "kind": "area", "icon": "🐑", "name": "Փարախ", "about": "Ոչխարներ, բուրդ և հայկական գորգեր։", "available": false },
-    { "id": "Bees", "kind": "area", "icon": "🐝", "name": "Մեղվանոց", "about": "Մեղուներ, ծաղիկներ և մեղր։", "available": false },
-    { "id": "Buffalo", "kind": "area", "icon": "🐃", "name": "Գոմեշանոց", "about": "Գոմեշները շատ կաթ են տալիս և սիրում են ջուր։", "available": false },
-    { "id": "Rabbits", "kind": "area", "icon": "🐇", "name": "Ճագարանոց", "about": "Ճագարները շատ արագ են բազմանում։", "available": false }
+    { "id": "Cows", "kind": "area", "icon": "cow", "name": "Գոմ", "about": "Վերանորոգում է գոմը։ Ներսում արդեն 2 կով կա, և բացվում է kitel() հրամանը։", "cost": 300, "animals": 2, "grants": ["milk"] },
+    { "id": "Hen", "kind": "animal", "animal": "Hen", "icon": "hen", "name": "Հավ", "about": "Եվս մեկ հավ հավանոցում, եթե տեղ կա։", "cost": 30 },
+    { "id": "Cow", "kind": "animal", "animal": "Cow", "icon": "cow", "name": "Կով", "about": "Եվս մեկ կով գոմում, եթե տեղ կա։", "cost": 150, "needs": "Cows" },
+    { "id": "HensBig", "kind": "size", "area": "Hens", "icon": "bigger", "name": "Մեծ հավանոց", "about": "Հավանոցը մեծանում է մեկ վանդակով (5×5, 6×6, 7×7)։ Ավելի շատ հավի տեղ կլինի։", "costs": [100, 250, 600] },
+    { "id": "CowsBig", "kind": "size", "area": "Cows", "icon": "bigger", "name": "Մեծ գոմ", "about": "Գոմը մեծանում է մեկ վանդակով (6×6, 7×7)։", "costs": [300, 700], "needs": "Cows" },
+    { "id": "FeedTrough", "kind": "trough", "icon": "trough", "name": "Կերաման", "about": "Եվս մեկ կերաման։ Դիր այն ցանկացած դատարկ վանդակում՝ karucel(Sarqer.Keraman)։", "cost": 25 },
+    { "id": "WaterTrough", "kind": "trough", "icon": "water2", "name": "Ջրաման", "about": "Եվս մեկ ջրաման։ Դիր այն karucel(Sarqer.Jraman)-ով։", "cost": 25 },
+    { "id": "Speed", "kind": "upgrade", "icon": "speed", "name": "Արագ դրոններ", "about": "Ռանչոյի բոլոր դրոնները դառնում են 1.5 անգամ արագ։", "costs": [120, 300, 800, 2000] },
+    { "id": "Hands", "kind": "upgrade", "icon": "hands", "name": "Մեծ ձեռքեր", "about": "Դրոնը ձեռքում պահում է ավելի շատ՝ 5, հետո 10, հետո 20։", "costs": [80, 250, 700] },
+    { "id": "buy", "kind": "command", "icon": "cart", "about": "Շուկայի դրոնը գնում է կեր՝ հատիկ կամ խոտի հակ։", "cost": 15, "grants": ["buy"] },
+    { "id": "pet", "kind": "command", "icon": "heart", "about": "Շոյում է դրոնի տակ կանգնած կենդանիներին. նրանք ուրախանում են։", "cost": 40, "grants": ["pet"] },
+    { "id": "clean", "kind": "command", "icon": "broom", "about": "Մաքրում է վանդակը և ասում, թե որքան է այն աղտոտ։", "cost": 50, "grants": ["clear", "dirt"] },
+    { "id": "animals", "kind": "command", "icon": "board", "about": "Վայրի բոլոր կենդանիների ցուցակը. ամեն կենդանի օբյեկտ է։", "cost": 80, "grants": ["animals"] },
+    { "id": "cart", "kind": "command", "icon": "wagon", "about": "Սայլը ֆերմայից բերում է խոտի հակեր (10 000 չոր խոտ → 1 հակ)։", "cost": 60, "grants": ["bring"] },
+    { "id": "orders", "kind": "command", "icon": "scroll", "about": "Գյուղացիների պատվերները. նրանք վճարում են շուկայից ավելի շատ։", "cost": 60, "grants": ["orders", "deliver"] },
+    { "id": "Workshop", "kind": "area", "icon": "workshop", "name": "Արհեստանոց", "about": "Վերանորոգում է արհեստանոցը՝ կաթնատնով։ Բացվում է patrastel() հրամանը՝ մածուն, պանիր և կարագ։", "cost": 500, "needs": "Cows", "grants": ["make"] },
+    { "id": "Stove", "kind": "machine", "icon": "stove", "name": "Վառարան", "about": "Ձվածեղ արհեստանոցում (2 ձու և կարագ)։ Դիր այն karucel(Sarqer.Vararan)-ով։", "cost": 250, "needs": "Workshop" },
+    { "id": "Goats", "kind": "area", "icon": "goat", "name": "Այծանոց", "about": "Վերանորոգում է այծանոցը, ներսում 2 այծ կա։ Այծերը հրում են ցանկապատը. բացվում են norogel() և kapel() հրամանները։", "cost": 600, "animals": 2, "needs": "Cows", "grants": ["repair", "rope"] },
+    { "id": "Goat", "kind": "animal", "animal": "Goat", "icon": "goat", "name": "Այծ", "about": "Եվս մեկ այծ այծանոցում, եթե տեղ կա։", "cost": 100, "needs": "Goats" },
+    { "id": "GoatsBig", "kind": "size", "area": "Goats", "icon": "bigger", "name": "Մեծ այծանոց", "about": "Այծանոցը մեծանում է մեկ վանդակով (6×6, 7×7)։", "costs": [400, 900], "needs": "Goats" },
+    { "id": "Drones", "kind": "upgrade", "icon": "drones", "name": "Եվս մեկ դրոն", "about": "Ամեն վայրում ևս մեկ դրոն՝ norDron()-ով, ինչպես ֆերմայում։", "costs": [400, 1500], "grants": ["spawnDrone", "waitFor", "hasFinished", "numDrones", "maxDrones"] },
+    { "id": "events", "kind": "command", "icon": "bell", "about": "erb()՝ դրոնը լսում է իրադարձությունները (ձու, պատրաստ կով, քաղց…) և պատասխանում դրանց, երբ ազատ է։", "cost": 120, "grants": ["on"] },
+    { "id": "board", "kind": "command", "icon": "board", "about": "Ռանչոյի ընդհանուր տախտակը. դրոնները գրում են grel()-ով և կարդում kardal()-ով։", "cost": 100, "grants": ["write", "read"] },
+    { "id": "sellAnimals", "kind": "command", "icon": "tag", "about": "Շուկայի դրոնը վաճառում է կենդանուն գյուղացիներին ըստ id-ի։ Հազվագյուտ գույնը թանկ է։", "cost": 80, "grants": ["sellAnimal"] },
+    { "id": "heal", "kind": "command", "icon": "medicine", "about": "buzhel()՝ բուժում է դրոնի տակ կանգնած հիվանդ կենդանուն, եթե ձեռքում դեղ կա։", "cost": 60, "grants": ["heal"] },
+    { "id": "ship", "kind": "command", "icon": "wagon", "about": "tanel()՝ սայլը ռանչոյի ապրանքները տանում է ֆերմա. գոմաղբը դառնում է պարարտանյութ։", "cost": 80, "grants": ["ship"] },
+    { "id": "FarmSpeed", "kind": "boost", "icon": "speed", "name": "Արագ ֆերմա", "about": "Ֆերմայի դրոնները 10 րոպե 1,5 անգամ արագ են։ Կարելի է գնել նորից։", "cost": 150, "boost": { "kind": "speed", "multiplier": 1.5, "seconds": 600 } },
+    { "id": "Sheep", "kind": "area", "icon": "sheep", "name": "Փարախ", "about": "Ոչխարներ, բուրդ և հայկական գորգեր։", "available": false },
+    { "id": "Bees", "kind": "area", "icon": "bee", "name": "Մեղվանոց", "about": "Մեղուներ, ծաղիկներ և մեղր։", "available": false },
+    { "id": "Buffalo", "kind": "area", "icon": "buffalo", "name": "Գոմեշանոց", "about": "Գոմեշները շատ կաթ են տալիս և սիրում են ջուր։", "available": false },
+    { "id": "Rabbits", "kind": "area", "icon": "rabbit", "name": "Ճագարանոց", "about": "Ճագարները շատ արագ են բազմանում։", "available": false }
   ],
   "story": {
     "intro": [
@@ -105,12 +145,22 @@
       { "emotion": "thinking", "text": "Այստեղ ամեն ինչ կենդանի է։ Հավերը քայլում են, քաղցում են, ծարավում և ձու են ածում միայն, երբ ուրախ են։" },
       { "emotion": "happy", "text": "Ամեն վայր ունի իր դրոնը և իր կոդը։ Կոդի պատուհանում ներդիրներն են՝ «havanoc» (հավանոց) և «shuka» (շուկա)։ Մեծ ▶ կոճակը գործարկում է բոլորը միասին, իսկ ներդիրի փոքր ▶-ը՝ միայն այդ վայրը։" },
       { "emotion": "thinking", "text": "Դրոնը ձեռքում կարող է պահել միայն մի քանի բան։ Ձուն վերցնում է havaqel()-ով, իսկ զամբյուղի վանդակում datarkel()-ով դնում պահեստ։" },
-      { "emotion": "happy", "text": "Կերը վերցնում ես զամբյուղից, ջուրը՝ ջրհորից՝ vercnel()-ով, և լցնում ամանների մեջ՝ lcnel()-ով։ Ձվերը վաճառում է շուկայի դրոնը, իսկ ֏-ով 🛒 Խանութից կգնես նոր կենդանիներ և հրամաններ։" }
+      { "emotion": "happy", "text": "Կերը վերցնում ես զամբյուղից, ջուրը՝ ջրհորից՝ vercnel()-ով, և լցնում ամանների մեջ՝ lcnel()-ով։ Ձվերը վաճառում է շուկայի դրոնը, իսկ ֏-ով «Խանութ»-ից կգնես նոր կենդանիներ և հրամաններ։" }
     ],
     "areas": {
       "Cows": [
         { "emotion": "celebrating", "text": "Գոմը վերանորոգված է, և երկու կով արդեն ներսում են։" },
-        { "emotion": "thinking", "text": "Կովերը քայլում են, ուստի դրոնը պետք է գտնի նրանց։ Երբ կովը պատրաստ է, նրա վանդակում kitel()-ը կաթ է տալիս։ Կովերն ուտում են խոտի հակ՝ Irer.XotiHak։" }
+        { "emotion": "thinking", "text": "Կովերը քայլում են, ուստի դրոնը պետք է գտնի նրանց։ Երբ կովը պատրաստ է, նրա վանդակում kitel()-ը կաթ է տալիս։ Կովերն ուտում են խոտի հակ՝ Irer.XotiHak։" },
+        { "emotion": "happy", "text": "Երկու ուրախ կով, և ազատ տեղ. շուտով հորթ կունենաս։ Ձագն իր ծնողի գույնն ունի, իսկ երբեմն ծնվում է հազվագյուտ գույնով։" }
+      ],
+      "Workshop": [
+        { "emotion": "celebrating", "text": "Արհեստանոցը նորից աշխատում է։ Այստեղ կաթը դառնում է մածուն, պանիր և կարագ։" },
+        { "emotion": "thinking", "text": "Արհեստանոցի դրոնը կաթը վերցնում է զամբյուղից՝ vercnel(Irer.Kat, 3), բերում է կաթնատուն և լցնում lcnel()-ով։ Հետո patrastel(Irer.Panir)-ը սկսում է պանիրը։" },
+        { "emotion": "happy", "text": "Մեքենան աշխատում է մի քանի վայրկյան։ Երբ պատրաստ է, havaqel()-ը վերցնում է պանիրը, իսկ datarkel()-ը դնում է պահեստ։ Պանիրը շատ ավելի թանկ է, քան կաթը։" }
+      ],
+      "Goats": [
+        { "emotion": "celebrating", "text": "Այծանոցում երկու այծ կա։ Նրանք կաթ են տալիս, բայց շատ համառ են՝ գլխով հրում են ցանկապատը։" },
+        { "emotion": "worried", "text": "Երբ ցանկապատի մի կտոր կոտրվում է, անցք է բացվում, և այծը փախչում է գյուղ։ norogel()-ը տախտակով նորոգում է անցքը, իսկ kapel()-ը պարանով վերադարձնում է փախածին։" }
       ]
     }
   },
@@ -131,6 +181,34 @@
     "cart": [
       { "emotion": "happy", "text": "berel(Irer.XotiHak, քանակ)՝ սայլը ֆերմայից բերում է խոտի հակեր։ Ամեն հակի համար ֆերմայի պահեստից վերցվում է 10 000 չոր խոտ։ Միայն շուկայի դրոնը կարող է կանչել սայլը։" }
     ],
+    "Workshop": [
+      { "emotion": "happy", "text": "patrastel(իր)՝ մեքենան սկսում է պատրաստել, եթե ներսում բավականաչափ ապրանք կա։ Կաթնատունը պատրաստում է Irer.Macun, Irer.Panir և Irer.Karag։", "code": "vercnel(Irer.Kat, 3);\n// ... դրոնը գնում է կաթնատուն\nlcnel();\npatrastel(Irer.Panir);" }
+    ],
+    "Stove": [
+      { "emotion": "happy", "text": "Վառարանը ձվածեղ է պատրաստում՝ 2 ձու և 1 կարագ։ Նախ դիր այն արհեստանոցի դատարկ վանդակում՝ karucel(Sarqer.Vararan)։" }
+    ],
+    "events": [
+      { "emotion": "happy", "text": "erb(«անուն», ֆունկցիա)՝ դրոնը սկսում է լսել իրադարձությունը։ Երբ այն տեղի ունենա, ֆունկցիան կկանչվի։ Այդպես են աշխատում բոլոր կայքերի կոճակները։", "code": "erb(\"dzu\", (e) => {\n  tpel(\"Նոր ձու\", e.x, e.y);\n});" },
+      { "emotion": "thinking", "text": "Կարևոր գաղտնիք՝ JavaScript-ը միաժամանակ մեկ բան է անում։ Ֆունկցիան կանչվում է միայն այն ժամանակ, երբ դրոնն ազատ է՝ նրա կոդն ավարտվել է։ Մինչ այդ իրադարձությունները հերթ են կանգնում։" },
+      { "emotion": "worried", "text": "Եթե կոդդ while (true) է, այն երբեք չի ավարտվում, և erb-ի ֆունկցիաները երբեք չեն կանչվի։ Իրադարձություններն են՝ dzu, kat, sovac, datark, patrast, ancq և grum։" }
+    ],
+    "board": [
+      { "emotion": "happy", "text": "Ռանչոյի տախտակը բոլոր դրոններինն է։ grel(«անուն», արժեք)՝ գրում է, kardal(«անուն»)՝ կարդում։ Այդպես հավանոցի դրոնը կարող է շուկայի դրոնին ասել, որ հատիկ է պետք։", "code": "grel(\"hatik\", 5);\ntpel(kardal(\"hatik\"));" },
+      { "emotion": "thinking", "text": "Երբ որևէ մեկը գրում է տախտակին, բոլոր դրոնները ստանում են grum իրադարձությունը։ e.anun-ը ասում է, թե որ անունն է փոխվել։" }
+    ],
+    "sellAnimals": [
+      { "emotion": "happy", "text": "vacharelKendani(id)՝ շուկայի դրոնը կենդանուն վաճառում է գյուղացուն։ Ձագերին չեն վաճառում, իսկ հազվագյուտ գույնը երեք անգամ թանկ է։ Երբեմն պատվերներն էլ որոշակի գույնի կենդանի են ուզում։" }
+    ],
+    "heal": [
+      { "emotion": "thinking", "text": "Կենդանին, որ երկար կանգնում է աղտոտ վանդակում, հիվանդանում է. նա ոչինչ չի տալիս և տխուր է։ Դեղը գնում է շուկայի դրոնը՝ gnel(Irer.Dex, 2)։" },
+      { "emotion": "happy", "text": "Հետո վայրի դրոնը դեղը վերցնում է զամբյուղից, գնում է հիվանդի մոտ և buzhel()։ kendaniner()-ում hivand-ը ասում է, թե ով է հիվանդ։" }
+    ],
+    "ship": [
+      { "emotion": "happy", "text": "tanel(իր, քանակ)՝ սայլը ռանչոյի ապրանքները տանում է ֆերմա։ Գոմաղբը (այն մաքրելիս ես ստանում) դառնում է ֆերմայի պարարտանյութ, իսկ ձուն ու կարագը պետք են գյուղի նազուկի համար։" }
+    ],
+    "Drones": [
+      { "emotion": "happy", "text": "Հիմա ամեն վայրում կարող է աշխատել ևս մեկ դրոն։ norDron(ֆունկցիա)-ն աշխատում է ինչպես ֆերմայում, իսկ դրոնները կարող են խոսել տախտակով։" }
+    ],
     "orders": [
       { "emotion": "happy", "text": "patverner()՝ այսօրվա պատվերների ցուցակն է։ Ամեն պատվեր օբյեկտ է՝ anun, irer, gin և katarvac։ hanznel(համար)՝ հանձնում է պատվերը, եթե պահեստում բոլոր ապրանքները կան։", "code": "let p = patverner();\ntpel(p[0].irer, p[0].gin);" }
     ]
@@ -146,7 +224,7 @@
         "Ձվի վանդակում havaqel()-ը ձուն վերցնում է դրոնի ձեռքը։",
         "Հետո դրոնը վերադառնում է (0, 0) վանդակ, որտեղ զամբյուղն է, և կանչում datarkel()։"
       ],
-      "done": "Առաջին ձուն պահեստում է 🥚"
+      "done": "Առաջին ձուն պահեստում է"
     },
     {
       "id": "ranch_troughs",
@@ -158,7 +236,7 @@
         "Ջրհորի վանդակում vercnel(Irer.Jur, 3)-ը ջուր է վերցնում։",
         "Կերամանի կամ ջրամանի վանդակում lcnel()-ը լցնում է ձեռքում եղածը։ Քարտեզի վրա տես, թե որտեղ են ամանները։"
       ],
-      "done": "Հավերը կուշտ են ու ուրախ 🐔"
+      "done": "Հավերը կուշտ են ու ուրախ"
     },
     {
       "id": "ranch_sell",
@@ -175,10 +253,10 @@
     {
       "id": "ranch_grain",
       "title": "Հատիկ գնիր",
-      "text": "🛒 Խանութից գնիր gnel() հրամանը և գնիր 5 հատիկ։",
+      "text": "Խանութից գնիր gnel() հրամանը և գնիր 5 հատիկ։",
       "goals": [{ "type": "research", "id": "buy" }, { "type": "gain", "item": "Grain", "amount": 5 }],
       "hints": [
-        "🛒 Խանութ կոճակը վերևում է։ gnel()-ն արժե 15 ֏։",
+        "Խանութ կոճակը վերևում է։ gnel()-ն արժե 15 ֏։",
         "Շուկայի ներդիրում gnel(Irer.Hatik, 5)-ը գնում է 5 հատիկ։"
       ],
       "done": "Հիմա հավերը միշտ կեր կունենան"
@@ -198,7 +276,7 @@
     {
       "id": "ranch_animals",
       "title": "Կենդանիների ցուցակ",
-      "text": "🛒 Խանութից գնիր kendaniner()-ը և օգտագործիր այն կոդում։",
+      "text": "Խանութից գնիր kendaniner()-ը և օգտագործիր այն կոդում։",
       "goals": [{ "type": "research", "id": "animals" }, { "type": "code", "fn": "animals" }],
       "hints": [
         "kendaniner()-ը տալիս է ցուցակ. նրա երկարությունը՝ .length, առաջին կենդանին՝ [0]։",
@@ -209,10 +287,10 @@
     {
       "id": "ranch_cows",
       "title": "Գոմը",
-      "text": "Վերանորոգիր գոմը՝ գնիր այն 🛒 Խանութից։",
+      "text": "Վերանորոգիր գոմը՝ գնիր այն «Խանութ»-ից։",
       "goals": [{ "type": "research", "id": "Cows" }],
       "hints": ["Գոմն արժե 300 ֏։ Վաճառիր ձվեր, մինչև բավարար ֏ ունենաս։"],
-      "done": "Կովերը տանն են 🐄"
+      "done": "Կովերը տանն են"
     },
     {
       "id": "ranch_milk",
@@ -224,12 +302,12 @@
         "kitel()-ը աշխատում է միայն այն վանդակում, որտեղ կանգնած է պատրաստ կովը։ Կովերը քայլում են, ուստի ստուգիր նրանց տեղը։",
         "Կթելուց հետո կաթը դրոնի ձեռքում է. դատարկիր այն զամբյուղում։"
       ],
-      "done": "Թարմ կաթ 🥛"
+      "done": "Թարմ կաթ"
     },
     {
       "id": "ranch_cart",
       "title": "Սայլ ֆերմայից",
-      "text": "🛒 Խանութից գնիր berel()-ը և բեր 2 խոտի հակ ֆերմայից։",
+      "text": "Խանութից գնիր berel()-ը և բեր 2 խոտի հակ ֆերմայից։",
       "goals": [{ "type": "research", "id": "cart" }, { "type": "gain", "item": "Bale", "amount": 2 }],
       "hints": [
         "Միայն շուկայի դրոնը կարող է կանչել սայլը։",
@@ -240,10 +318,10 @@
     {
       "id": "ranch_order",
       "title": "Գյուղացու պատվերը",
-      "text": "🛒 Խանութից գնիր patverner()-ը և կատարիր մեկ պատվեր։",
+      "text": "Խանութից գնիր patverner()-ը և կատարիր մեկ պատվեր։",
       "goals": [{ "type": "research", "id": "orders" }, { "type": "order", "amount": 1 }],
       "hints": [
-        "📋 Շուկա կոճակը ցույց է տալիս այսօրվա պատվերները։",
+        "Շուկա կոճակը ցույց է տալիս այսօրվա պատվերները։",
         "hanznel(0)-ն հանձնում է առաջին պատվերը, եթե պահեստում ամեն ինչ կա։"
       ],
       "done": "Գյուղացին գոհ է"
@@ -251,13 +329,102 @@
     {
       "id": "ranch_clean",
       "title": "Մաքուր ռանչո",
-      "text": "🛒 Խանութից գնիր maqrel()-ը և մաքրիր աղտոտ վանդակները։",
+      "text": "Խանութից գնիր maqrel()-ը և մաքրիր աղտոտ վանդակները։",
       "goals": [{ "type": "research", "id": "clean" }, { "type": "code", "fn": "clear" }],
       "hints": [
         "axtot()-ը ասում է, թե որքան է աղտոտ դրոնի տակի վանդակը։",
         "Անցիր բոլոր վանդակներով և մաքրիր նրանք, որոնք շատ աղտոտ են։"
       ],
       "done": "Կենդանիները սիրում են մաքրություն"
+    },
+    {
+      "id": "ranch_workshop",
+      "title": "Արհեստանոց",
+      "text": "Վերանորոգիր արհեստանոցը և պատրաստիր առաջին պանիրը։",
+      "goals": [{ "type": "research", "id": "Workshop" }, { "type": "gain", "item": "Cheese", "amount": 1 }],
+      "hints": [
+        "Արհեստանոցն արժե 500 ֏, և նախ պետք է գոմ ունենաս։",
+        "Արհեստանոցի զամբյուղից վերցրու 3 կաթ՝ vercnel(Irer.Kat, 3), գնա կաթնատուն և lcnel()։",
+        "patrastel(Irer.Panir)-ից հետո սպասիր, մինչև պանիրը պատրաստ լինի, հետո havaqel() և datarkel() զամբյուղում։"
+      ],
+      "done": "Առաջին պանիրը պատրաստ է"
+    },
+    {
+      "id": "ranch_events",
+      "title": "Լսող դրոն",
+      "text": "Գնիր erb()-ը և գրիր կոդ, որ պատասխանում է իրադարձության։",
+      "goals": [{ "type": "research", "id": "events" }, { "type": "code", "fn": "on" }],
+      "hints": [
+        "erb(\"dzu\", ֆունկցիա)-ն կանչում է ֆունկցիան ամեն նոր ձվի համար։",
+        "Ֆունկցիան ստանում է օբյեկտ՝ e.x և e.y. դրոնը կարող է գնալ այնտեղ և havaqel()։",
+        "Մի գրիր while (true) նույն կոդում. իրադարձությունները կանչվում են միայն, երբ կոդն ավարտվել է։"
+      ],
+      "done": "Դրոնը լսում է ռանչոն"
+    },
+    {
+      "id": "ranch_board",
+      "title": "Դրոնների զրույց",
+      "text": "Գնիր տախտակը և գրիր այնտեղ grel()-ով։",
+      "goals": [{ "type": "research", "id": "board" }, { "type": "code", "fn": "write" }, { "type": "code", "fn": "read" }],
+      "hints": [
+        "Մի ներդիրում grel(\"hatik\", 5), մյուսում՝ kardal(\"hatik\")։",
+        "Շուկայի դրոնը կարող է կարդալ, թե քանի հատիկ է պետք, և գնել այդքան։"
+      ],
+      "done": "Դրոնները հիմա խոսում են իրար հետ"
+    },
+    {
+      "id": "ranch_goats",
+      "title": "Համառ այծեր",
+      "text": "Վերանորոգիր այծանոցը և նորոգիր ցանկապատի անցքը։",
+      "goals": [{ "type": "research", "id": "Goats" }, { "type": "code", "fn": "repair" }],
+      "hints": [
+        "Այծանոցն արժե 600 ֏։",
+        "Տախտակը բերում է շուկայի դրոնը՝ berel(Irer.Taxtak, 1) (10 000 փայտ) կամ gnel(Irer.Taxtak, 1)։",
+        "Այծանոցի դրոնը տախտակը վերցնում է զամբյուղից, գնում է անցքի կողքի վանդակ և norogel()։ erb(\"ancq\", …)-ը ասում է, թե որտեղ է անցքը։"
+      ],
+      "done": "Ցանկապատն ամուր է"
+    },
+    {
+      "id": "ranch_rope",
+      "title": "Փախածը տանն է",
+      "text": "Պարանով վերադարձրու փախած այծին՝ kapel()։",
+      "goals": [{ "type": "code", "fn": "rope" }],
+      "hints": [
+        "Նախ նորոգիր բոլոր անցքերը, թե չէ այծը նորից կփախչի։",
+        "kapel()-ը աշխատում է ցանկապատի կողքի ցանկացած վանդակում և մի քանի վայրկյան է տևում։"
+      ],
+      "done": "Այծը տանն է"
+    },
+    {
+      "id": "ranch_heal",
+      "title": "Անասնաբույժ",
+      "text": "Գնիր buzhel()-ը և բուժիր հիվանդ կենդանուն։",
+      "goals": [{ "type": "research", "id": "heal" }, { "type": "code", "fn": "heal" }],
+      "hints": [
+        "Շուկայի դրոնը դեղ է գնում՝ gnel(Irer.Dex, 1)։",
+        "kendaniner()-ում գտիր այն կենդանուն, որի hivand-ը true է, գնա նրա մոտ դեղը ձեռքին և buzhel()։",
+        "Ավելի լավ է՝ մաքուր պահիր վանդակները, որ ոչ ոք չհիվանդանա։"
+      ],
+      "done": "Կենդանին առողջ է"
+    },
+    {
+      "id": "ranch_ship",
+      "title": "Սայլ դեպի ֆերմա",
+      "text": "Գնիր tanel()-ը և ռանչոյի ապրանքներ ուղարկիր ֆերմա։",
+      "goals": [{ "type": "research", "id": "ship" }, { "type": "code", "fn": "ship" }],
+      "hints": [
+        "Միայն շուկայի դրոնը կարող է ուղարկել սայլը։",
+        "tanel(Irer.Gomaxb, 5)-ը 5 գոմաղբը ֆերմայում դարձնում է 15 պարարտանյութ։"
+      ],
+      "done": "Ֆերման շնորհակալ է ռանչոյին"
+    },
+    {
+      "id": "ranch_2000",
+      "title": "Ռանչոյի վարպետ",
+      "text": "Վաստակիր 2000 ֏։",
+      "goals": [{ "type": "earn", "amount": 2000 }],
+      "hints": ["Պանիրն ու կարագը շատ ավելի թանկ են, քան կաթը։ Իսկ պատվերներն ավելի շատ են վճարում։"],
+      "done": "Իսկական ռանչոյի վարպետ"
     },
     {
       "id": "ranch_500",

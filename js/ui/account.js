@@ -1,12 +1,12 @@
 // Start screen (login / registration / leaderboard), the profile window and the leaderboard table.
-import { h, pixelImg } from './dom.js';
+import { h, icon, pixelImg } from './dom.js';
 import { openModal } from './modal.js';
 import { formatClock, formatCount, formatTenths, dayKey, prevDayKey, prevMonthKey, dayNumber, keyOfDay, weekKey } from '../core/util.js';
 import { boardField, playerRow, ascending } from '../storage/account.js';
 import { festivalOn } from '../engine/festivals.js';
 
 const AVATAR_COLORS = ['#2d6be0', '#36a852', '#e2483d', '#f08a24', '#7c3aed', '#0e7490', '#c026d3', '#b45309'];
-const MEDALS = ['🥇', '🥈', '🥉'];
+const MEDALS = ['medal1', 'medal2', 'medal3'];
 const WHAT = ['points', 'code', 'challenge', 'perfect', 'ranch', 'festival']; // the festival only while one runs
 const WHEN = ['day', 'month', 'all']; // (for points and the ranch's ֏)
 
@@ -57,7 +57,7 @@ export class LoginScreen {
       onclick: () => {
         this.pass.type = this.pass.type === 'password' ? 'text' : 'password';
       },
-    }, '👁');
+    }, icon(app.sprites, 'eye'));
     this.rule = h('div', { class: 'form-hint' });
     this.error = h('div', { class: 'form-error' });
     this.submit = h('button', { class: 'btn btn-run login-submit', type: 'submit' });
@@ -175,7 +175,7 @@ export function leaderboardView(app, me = null, before = null) {
     store.set('boardWhen', v);
     load();
   });
-  const whatSelect = select(whats, what, (v) => (v === 'festival' ? `${festival.icon} ${festival.name}` : t(`ui.boardWhat.${v}`)), (v) => {
+  const whatSelect = select(whats, what, (v) => (v === 'festival' ? festival.name : t(`ui.boardWhat.${v}`)), (v) => {
     what = v;
     store.set('boardWhat', v);
     load();
@@ -204,7 +204,7 @@ export function leaderboardView(app, me = null, before = null) {
     h(
       'div',
       { class: 'board-head' },
-      h('span', {}, `🏆 ${t('ui.leadersTitle')} `, questionButton(help)),
+      h('span', {}, icon(app.sprites, 'trophy'), ` ${t('ui.leadersTitle')} `, questionButton(help)),
       h('button', { class: 'btn btn-ghost btn-sm', onclick: () => load(true) }, `↻ ${t('ui.refresh')}`),
     ),
     h('div', { class: 'board-selects' }, whatSelect, whenSelect),
@@ -245,34 +245,34 @@ function boardRow(app, r, place, ctx) {
   return h(
     'li',
     { class: `board-row${ctx.me && r.id === ctx.me.id ? ' me' : ''}`, title: t('ui.cardTitle'), onclick: () => openCard(app, r, ctx) },
-    h('span', { class: 'board-rank' }, MEDALS[place - 1] || String(place)),
+    h('span', { class: 'board-rank' }, MEDALS[place - 1] ? icon(app.sprites, MEDALS[place - 1]) : String(place)),
     avatar(app, r.name, r.hat, 'small'),
     h('span', { class: 'board-who' }, h('span', { class: 'board-name' }, r.name), badges(app, r, ctx)),
     h('span', { class: 'board-value' }, boardValue(ctx.field, r[ctx.field])),
-    h('span', { class: 'board-stat', title: t('ui.colResearch') }, `🔬 ${r.research || 0}`),
-    h('span', { class: 'board-stat', title: t('ui.colTime') }, `⏱ ${formatClock(r.playSeconds || 0)}`),
+    h('span', { class: 'board-stat', title: t('ui.colResearch') }, icon(app.sprites, 'research'), ` ${r.research || 0}`),
+    h('span', { class: 'board-stat', title: t('ui.colTime') }, formatClock(r.playSeconds || 0)),
   );
 }
 
-// [[icon, title]] for 👑 yesterday's, 🏆 last month's and 🎓 last week's challenge champion.
+// [[icon, title]] for the crown (yesterday's), the trophy (last month's) and the cap (last week's challenge champion).
 function crownsOf(app, r, champs) {
   const t = app.i18n.t;
   const out = [];
-  if (champs && champs.day && champs.day.id === r.id) out.push(['👑', t('ui.crownDay')]);
-  if (champs && champs.month && champs.month.id === r.id) out.push(['🏆', t('ui.crownMonth')]);
-  if (champs && champs.week && champs.week.id === r.id) out.push(['🎓', t('ui.crownWeek')]);
+  if (champs && champs.day && champs.day.id === r.id) out.push(['crown', t('ui.crownDay')]);
+  if (champs && champs.month && champs.month.id === r.id) out.push(['trophy', t('ui.crownMonth')]);
+  if (champs && champs.week && champs.week.id === r.id) out.push(['cap', t('ui.crownWeek')]);
   return out;
 }
 
-// Crowns, the rank tier and the 🔥 day streak next to a name.
+// Crowns, the rank tier and the day streak (a flame) next to a name.
 function badges(app, r, { champs, today }) {
   const tier = tierOf(app.config.settings, r.points || 0).tier;
   const streak = streakOf(r, today);
-  const badge = ([text, title]) => h('span', { class: 'board-badge', title }, text);
+  const badge = ([name, title, text = '']) => h('span', { class: 'board-badge', title }, icon(app.sprites, name), text);
   return [
     ...crownsOf(app, r, champs).map(badge),
     tier ? badge([tier.icon, tier.name]) : null,
-    streak >= 2 ? badge([`🔥${streak}`, app.i18n.t('ui.streakDays', { n: streak })]) : null,
+    streak >= 2 ? badge(['flame', app.i18n.t('ui.streakDays', { n: streak }), String(streak)]) : null,
   ];
 }
 
@@ -280,27 +280,27 @@ function badges(app, r, { champs, today }) {
 function openCard(app, r, ctx) {
   const t = app.i18n.t;
   const { tier } = tierOf(app.config.settings, r.points || 0);
-  const stat = (label, value) => h('div', { class: 'card-stat' }, h('span', {}, label), h('b', {}, value));
+  const stat = ([name, label], value) => h('div', { class: 'card-stat' }, h('span', {}, name ? icon(app.sprites, name) : null, ` ${label}`), h('b', {}, value));
   openModal({
-    title: `🃏 ${t('ui.cardTitle')}`,
+    title: t('ui.cardTitle'),
     width: 'min(420px, calc(100vw - 32px))',
     body: h(
       'div',
       { class: 'player-card' },
       avatar(app, r.name, r.hat, 'big'),
       h('div', { class: 'card-name' }, r.name),
-      tier ? h('div', { class: 'card-tier' }, `${tier.icon} ${tier.name}`) : null,
-      h('div', { class: 'card-badges' }, crownsOf(app, r, ctx.champs).map(([icon, title]) => h('span', { class: 'chip' }, `${icon} ${title}`))),
+      tier ? h('div', { class: 'card-tier' }, icon(app.sprites, tier.icon), ` ${tier.name}`) : null,
+      h('div', { class: 'card-badges' }, crownsOf(app, r, ctx.champs).map(([name, title]) => h('span', { class: 'chip' }, icon(app.sprites, name), ` ${title}`))),
       h(
         'div',
         { class: 'card-stats' },
-        stat(`⭐ ${t('ui.colPoints')}`, formatCount(r.points || 0)),
-        stat(`💻 ${t('ui.colCode')}`, formatCount(r.code || 0)),
-        stat(`🔬 ${t('ui.colResearch')}`, `${r.research || 0} / ${researchTotal(app.config)}`),
-        stat(`⏱ ${t('ui.colTime')}`, formatClock(r.playSeconds || 0)),
-        stat(`🌾 ${t('ui.colFarm')}`, r.farm || '1×1'),
-        stat(`🔥 ${t('ui.colStreak')}`, String(streakOf(r, ctx.today))),
-        stat(`🌟 ${t('ui.colPerfect')}`, `${r.perfect || 0}%`),
+        stat(['star', t('ui.colPoints')], formatCount(r.points || 0)),
+        stat(['code', t('ui.colCode')], formatCount(r.code || 0)),
+        stat(['research', t('ui.colResearch')], `${r.research || 0} / ${researchTotal(app.config)}`),
+        stat(['', t('ui.colTime')], formatClock(r.playSeconds || 0)),
+        stat(['farm', t('ui.colFarm')], r.farm || '1×1'),
+        stat(['flame', t('ui.colStreak')], String(streakOf(r, ctx.today))),
+        stat(['star', t('ui.colPerfect')], `${r.perfect || 0}%`),
       ),
     ),
     buttons: [{ label: t('ui.close'), class: 'btn-primary' }],
@@ -356,8 +356,8 @@ function albumView(app, earned) {
     const hide = s.secret && !got;
     return h(
       'button',
-      { type: 'button', class: `sticker${got ? ' got' : ''}`, onclick: () => (info.textContent = hide ? t('ui.stickerSecretAbout') : `${s.icon} ${s.name}․ ${s.about}`) },
-      h('span', { class: 'sticker-icon' }, hide ? '?' : s.icon),
+      { type: 'button', class: `sticker${got ? ' got' : ''}`, onclick: () => (info.textContent = hide ? t('ui.stickerSecretAbout') : `${s.name}․ ${s.about}`) },
+      h('span', { class: 'sticker-icon' }, hide ? '?' : icon(app.sprites, s.icon)),
       h('small', {}, hide ? t('ui.stickerSecret') : s.name),
     );
   };
@@ -383,7 +383,7 @@ export function openProfile(app, { stats, sync, onLogout }) {
   const album = albumView(app, stats.stickers);
   breakdown.hidden = perfect.hidden = album.hidden = true;
   openModal({
-    title: `👤 ${t('ui.profileTitle')}`,
+    title: [icon(app.sprites, 'player'), ` ${t('ui.profileTitle')}`],
     body: [
       h(
         'div',
@@ -392,19 +392,19 @@ export function openProfile(app, { stats, sync, onLogout }) {
         h(
           'div',
           { class: 'profile-info' },
-          h('div', { class: 'profile-name' }, user.name, tier ? h('span', { class: 'profile-tier' }, `${tier.icon} ${tier.name}`) : null),
+          h('div', { class: 'profile-name' }, user.name, tier ? h('span', { class: 'profile-tier' }, icon(app.sprites, tier.icon), ` ${tier.name}`) : null),
           h('div', { class: 'profile-meta' }, t('ui.profileStats', { research: stats.research, total: researchTotal(app.config), time: formatClock(stats.playSeconds) })),
           next ? h('div', { class: 'tier-bar' }, h('span', { style: { width: `${Math.min(100, ((stats.points - from) / (next.points - from)) * 100)}%` } })) : null,
-          h('div', { class: 'profile-meta' }, next ? t('ui.tierNext', { n: formatCount(next.points - stats.points), icon: next.icon, name: next.name }) : t('ui.tierMax')),
+          h('div', { class: 'profile-meta' }, next ? t('ui.tierNext', { n: formatCount(next.points - stats.points), name: next.name }) : t('ui.tierMax')),
         ),
       ),
       h(
         'div',
         { class: 'profile-chips' },
-        h('span', { class: 'chip', title: t('ui.colPoints') }, `⭐ ${formatCount(stats.points)}`, questionButton(breakdown)),
-        h('span', { class: 'chip', title: t('ui.colCode') }, `💻 ${formatCount(stats.code)}`),
-        h('span', { class: 'chip', title: t('ui.colPerfect') }, `🌟 ${stats.perfect}%`, questionButton(perfect)),
-        h('span', { class: 'chip', title: t('ui.stickersShort') }, `🏷 ${stats.stickers.length} / ${((app.config.events || {}).stickers || []).length}`, questionButton(album)),
+        h('span', { class: 'chip', title: t('ui.colPoints') }, icon(app.sprites, 'star'), ` ${formatCount(stats.points)}`, questionButton(breakdown)),
+        h('span', { class: 'chip', title: t('ui.colCode') }, icon(app.sprites, 'code'), ` ${formatCount(stats.code)}`),
+        h('span', { class: 'chip', title: t('ui.colPerfect') }, icon(app.sprites, 'star'), ` ${stats.perfect}%`, questionButton(perfect)),
+        h('span', { class: 'chip', title: t('ui.stickersShort') }, icon(app.sprites, 'tag'), ` ${stats.stickers.length} / ${((app.config.events || {}).stickers || []).length}`, questionButton(album)),
         streak >= 2 ? h('span', { class: 'chip', title: t('ui.colStreak') }, t('ui.streakDays', { n: streak })) : null,
       ),
       breakdown,
@@ -415,7 +415,7 @@ export function openProfile(app, { stats, sync, onLogout }) {
     ],
     buttons: [
       {
-        label: `🚪 ${t('ui.logout')}`,
+        label: t('ui.logout'),
         class: 'btn-danger',
         onClick: (close) => {
           close();

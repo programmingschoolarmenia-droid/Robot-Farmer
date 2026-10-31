@@ -33,7 +33,7 @@ export class ConsolePanel {
       h(
         'div',
         { class: 'console-head' },
-        h('span', {}, `🖥 ${i18n.t('ui.console')}`),
+        h('span', {}, i18n.t('ui.console')),
         h('span', { class: 'spacer' }),
         h('button', { class: 'btn btn-ghost btn-sm', onclick: () => this.clear() }, i18n.t('ui.clearConsole')),
       ),
