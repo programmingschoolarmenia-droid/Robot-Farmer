@@ -810,7 +810,18 @@ export class GameScreen {
       stats: { ...this.game.leaderStats(), breakdown: this.game.stats.breakdown(), parts: perfection(this.game).parts, stickers: [...this.game.stickers.earned] },
       sync: this.syncCloud({ now: true }),
       onLogout: () => this.exit(),
+      onRename: (name, password) => this.rename(name, password),
     });
+  }
+
+  // The farm moves to the new account (an online save still on its way finishes first).
+  async rename(name, password) {
+    this.save();
+    if (this.pushing) await this.pushing;
+    const user = await this.app.account.rename(name, password, this.lastData, this.game.leaderStats());
+    this.cloudDirty = false;
+    this.el.querySelector('.player-pill .btn-label').textContent = user.name;
+    return user;
   }
 
   applyPrefs() {

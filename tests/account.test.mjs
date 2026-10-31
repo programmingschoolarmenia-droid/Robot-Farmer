@@ -242,3 +242,35 @@ test('the weekly challenge list: the fastest first, my place from two counts, la
     }
   }
 });
+
+test('rename: the farm and the row move to the new name, the old account is gone (here and on Firebase)', async () => {
+  const fb = createFakeFirebase();
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = fb.fetch;
+  try {
+    for (const cfg of [{}, { apiKey: 'test-key', projectId: 'test-project' }]) {
+      const acc = new Accounts(memory(), cfg);
+      await acc.register('Aram', 'secret1');
+      await acc.register('taken', 'secret1');
+      await acc.login('aram', 'secret1');
+      const farm = { game: { time: 5 } };
+      acc.saveLocal(farm);
+      await acc.saveOnline(farm, stats({ points: 40 }));
+      assert.equal(await codeOf(acc.rename('Taken', 'secret1', farm, stats())), 'nameTaken');
+      assert.equal(await codeOf(acc.rename('aram', 'secret1', farm, stats())), 'nameTaken');
+      assert.equal(await codeOf(acc.rename('a b', 'secret1', farm, stats())), 'nameInvalid');
+      assert.equal(await codeOf(acc.rename('Gandom', 'wrong12', farm, stats())), 'badLogin');
+      assert.equal(acc.user.id, 'aram');
+
+      assert.deepEqual(await acc.rename('Gandom', 'secret1', farm, stats({ points: 40 })), { id: 'gandom', name: 'Gandom' });
+      assert.equal((await acc.loadSave()).game.time, 5);
+      assert.deepEqual((await acc.leaderboard('points', null, true)).rows.map((r) => [r.name, r.points]), [['Gandom', 40]]);
+      assert.equal(acc.adapter.get('save.v2.aram'), null);
+      assert.equal(await codeOf(acc.login('aram', 'secret1')), 'badLogin');
+      assert.deepEqual(await new Accounts(acc.adapter, cfg).login('gandom', 'secret1'), { id: 'gandom', name: 'Gandom' });
+      if (cfg.apiKey) assert.equal(fb.docs.has('saves/aram') || fb.docs.has('players/aram'), false);
+    }
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

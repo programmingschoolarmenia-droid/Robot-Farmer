@@ -196,6 +196,19 @@
 .form-hint:empty {
   display: none;
 }
+.link-quiet {
+  display: block;
+  margin: 10px auto 0;
+  padding: 2px 6px;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  cursor: pointer;
+  opacity: 0.7;
+}
 .login-main > .form-hint,
 .login-main > .form-error {
   margin-top: 14px;

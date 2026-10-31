@@ -372,7 +372,45 @@ function albumView(app, earned) {
 
 // stats = { ...Game.leaderStats(), breakdown, parts (Perfection), stickers (earned ids) };
 // sync = promise of the fresh online save.
-export function openProfile(app, { stats, sync, onLogout }) {
+// A new username: the new name and the password (asked again, like any account change).
+function openRename(app, onRename, closeProfile) {
+  const t = app.i18n.t;
+  const name = h('input', { class: 'input', autocomplete: 'username', autocapitalize: 'none', spellcheck: 'false', maxlength: '16' });
+  const pass = h('input', { class: 'input', type: 'password', autocomplete: 'current-password' });
+  const error = h('div', { class: 'form-error' });
+  const submit = h('button', { class: 'btn btn-primary', type: 'submit' }, t('ui.renameSave'));
+  const { close } = openModal({
+    title: t('ui.renameTitle'),
+    body: h(
+      'form',
+      {
+        class: 'login-form',
+        onsubmit: async (e) => {
+          e.preventDefault();
+          submit.disabled = true;
+          error.textContent = '';
+          try {
+            const user = await onRename(name.value, pass.value);
+            close();
+            closeProfile();
+            app.toast(t('ui.renameDone', { name: user.name }));
+          } catch (err) {
+            error.textContent = accountErrorText(app.i18n, err);
+            submit.disabled = false;
+          }
+        },
+      },
+      h('p', { class: 'form-hint' }, t('ui.renameHint')),
+      h('label', { class: 'field' }, h('span', {}, t('ui.renameNew')), name),
+      h('label', { class: 'field' }, h('span', {}, t('ui.password')), pass),
+      error,
+      submit,
+    ),
+  });
+  name.focus();
+}
+
+export function openProfile(app, { stats, sync, onLogout, onRename }) {
   const t = app.i18n.t;
   const user = app.account.user;
   const { tier, next } = tierOf(app.config.settings, stats.points);
@@ -382,7 +420,7 @@ export function openProfile(app, { stats, sync, onLogout }) {
   const perfect = perfectionView(app, stats.parts);
   const album = albumView(app, stats.stickers);
   breakdown.hidden = perfect.hidden = album.hidden = true;
-  openModal({
+  const profile = openModal({
     title: [icon(app.sprites, 'player'), ` ${t('ui.profileTitle')}`],
     body: [
       h(
@@ -412,6 +450,7 @@ export function openProfile(app, { stats, sync, onLogout }) {
       album,
       leaderboardView(app, { id: user.id, ...stats }, sync),
       app.account.online ? null : h('p', { class: 'form-hint' }, t('ui.localMode')),
+      h('button', { class: 'link-quiet', onclick: () => openRename(app, onRename, profile.close) }, t('ui.renameTitle')),
     ],
     buttons: [
       {

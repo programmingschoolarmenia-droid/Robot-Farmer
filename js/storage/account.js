@@ -119,6 +119,30 @@ export class Accounts {
     this.adapter.remove(SESSION_KEY);
   }
 
+  // A new username (login too): the password is checked, a new account gets the farm and the
+  // leaderboard row, then the old account and its documents are removed. If removing fails, the
+  // new account still works (the teacher can delete the old one).
+  async rename(name, password, data, stats) {
+    const n = String(name || '').trim();
+    if (!NAME_RE.test(n)) throw new AccountError('nameInvalid');
+    const id = n.toLowerCase();
+    if (id === this.session.id) throw new AccountError('nameTaken');
+    const old = await this.backend.signIn(this.session.id, password, this.session.name);
+    const fresh = await this.backend.signUp(id, password, n);
+    try {
+      await this.backend.putSave(fresh, data, playerRow(n, stats));
+    } catch (e) {
+      await this.backend.remove(fresh).catch((err) => console.warn('New account not removed:', err));
+      throw e;
+    }
+    this.adapter.set(saveKey(id), JSON.stringify(data));
+    this.forget(old.id);
+    this.start(fresh);
+    this.cache.clear();
+    await this.backend.remove(old).catch((e) => console.warn('Old account not removed:', e));
+    return this.user;
+  }
+
   // The teacher deleted the account: this browser forgets its farm too.
   forget(id) {
     this.adapter.remove(saveKey(id));
@@ -327,6 +351,13 @@ class FirebaseBackend {
     });
   }
 
+  // The account and its documents (a fresh session from signIn / signUp).
+  async remove(s) {
+    const del = (collection) => ({ delete: `${this.docs}/${collection}/${s.id}` });
+    await call(`${this.url}:commit`, { token: s.idToken, body: { writes: [del('saves'), del('players')] } });
+    await call(`https://identitytoolkit.googleapis.com/v1/accounts:delete?key=${this.key}`, { body: { idToken: s.idToken } });
+  }
+
   // Rows whose `field` is above `min`, sorted by it. Firestore indexes every field by itself,
   // so the dated day / month fields need no setup.
   async query(field, min, asc, limit) {
@@ -404,6 +435,14 @@ class LocalBackend {
     const players = this.table('players.v1');
     players[s.id] = row;
     this.adapter.set('players.v1', JSON.stringify(players));
+  }
+
+  async remove(s) {
+    for (const key of ['users.v1', 'players.v1']) {
+      const table = this.table(key);
+      delete table[s.id];
+      this.adapter.set(key, JSON.stringify(table));
+    }
   }
 
   async query(field, min, asc, limit) {

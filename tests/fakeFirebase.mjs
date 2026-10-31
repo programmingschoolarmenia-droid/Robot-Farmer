@@ -39,6 +39,12 @@ export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-proj
         if (!users.has(email)) return fail(400, 'USER_NOT_FOUND');
         return json(200, { users: [{ email, disabled: !!users.get(email).disabled }] });
       }
+      if (u.pathname.endsWith('accounts:delete')) {
+        const email = tokens.get(body.idToken);
+        if (!email || !users.has(email)) return fail(400, 'USER_NOT_FOUND');
+        users.delete(email);
+        return json(200, {});
+      }
       const user = users.get(body.email);
       if (u.pathname.endsWith('accounts:signUp')) {
         if (user) return fail(400, 'EMAIL_EXISTS');
@@ -68,8 +74,9 @@ export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-proj
     if (path === ':commit') {
       const email = owner(req);
       if (!email) return fail(401, 'Request had invalid authentication credentials.', { status: 'UNAUTHENTICATED' });
-      for (const w of body.writes) if (!ownsDoc(email, w.update.name)) return fail(403, 'Missing or insufficient permissions.', { status: 'PERMISSION_DENIED' });
-      for (const w of body.writes) docs.set(w.update.name.replace(`${prefix}/`, ''), w.update.fields);
+      const doc = (w) => (w.update ? w.update.name : w.delete).replace(`${prefix}/`, '');
+      for (const w of body.writes) if (!ownsDoc(email, doc(w))) return fail(403, 'Missing or insufficient permissions.', { status: 'PERMISSION_DENIED' });
+      for (const w of body.writes) w.update ? docs.set(doc(w), w.update.fields) : docs.delete(doc(w));
       return json(200, { commitTime: new Date().toISOString() });
     }
     const players = [...docs].filter(([k]) => k.startsWith('players/'));
