@@ -82,12 +82,26 @@ export class Accounts {
     this.online = !!(online.apiKey && online.projectId);
     this.backend = this.online ? new FirebaseBackend(online) : new LocalBackend(adapter);
     this.limit = online.leaderboardSize || 50;
+    this.admins = (online.admins || []).map((a) => String(a).toLowerCase());
     this.session = readJSON(adapter, SESSION_KEY);
     this.cache = new Map(); // leaderboard field -> { at, rows }
   }
 
   get user() {
     return this.session ? { id: this.session.id, name: this.session.name } : null;
+  }
+
+  // Teachers (settings.json → online.admins) can delete any player from the leaderboard.
+  get isAdmin() {
+    return !!this.session && this.admins.includes(this.session.id);
+  }
+
+  // The player's farm and row go, and the username is blocked: an open game of that player is
+  // logged out at its next save.
+  async removePlayer(id) {
+    if (!this.isAdmin || id === this.session.id) throw new AccountError('unknown', 'not allowed');
+    await this.backend.removePlayer(this.session, id);
+    this.cache.clear();
   }
 
   async register(name, password) {
@@ -319,15 +333,20 @@ class FirebaseBackend {
 
   // A deleted account's ID token still works for up to an hour, so every load and save first
   // asks Auth whether the account still exists (and is not disabled).
+  // A teacher's delete leaves a deleted/{id} document.
   async check(s) {
     const idToken = await this.token(s);
-    let r;
-    try {
-      r = await call(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${this.key}`, { body: { idToken } });
-    } catch (e) {
-      throw e.code === 'badLogin' ? new AccountError('deleted') : e; // USER_DISABLED
-    }
-    if (!r.users || !r.users.length || r.users[0].disabled) throw new AccountError('deleted');
+    const [r, blocked] = await Promise.all([
+      call(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${this.key}`, { body: { idToken } }).catch((e) => {
+        throw e.code === 'badLogin' ? new AccountError('deleted') : e; // USER_DISABLED
+      }),
+      call(`${this.url}/deleted/${s.id}`, { token: idToken, missingOk: true }).catch((e) => {
+        if (e.code !== 'config') throw e;
+        console.warn('Firestore rules have no "deleted" part yet (config/README.md), the teacher cannot delete players:', e);
+        return null;
+      }),
+    ]);
+    if (!r.users || !r.users.length || r.users[0].disabled || blocked) throw new AccountError('deleted');
     return idToken;
   }
 
@@ -348,6 +367,16 @@ class FirebaseBackend {
           update('players', Object.fromEntries(Object.entries(row).map(([k, v]) => [k, encode(v)]))),
         ],
       },
+    });
+  }
+
+  // Another player's documents go and deleted/{id} blocks the name (the Firestore rules let only
+  // the teachers do this; Auth accounts can be deleted only in the Firebase console).
+  async removePlayer(s, id) {
+    const doc = (collection) => `${this.docs}/${collection}/${id}`;
+    await call(`${this.url}:commit`, {
+      token: await this.check(s),
+      body: { writes: [{ update: { name: doc('deleted'), fields: { by: { stringValue: s.id } } } }, { delete: doc('saves') }, { delete: doc('players') }] },
     });
   }
 
@@ -435,6 +464,10 @@ class LocalBackend {
     const players = this.table('players.v1');
     players[s.id] = row;
     this.adapter.set('players.v1', JSON.stringify(players));
+  }
+
+  async removePlayer(s, id) {
+    return this.remove({ id });
   }
 
   async remove(s) {

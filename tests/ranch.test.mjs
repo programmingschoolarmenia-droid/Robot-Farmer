@@ -38,12 +38,12 @@ const buy = (r, ...ids) => {
   for (const id of ids) assert.deepEqual(r.buy(id), { ok: true }, id);
 };
 
-test('the ranch research appears after 70 research levels and shows the ranch button', () => {
-  const levels = { Loops: 1, Speed: 5, Grass: 10, Expand: 9, Plant: 1, Carrots: 10, Operators: 1, Watering: 9, Trees: 10, Variables: 1, Lists: 1, Objects: 1, Functions: 1, Pumpkins: 9 };
-  const game = makeGame({ levels, items: { Hay: 500000, Wood: 500000, Carrot: 200000, Pumpkin: 100000 } });
-  assert.equal(game.research.totalLevels(), 69);
-  assert.equal(game.research.state('Ranch'), 'locked', 'its parents are done, but only 69 levels');
-  game.research.levels.set('Pumpkins', 10);
+test('the ranch research appears after 40 research levels and shows the ranch button', () => {
+  const levels = { Loops: 1, Speed: 5, Grass: 10, Expand: 7, Plant: 1, Carrots: 10, Operators: 1, Variables: 1, Lists: 1, Objects: 1, Functions: 1 };
+  const game = makeGame({ levels, items: { Hay: 250000, Wood: 250000, Carrot: 100000, Pumpkin: 50000 } });
+  assert.equal(game.research.totalLevels(), 39);
+  assert.equal(game.research.state('Ranch'), 'locked', 'its parents are done, but only 39 levels');
+  game.research.levels.set('Expand', 8);
   assert.equal(game.research.state('Ranch'), 'affordable');
   assert.equal(game.research.hasPanel('ranch'), false);
   assert.equal(game.research.buy('Ranch').ok, true);
@@ -187,7 +187,7 @@ test('the shop: areas, animals while there is room, bigger pens, troughs built b
   const locked = runRanch(game, { havanoc: 'shoyel();' });
   const i18n = createI18n(game.config.texts, game.config.research.nodes, game.config.guide);
   assert.deepEqual([locked.errors, describeError(locked.error, i18n, r).message], [['lockedFunction'], 'shoyel() հրամանը դեռ չունես։ Գնիր այն ռանչոյի «Խանութ»-ից։']);
-  assert.deepEqual(runRanch(game, { havanoc: 'tnkel(Bujser.Xot);' }).errors, ['notDefined']);
+  assert.deepEqual(runRanch(game, { havanoc: 'tnkel(Buyser.Xot);' }).errors, ['notDefined']);
   buy(r, 'pet');
   assert.deepEqual(runRanch(game, { havanoc: 'tpel(shoyel() || true);' }).errors, []);
 });

@@ -136,24 +136,26 @@ test('import / export between scripts', () => {
 
 test('Armenian aliases work for functions, directions and enums', () => {
   const game = makeGame({ unlockAll: true });
-  const r = runCode(game, 'tpel(Bujser.Gazar, Իրեր.Փայտ, Hyusis);\nհավաքել();');
+  const r = runCode(game, 'tpel(Buyser.Gazar, Իրեր.Փայտ, Hyusis);\nհավաքել();');
   assert.equal(r.error, null);
-  assert.deepEqual(r.out, ['Bujser.Gazar Irer.Payt Verev']);
+  assert.deepEqual(r.out, ['Buyser.Gazar Irer.Payt Verev']);
 });
 
 test('Armenian names are shown everywhere, English names still work hidden', () => {
-  assert.deepEqual(outOf('print(Entities.Carrot, East, harvest, Math.floor(2.5));\nharvest();'), ['Bujser.Gazar Aj havaqel() 2']);
-  assert.match(outOf('tpel(arzheq(Hetazotutyunner.Aragutyun, 0), arzheq(Bujser.Gazar));')[0], /^\{ ChorXot: 20 \} \{ ChorXot: \d+, Payt: \d+ \}$/);
-  assert.deepEqual(outOf('tpel(texapoxel == poxatexel, Bujser.Ganc == Bujser.Gandz);'), ['true true']);
+  assert.deepEqual(outOf('print(Entities.Carrot, East, harvest, Math.floor(2.5));\nharvest();'), ['Buyser.Gazar Aj havaqel() 2']);
+  assert.match(outOf('tpel(arzheq(Hetazotutyunner.Aragutyun, 0), arzheq(Buyser.Gazar));')[0], /^\{ ChorXot: 20 \} \{ ChorXot: \d+, Payt: \d+ \}$/);
+  assert.deepEqual(outOf('tpel(texapoxel == poxatexel, Buyser.Ganc == Buyser.Gandz);'), ['true true']);
+  // old spellings keep working in saved code
+  assert.deepEqual(outOf('tpel(Bujser.Gazar == Buyser.Gazar, ynker == enker, Dzkner.Kogak == Dzkner.Koxak);'), ['true true true']);
   const game = makeGame({ unlockAll: true });
   const names = game.api.knownNames();
-  for (const n of ['havaqel', 'tnkel', 'Bujser', 'Verev', 'Math']) assert.ok(names.includes(n), n);
+  for (const n of ['havaqel', 'tnkel', 'Buyser', 'Verev', 'Math']) assert.ok(names.includes(n), n);
   for (const n of ['harvest', 'Entities', 'North', 'հավաքել', 'Hyusis']) assert.ok(!names.includes(n), n);
   assert.ok(game.api.enums.Entities.displayNames().includes('Xot'));
   assert.ok(!game.api.enums.Entities.displayNames().includes('Grass'));
   assert.deepEqual(game.api.suggest('havakel'), ['havaqel']);
-  assert.equal(run('Xot;').error.params.enumHint[0], 'Bujser.Xot');
-  assert.deepEqual(run('Bujser.Gazr;').error.params.suggestions, ['Gazar']);
+  assert.equal(run('Xot;').error.params.enumHint[0], 'Buyser.Xot');
+  assert.deepEqual(run('Buyser.Gazr;').error.params.suggestions, ['Gazar']);
 });
 
 test('error messages name game functions in Armenian', () => {

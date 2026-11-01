@@ -1,6 +1,6 @@
 // A tiny in-memory stand-in for the Firebase Auth + Firestore REST endpoints the game uses,
 // so tests (and the browser play-throughs) exercise the real request code without a project.
-export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-project' } = {}) {
+export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-project', admins = [] } = {}) {
   const users = new Map(); // email -> { password, displayName }
   const tokens = new Map(); // idToken -> email
   const refresh = new Map(); // refreshToken -> email
@@ -19,7 +19,14 @@ export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-proj
     return { idToken, refreshToken, expiresIn: '3600' };
   };
   const owner = (req) => tokens.get(String(req.headers.Authorization || '').replace('Bearer ', ''));
-  const ownsDoc = (email, path) => email && email.split('@')[0] === path.split('/').pop();
+  // Like the Firestore rules in config/README.md: owners write their own saves / players unless
+  // deleted/{name} exists; the teachers write anything, deleted/ included.
+  const isAdmin = (email) => email && admins.includes(email.split('@')[0]);
+  const ownsDoc = (email, path) => {
+    const id = path.split('/').pop();
+    if (isAdmin(email)) return true;
+    return email && !path.includes('deleted/') && email.split('@')[0] === id && !docs.has(`deleted/${id}`);
+  };
   const num = (fields, f) => (fields[f] && 'integerValue' in fields[f] ? Number(fields[f].integerValue) : undefined);
 
   fake.expireTokens = () => tokens.clear();
@@ -64,6 +71,10 @@ export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-proj
     }
 
     const path = decodeURIComponent(u.pathname).replace(`/v1/${prefix}`, '');
+    if (path.startsWith('/deleted/') && !body) {
+      const fields = docs.get(path.slice(1));
+      return fields ? json(200, { name: `${prefix}${path}`, fields }) : fail(404, `Document "${prefix}${path}" not found.`, { status: 'NOT_FOUND' });
+    }
     if (path.startsWith('/saves/') && !body) {
       const email = owner(req);
       if (!email) return fail(401, 'Request had invalid authentication credentials.', { status: 'UNAUTHENTICATED' });

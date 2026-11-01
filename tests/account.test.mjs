@@ -274,3 +274,37 @@ test('rename: the farm and the row move to the new name, the old account is gone
     globalThis.fetch = realFetch;
   }
 });
+
+test('a teacher deletes a player from the leaderboard: the farm and row go, the name is blocked at once', async () => {
+  const fb = createFakeFirebase({ admins: ['admin'] });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = fb.fetch;
+  try {
+    for (const cfg of [{ admins: ['admin'] }, { apiKey: 'test-key', projectId: 'test-project', admins: ['Admin'] }]) {
+      const kid = new Accounts(memory(), cfg);
+      await kid.register('Seroj', 'secret1');
+      kid.saveLocal({ game: { time: 3 } });
+      await kid.saveOnline({ game: { time: 3 } }, stats({ points: 30 }));
+      assert.equal(kid.isAdmin, false);
+      assert.equal(await codeOf(kid.removePlayer('seroj')), 'unknown');
+
+      const teacher = new Accounts(memory(), cfg);
+      await teacher.register('admin', 'secret1');
+      assert.equal(teacher.isAdmin, true);
+      assert.equal(await codeOf(teacher.removePlayer('admin')), 'unknown', 'not yourself');
+      await teacher.removePlayer('seroj');
+      assert.deepEqual((await teacher.leaderboard('points', null, true)).rows, []);
+      if (!cfg.apiKey) continue;
+      assert.equal(fb.docs.has('saves/seroj') || fb.docs.has('players/seroj'), false);
+      // The student's open game is refused at the next save and forgets the farm; logging in again fails too.
+      assert.equal(await codeOf(kid.saveOnline({ game: { time: 4 } }, stats({ points: 40 }))), 'deleted');
+      assert.equal(fb.docs.has('players/seroj'), false);
+      assert.deepEqual([kid.session, kid.adapter.get('save.v2.seroj')], [null, null]);
+      await kid.login('seroj', 'secret1');
+      assert.equal(await codeOf(kid.loadSave()), 'deleted');
+      assert.equal(await codeOf(kid.register('seroj', 'secret1')), 'nameTaken');
+    }
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

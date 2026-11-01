@@ -224,6 +224,7 @@ export function validateConfig(config) {
       if (!o.apiKey !== !o.projectId) err(S, o.apiKey ? 'online.projectId' : 'online.apiKey', 'Firebase-ի համար պետք են և՛ apiKey-ն, և՛ projectId-ն');
       needNum('online.cloudSaveSeconds', o.cloudSaveSeconds, { min: 10, optional: true });
       needNum('online.leaderboardSize', o.leaderboardSize, { min: 1, int: true, optional: true });
+      if (o.admins !== undefined && !(Array.isArray(o.admins) && o.admins.every((a) => typeof a === 'string' && /^[A-Za-z0-9_]{3,16}$/.test(a)))) err(S, 'online.admins', 'Պետք է լինի մուտքանունների ցուցակ, օրինակ՝ ["admin"]');
     }
   }
   if (settings.fishing !== undefined) {

@@ -18,7 +18,7 @@ test('fishing: dig a pond, fill it with water, then fish', () => {
   r = runCode(game, 'while (jriQanak() < 1) {\n  ogtagorcel(Irer.Jur);\n}\nlet dzuk = dzknorsel();\ntpel(dzuk);');
   assert.equal(r.error, null);
   assert.ok(game.world.isFullPond(tile));
-  assert.match(r.out[0], /^Dzkner\.(Karas|Kogak|Ishkhan|Voske)$/);
+  assert.match(r.out[0], /^Dzkner\.(Karas|Koxak|Ishxan|Voske)$/);
   assert.ok(game.inventory.get('Fish') >= 16, 'research level 5 doubles the catch 4 times');
 
   // The pond keeps its water and its place in a save; nothing grows in it; herkel() fills it in.
@@ -26,7 +26,7 @@ test('fishing: dig a pond, fill it with water, then fish', () => {
   assert.equal(tile.water, 1);
   const loaded = new Game(game.config, JSON.parse(JSON.stringify(game.toSave()))).world.tile(0, 0);
   assert.deepEqual([loaded.ground, loaded.water], ['Pond', 1]);
-  assert.deepEqual(runCode(game, 'tnkel(Bujser.Tup);').warnings, ['plant_pond']);
+  assert.deepEqual(runCode(game, 'tnkel(Buyser.Tup);').warnings, ['plant_pond']);
   runCode(game, 'herkel();');
   assert.deepEqual([tile.ground, tile.water], ['Grassland', 0]);
 });

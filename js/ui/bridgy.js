@@ -26,7 +26,7 @@ export class Bridgy {
       'div',
       { class: 'bridgy-box' },
       this.nameEl,
-      h('button', { class: 'btn btn-ghost btn-sm bridgy-close', title: t('ui.close'), onclick: () => this.end() }, '✕'),
+      h('button', { class: 'btn btn-ghost btn-sm bridgy-close', title: t('ui.close'), onclick: () => this.closeAll() }, '✕'),
       this.textEl,
       this.extraEl,
       this.buttonsEl,
@@ -70,11 +70,13 @@ export class Bridgy {
   say(pages, opts = {}) {
     if (!pages || !pages.length) return;
     const conv = { pages, ...opts };
-    if (opts.interrupt && this.conv) {
+    // A new menu / hint replaces the old one instead of piling up behind it.
+    if (opts.replaceSame) this.queue = this.queue.filter((c) => c.key !== opts.key);
+    if (opts.replaceSame && this.conv && this.conv.key === opts.key) this.start(conv);
+    else if (opts.interrupt && this.conv) {
       this.queue.unshift({ ...this.conv, resumeAt: this.page });
       this.start(conv);
     } else if (!this.conv) this.start(conv);
-    else if (opts.replaceSame && this.conv.key === opts.key) this.start(conv);
     else this.queue.push(conv);
   }
 

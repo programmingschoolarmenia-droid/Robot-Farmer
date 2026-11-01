@@ -1,6 +1,6 @@
 // Start screen (login / registration / leaderboard), the profile window and the leaderboard table.
 import { h, icon, pixelImg } from './dom.js';
-import { openModal } from './modal.js';
+import { openModal, confirmModal } from './modal.js';
 import { formatClock, formatCount, formatTenths, dayKey, prevDayKey, prevMonthKey, dayNumber, keyOfDay, weekKey } from '../core/util.js';
 import { boardField, playerRow, ascending } from '../storage/account.js';
 import { festivalOn } from '../engine/festivals.js';
@@ -192,7 +192,7 @@ export function leaderboardView(app, me = null, before = null) {
       await before;
       const meRow = me && { id: me.id, ...playerRow(app.account.user.name, me) };
       const [board, champs] = await Promise.all([app.account.leaderboard(field, meRow && { id: meRow.id, value: meRow[field] || 0 }, refresh), championsOf(app, today)]);
-      if (mine === seq) body.replaceChildren(...boardContent(app, { ...board, tab, field, today, me: meRow, champs }));
+      if (mine === seq) body.replaceChildren(...boardContent(app, { ...board, tab, field, today, me: meRow, champs, reload: () => load(true) }));
     } catch (e) {
       if (mine === seq) body.replaceChildren(h('div', { class: 'board-note form-error' }, accountErrorText(app.i18n, e)));
     }
@@ -281,6 +281,19 @@ function openCard(app, r, ctx) {
   const t = app.i18n.t;
   const { tier } = tierOf(app.config.settings, r.points || 0);
   const stat = ([name, label], value) => h('div', { class: 'card-stat' }, h('span', {}, name ? icon(app.sprites, name) : null, ` ${label}`), h('b', {}, value));
+  const account = app.account;
+  // Teachers: delete this player (after a question).
+  const remove = async (close) => {
+    if (!(await confirmModal(app.i18n, { title: t('ui.deletePlayer'), text: t('ui.deletePlayerAsk', { name: r.name }), okLabel: t('ui.deletePlayer') }))) return;
+    try {
+      await account.removePlayer(r.id);
+      close();
+      app.toast(t('ui.deletePlayerDone', { name: r.name }));
+      ctx.reload();
+    } catch (e) {
+      app.toast(accountErrorText(app.i18n, e), 'warn');
+    }
+  };
   openModal({
     title: t('ui.cardTitle'),
     width: 'min(420px, calc(100vw - 32px))',
@@ -303,7 +316,10 @@ function openCard(app, r, ctx) {
         stat(['star', t('ui.colPerfect')], `${r.perfect || 0}%`),
       ),
     ),
-    buttons: [{ label: t('ui.close'), class: 'btn-primary' }],
+    buttons: [
+      account.isAdmin && r.id !== account.user.id ? { label: t('ui.deletePlayer'), class: 'btn-danger', onClick: remove } : null,
+      { label: t('ui.close'), class: 'btn-primary' },
+    ].filter(Boolean),
   });
 }
 

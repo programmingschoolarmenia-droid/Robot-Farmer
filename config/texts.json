@@ -80,6 +80,9 @@
     "profileStats": "Հետազոտություններ՝ {research} / {total} · Խաղի ժամանակ՝ {time}",
     "logout": "Դուրս գալ",
     "renameTitle": "Փոխել մուտքանունը",
+    "deletePlayer": "Ջնջել խաղացողին",
+    "deletePlayerAsk": "Ջնջե՞լ {name}-ին։ Նրա ֆերման և տեղը ցուցակում կջնջվեն, իսկ այս անունով այլևս հնարավոր չի լինի խաղալ։",
+    "deletePlayerDone": "{name}-ը ջնջված է։",
     "renameHint": "Ֆերման կմնա քոնը, բայց հին անունով այլևս չես կարողանա մտնել։",
     "renameNew": "Նոր մուտքանուն",
     "renameSave": "Փոխել",
@@ -544,7 +547,7 @@
     "namespace": "խումբ",
     "drone": "դրոն",
     "enum": "ուղղություն",
-    "enum:Entities": "բույս (Bujser.…)",
+    "enum:Entities": "բույս (Buyser.…)",
     "enum:Items": "իր (Irer.…)",
     "enum:Grounds": "հող (Hoxer.…)",
     "enum:Hats": "գլխարկ (Glxarkner.…)",
@@ -556,7 +559,7 @@
   },
 
   "expected": {
-    "Entities": "բույս, օրինակ՝ Bujser.Tup",
+    "Entities": "բույս, օրինակ՝ Buyser.Tup",
     "Items": "իր, օրինակ՝ Irer.ChorXot",
     "Grounds": "հող, օրինակ՝ Hoxer.Hox",
     "Hats": "գլխարկ, օրինակ՝ Glxarkner.Karmir",

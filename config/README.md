@@ -85,7 +85,7 @@ Each plant has:
 
 **Fishing:** `porel()` digs a pond under the drone (plants can't grow there; `herkel()` fills it
 in again). `ogtagorcel(Irer.Jur)` fills it with water (a pond does not dry out); when
-`jriQanak()` is 1 the pond is full and `dzknorsel()` catches a random fish: Karas, Kogak, Ishkhan
+`jriQanak()` is 1 the pond is full and `dzknorsel()` catches a random fish: Karas, Koxak, Ishxan
 or the golden fish, in winter also Sig (whitefish) and in the rain Loqo (catfish). The fish
 (`Irer.Dzuk`) go to the storage, count for the leaderboard and pay for the next fishing levels.
 
@@ -124,6 +124,7 @@ here, give it a name in `texts.json → hats`, and unlock it from a research car
 | `emailDomain` | Hidden e-mail domain for usernames (`aram` → `aram@bridgys-farm.app`). If you change it, change it in the Firestore rules too | `bridgys-farm.app` |
 | `cloudSaveSeconds` | How often a changed farm is saved online (it is also saved right after a research, when the page is hidden or closed, and on log out) | `60` |
 | `leaderboardSize` | How many players each leaderboard list shows (a player outside it still sees their own row and place) | `50` |
+| `admins` | Teacher usernames that get a **Delete** button on every player card (see *Delete a student* below; also list them in the Firestore rules) | `["admin"]` |
 
 ### `leaderboard` (points, tiers)
 | Field | Meaning | Default |
@@ -241,7 +242,7 @@ autocomplete, error messages); the other names also work. The English name alway
 ```json
 "functions":  { "harvest": ["havaqel", "հավաքել"] },
 "constants":  { "East": ["Aj", "Աջ", "Arevelq", "Արևելք"] },
-"namespaces": { "Entities": ["Bujser", "Բույսեր"] },
+"namespaces": { "Entities": ["Buyser", "Բույսեր"] },
 "members":    { "Entities": { "Carrot": ["Gazar", "Գազար"] } }
 ```
 If you rename a command here, also update the texts that mention it (`bridgy.json`,
@@ -284,16 +285,23 @@ Until you add Firebase keys, accounts and the leaderboard work **only inside one
    rules_version = '2';
    service cloud.firestore {
      match /databases/{database}/documents {
+       function isAdmin() {
+         return request.auth != null && request.auth.token.email in ['admin@bridgys-farm.app'];
+       }
        function isOwner(name) {
          return request.auth != null && request.auth.token.email == name + '@bridgys-farm.app'
            && !exists(/databases/$(database)/documents/deleted/$(name));
        }
        match /players/{name} {
          allow read: if true;
-         allow write: if isOwner(name);
+         allow write: if isOwner(name) || isAdmin();
        }
        match /saves/{name} {
-         allow read, write: if isOwner(name);
+         allow read, write: if isOwner(name) || isAdmin();
+       }
+       match /deleted/{name} {
+         allow read: if true;
+         allow write: if isAdmin();
        }
      }
    }
@@ -311,13 +319,19 @@ Until you add Firebase keys, accounts and the leaderboard work **only inside one
 username). To remove a student completely, also delete `saves/username` and
 `players/username` in Firestore.
 
-**Delete a student:** Authentication → Users → ⋮ → *Delete account* (or *Disable account*),
-then delete `players/username` and `saves/username` in Firestore. Before every load and save
-the game asks Firebase whether the account still exists, so an open game stops saving at its
-next save (within `cloudSaveSeconds`), goes back to the login screen with «Այս հաշիվը ջնջված է»
-and forgets the farm in that browser. Nothing comes back.
-(Optional, to block a username for good: add a document `deleted/username` in Firestore; the
-rules above then refuse its saves even if the name is registered again.)
+**Delete a student (teacher account):** the usernames in `settings.json → online.admins`
+(default `["admin"]`, the same names as in `isAdmin()` of the rules above) are teachers.
+**Register the `admin` account in the game before publishing the rules**, so no student can take
+that name. Logged in as admin, open the leaderboard → click a player → **Ջնջել խաղացողին**.
+The farm and the row are deleted and `deleted/username` is written: the student's open game is
+logged out at its next save (within `cloudSaveSeconds`), and that username cannot play again.
+To allow the name again, delete `deleted/username` in Firestore. (The Auth account stays; delete
+it in Authentication → Users only if you want the name to be free for a new registration.)
+Another teacher: add the username to `admins` and to the list in `isAdmin()`.
+
+You can also delete in the Firebase console: Authentication → Users → ⋮ → *Delete account*
+(or *Disable account*), then `players/username` and `saves/username` in Firestore. The game
+asks Firebase before every load and save whether the account still exists, so nothing comes back.
 
 The free plan (50 000 reads and 20 000 writes per day) is plenty for a school. The leaderboard
 needs no extra setup: every list is one query, a list is reused for a minute when students
@@ -400,7 +414,7 @@ and what was bought to keep in the ranch's shop (areas, bigger pens, upgrades an
 by level; animals and troughs don't count). «Soon» things don't count; `hat` comes at 100%.
 
 ## ranch.json (Bridgy's ranch)
-The ranch opens with the research named in `research` («Ռանչո», after 70 research levels). It is a
+The ranch opens with the research named in `research` («Ռանչո», after 40 research levels). It is a
 second world on its own screen: only the open world runs, so the farm waits while the ranch is open
 and the ranch waits while the farm is. Its areas lie on one map, each with **its own drone and its
 own code tab** (pen coordinates start at (0, 0) in the area's bottom-left corner; the fences stop

@@ -1853,11 +1853,15 @@ function rabbit() {
   return p;
 }
 
+// An open hand: four fingers, a thumb, the palm and a sleeve.
 function handsIcon() {
   const p = new Pixels();
-  p.ellipse(5, 9, 4, 5, '#f2c6a0').ellipse(11, 9, 4, 5, '#f2c6a0');
+  for (const [x, top] of [[4, 3], [7, 2], [10, 3], [13, 5]]) p.rect(x, top, 2, 9 - top, '#f2c6a0');
+  p.rect(4, 8, 11, 5, '#f2c6a0');
+  p.polygon([[4, 12], [1, 7], [2.5, 6], [5.5, 9]], '#f2c6a0');
   p.shade('#f2c6a0', '#fbe0c8', '#d9a27a');
-  p.line(8, 5, 8, 14, '#d9a27a');
+  p.rect(5, 13, 9, 3, PAL.sky);
+  p.shade(PAL.sky, null, PAL.blue);
   p.outline(PAL.outlineBrown);
   return p;
 }

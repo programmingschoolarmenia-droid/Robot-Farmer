@@ -29,7 +29,7 @@
     "setSpeed": ["aragutyun", "արագություն"],
     "clear": ["maqrel", "մաքրել"],
     "canMove": ["karoxEmGnal", "կարողեմգնալ"],
-    "getCompanion": ["ynker", "ընկեր"],
+    "getCompanion": ["enker", "ընկեր", "ynker"],
     "spawnDrone": ["norDron", "նորդրոն"],
     "waitFor": ["spasel", "սպասել"],
     "hasFinished": ["avartelE", "ավարտելէ"],
@@ -56,7 +56,7 @@
   },
 
   "namespaces": {
-    "Entities": ["Bujser", "Բույսեր"],
+    "Entities": ["Buyser", "Բույսեր", "Bujser"],
     "Items": ["Irer", "Իրեր"],
     "Grounds": ["Hoxer", "Հողեր"],
     "Hats": ["Glxarkner", "Գլխարկներ"],
@@ -121,8 +121,8 @@
     },
     "Fishes": {
       "Carp": ["Karas", "Կարաս"],
-      "Barbel": ["Kogak", "Կողակ"],
-      "Trout": ["Ishkhan", "Իշխան"],
+      "Barbel": ["Koxak", "Կողակ", "Kogak"],
+      "Trout": ["Ishxan", "Իշխան", "Ishkhan"],
       "Golden_Fish": ["Voske", "Ոսկե"],
       "Whitefish": ["Sig", "Սիգ"],
       "Catfish": ["Loqo", "Լոքո"]
@@ -159,8 +159,8 @@
       "Vardavar_Gold_Hat": ["VardavariVoske", "ՎարդավառիՈսկե"],
       "Navasard_Hat": ["Navasardi", "Նավասարդի"],
       "Navasard_Gold_Hat": ["NavasardiVoske", "ՆավասարդիՈսկե"],
-      "Knowledge_Hat": ["Gitelqi", "Գիտելիքի"],
-      "Knowledge_Gold_Hat": ["GitelqiVoske", "ԳիտելիքիՈսկե"],
+      "Knowledge_Hat": ["Giteliqi", "Գիտելիքի", "Gitelqi"],
+      "Knowledge_Gold_Hat": ["GiteliqiVoske", "ԳիտելիքիՈսկե", "GitelqiVoske"],
       "Teacher_Hat": ["Usucchi", "Ուսուցչի"],
       "Teacher_Gold_Hat": ["UsucchiVoske", "ՈւսուցչիՈսկե"],
       "NewYear_Hat": ["Amanori", "Ամանորի"],
@@ -191,7 +191,7 @@
       "GoldenHat": ["VoskeGlxark", "ՈսկեԳլխարկ"],
       "Pumpkins": ["Ddumner", "Դդումներ"],
       "Cactus": ["Kaktusner", "Կակտուսներ"],
-      "Polyculture": ["Ynkerutyun", "Ընկերություն"],
+      "Polyculture": ["Enkerutyun", "Ընկերություն", "Ynkerutyun"],
       "Dinosaurs": ["Dinozavr", "Դինոզավր"],
       "Secret": ["Gaxtnik", "Գաղտնիք"],
       "SetSpeed": ["Dandaxecum", "Դանդաղեցում"],
@@ -261,7 +261,7 @@
       },
       "Colors": {
         "White": ["Spitak", "Սպիտակ"],
-        "Brown": ["Daraguyn", "Դարչնագույն"],
+        "Brown": ["Darchnaguyn", "Դարչնագույն", "Daraguyn"],
         "Black": ["Sev", "Սև"],
         "Gold": ["Voskeguyn", "Ոսկեգույն"],
         "Spotted": ["Xayt", "Խայտ"],

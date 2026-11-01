@@ -287,7 +287,8 @@
     "projectId": "bridgys-farm",
     "emailDomain": "bridgys-farm.app",
     "cloudSaveSeconds": 60,
-    "leaderboardSize": 50
+    "leaderboardSize": 50,
+    "admins": ["admin"]
   },
 
   "leaderboard": {

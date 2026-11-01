@@ -22,7 +22,7 @@ export class BuiltinFunction {
 }
 
 // Members of enums like Entities.Carrot, Items.Hay, North.
-// `label` is the name players see (Armenian, e.g. Bujser.Gazar); `group`/`name` stay canonical.
+// `label` is the name players see (Armenian, e.g. Buyser.Gazar); `group`/`name` stay canonical.
 export class EnumValue {
   constructor(group, name, label) {
     this.group = group;

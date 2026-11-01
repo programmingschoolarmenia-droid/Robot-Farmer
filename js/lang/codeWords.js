@@ -70,7 +70,7 @@ function normalize(tokens, i, api) {
   const global = (name) => api.globals.get(api.canonicalName(name));
   const prev = tokens[i - 1];
   if (prev && (prev.type.label === '.' || prev.type.label === '?.')) {
-    // Bujser.Gazar, Math.floor keep their member; list.push keeps the method; obj.myField → V
+    // Buyser.Gazar, Math.floor keep their member; list.push keeps the method; obj.myField → V
     const obj = tokens[i - 2];
     const g = obj && obj.type.label === 'name' && global(obj.value);
     if (g && g.value instanceof Namespace) return [g.value.canonical.get(value) || value, true];

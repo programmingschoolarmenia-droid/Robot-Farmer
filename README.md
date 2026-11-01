@@ -3,7 +3,7 @@
 A browser game for learning JavaScript: students write code that drives a drone on a
 farm, buy research to unlock new plants, functions and JavaScript features, and Bridgy
 the robot teaches them with lessons, quizzes, quests and hints (never ready-made answers).
-The interface and the game commands are in Armenian (`havaqel()`, `tnkel(Bujser.Gazar)`,
+The interface and the game commands are in Armenian (`havaqel()`, `tnkel(Buyser.Gazar)`,
 `gnal(Aj)`); JavaScript itself (`while`, `if`, `let`, `function`…) stays as it is.
 
 ## Run it
@@ -40,7 +40,7 @@ step is needed.
   challenge on a test farm that is the same for everyone (fastest time wins, the top 3 get hats
   and 🏅 medals). Villagers also give secret code notes (`gtnel()` digs out their treasure), the
   Profile has a sticker album, and the Perfection star (%) shows how much of the game a student has done.
-* **Bridgy's ranch** («Ռանչո», a research that appears after 70 research levels): a second
+* **Bridgy's ranch** («Ռանչո», a research that appears after 40 research levels): a second
   world on its own screen (the farm waits meanwhile). Every area — the henhouse, the cowshed, the
   market — has its own drone and its own code tab; the big ▶ runs them all. Animals walk, get
   hungry, thirsty, dirty and sad, and give eggs or milk only when they are cared for, so the code
