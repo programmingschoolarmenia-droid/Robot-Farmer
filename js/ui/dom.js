@@ -53,6 +53,35 @@ export function icon(sprites, name, cls = '') {
   return pixelImg(sprites.url(name.includes(':') ? name : `icon:${name}`, 2), `ico-img ${cls}`.trim());
 }
 
+// A carpet (js/engine/carpet.js) on a canvas: `px` screen pixels a knot; a knot not woven shows the warp.
+export function paintCarpet(canvas, palette, cells, px) {
+  const n = Math.round(Math.sqrt(cells.length));
+  const hex = Object.fromEntries(Object.values(palette).map((c) => [c.letter, c.hex]));
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#e6d8c0';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < cells.length; i++) {
+    const x = (i % n) * px;
+    const y = Math.floor(i / n) * px;
+    if (cells[i] === '.') {
+      ctx.fillStyle = '#cdbb9c';
+      ctx.fillRect(x + Math.floor(px / 2), y, 1, px);
+    } else {
+      ctx.fillStyle = hex[cells[i]] || '#000000';
+      ctx.fillRect(x, y, px, px);
+    }
+  }
+}
+
+export function carpetCanvas(palette, cells, px = 8) {
+  const n = Math.round(Math.sqrt(cells.length));
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = n * px;
+  canvas.className = 'carpet-canvas';
+  paintCarpet(canvas, palette, cells, px);
+  return canvas;
+}
+
 // Highlights a small code sample for Bridgy's dialog (very small JS tokenizer).
 const KEYWORDS = new Set([
   'while', 'for', 'if', 'else', 'let', 'const', 'var', 'function', 'return', 'true', 'false', 'null', 'undefined',

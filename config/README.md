@@ -303,6 +303,20 @@ Until you add Firebase keys, accounts and the leaderboard work **only inside one
          allow read: if true;
          allow write: if isAdmin();
        }
+       match /carpets/{entry} {
+         allow read: if true;
+         allow create, update: if isOwner(request.resource.data.owner)
+           && entry == request.resource.data.week + '~' + request.resource.data.owner
+           && request.resource.data.cells.size() == 81;
+         allow delete: if isAdmin();
+       }
+       match /likes/{like} {
+         allow read: if true;
+         allow create, update: if isOwner(request.resource.data.voter)
+           && request.resource.data.voter != request.resource.data.owner
+           && like == request.resource.data.week + '~' + request.resource.data.owner + '~' + request.resource.data.voter;
+         allow delete: if isAdmin();
+       }
      }
    }
    ```
@@ -389,6 +403,26 @@ winner's code. Last week's 1st, 2nd and 3rd get a challenge hat and 🏅 medals 
 | `challenge` | `building`, `limit` (game seconds per try, `600`), `speeds`, `stars` (first solution), `hats` and `medals` (for places 1–3), `levels` (research every test farm has; a task's `levels` add to it) |
 | `challenges` | `id`, `name`, `about`, `goal` (one of: `items: { "Hay": 500 }` gathered, `harvest: { "Trout": 1 }` harvested or caught, also `Treasure`, `giant: 4` pumpkin size, `chain: 16` cacti in one harvest, `dino: 12` dinosaur length), `levels` (`Expand` sets the farm size), `items` (the storage at the start), `seed` (the farm's luck: the same for everyone) |
 
+**The ranch's weekly challenge** is in the same School, once the ranch is open: `ranchChallenges` goes round
+every Monday like `challenges`, on a fresh test ranch with its own list. `ranchChallenge`: `limit`, `stars`,
+`levels` (farm research on top of `challenge.levels`). Each task: `id`, `name`, `about`, `owned` (places and
+commands), `animals` (added to the ones the ranch starts with), `items` (its storage), `seed` and `goal`
+(`items: { "Egg": 15 }` gathered, `count: { "sheared": 8 }` one of the ranch's counters: `born`, `healed`,
+`returned`, `events`, `carpets`, `perfect`, `sheared`, `honey`, `yarn`, `dyed`, `fairs`, `plus`; or `earn: 300` ֏).
+Prices and orders are those of one fixed day, so every day of the week is the same. Hats and medals come
+from `challenge`.
+
+**The carpet contest:** a student enters one free carpet a week and likes each carpet once, not their own
+(the window of the ranch's loom). On their next login the top 3 of last week with at least one like get
+`contest.hat` and `contest.medals`. A teacher (`online.admins`) has a Remove button on every entry. It needs
+the `carpets` and `likes` parts of the Firestore rules; without them the contest shows a message and
+everything else keeps working.
+
+**On the ranch:** each festival can have `ranch` (`sell`: `{ "Egg": 2 }` × the price of goods; `wool`, `heat`, …:
+like `ranch.json → seasons`) and `sample` (a carpet sample with `"festival": true`, an extra order during the
+festival). `hototel()` and `porel()` work in the pens too and count for the same festival. `ranchHats`: the hats for
+the first `carpet`, the first `honey` and the `fair`.
+
 **Secret notes:** after a request a villager sometimes gives the next note (one at a time). Each
 is a riddle whose answer is a square; `gtnel()` there digs out the treasure (⭐), `gtnel()` on a
 wrong square loses it (the note can come again later). Erik gives hints in «Բրիջի, օգնի՛ր», the
@@ -405,13 +439,14 @@ one condition: `feature` (`loops`, `if`, `variables`, `functions`, `lists`, `obj
 `fishAll`, `fish`, `goldenFish`, `total` (`{ "Hay": 1000000 }`, also ranch goods: `{ "Egg": 500 }`),
 `researchAll`, `village` (`"all"`), `requests`, `notes`, `festivalHats` (a number or `"all"`),
 `challengeTop`, `perfection`, `flips`, `hats`, `eaten`, `ranchEarned` (֏ earned on the ranch),
-`ranchOrders` (villagers' orders delivered).
+`ranchOrders` (villagers' orders delivered), `ranchCount` (`{ "carpets": 10 }`, the ranch's counters above).
 
 **Perfection** (`perfection`): how much of the game is done, shown as «🌟 37%» next to the
 player's name, in the Profile (with what is missing), on the player card and in the leaderboard.
 `research`, `village` and `ranch` are the weights of the research levels, the repaired buildings
 and what was bought to keep in the ranch's shop (areas, bigger pens, upgrades and commands, level
-by level; animals and troughs don't count). «Soon» things don't count; `hat` comes at 100%.
+by level; animals, troughs and machines don't count) plus the fair. New Game Plus doesn't take back
+what was reached. «Soon» things don't count; `hat` comes at 100%.
 
 ## ranch.json (Bridgy's ranch)
 The ranch opens with the research named in `research` («Ռանչո», after 40 research levels). It is a
@@ -443,7 +478,13 @@ drone (`vacharel()`, villagers' orders) and spent in the 🛒 shop.
 | `orders` | `perDay`, `pay` (× the base price), `base` (amounts asked, grown with the animals), `lines` (`{list}` and `{pay}`), `animals` (the chance that an order also asks for a live animal of a colour); the names and faces come from `village.json → requests.villagers` |
 | `hands` | What a drone holds at each «big hands» level: `[3, 5, 10, 20]` |
 | `shop` | `id`, `kind` and `cost` (or `costs`, one per level), `icon`, `name`, `about`, `needs` (buy that first), `available: false`. Kinds: `area` (its id is the area's; `animals` come with it, `grants` its commands), `animal` (`animal`), `size` (`area`; one cost per bigger size), `trough` (`FeedTrough` / `WaterTrough`: built with `karucel()`), `machine` (`Stove`: built in the workshop), `upgrade` (`Speed`: drones ×1.5 per level; `Hands`; `Drones`: one more drone in every area, with `grants`), `command` (`grants`: the commands it opens), `boost` (`{ "kind": "speed", "multiplier": 1.5, "seconds": 600 }`: a boost for the farm, bought again and again) |
-| `story` | Bridgy's pages: `intro` (the first visit) and `areas` (when an area is bought) |
+| `flowers`, `hive` | The flowers that can be planted; `hive`: `every` (seconds to fill with one kind of flower around it), `radius` (how many squares away a flower counts), `sting` (the drone's speed by a hive before the first honey), `stingRadius` |
+| `dishes` | What `utel()` eats: `{ "HoneyCake": { "multiplier": 2, "seconds": 60 } }`, the ranch's drones are faster for those seconds |
+| `donkey` | `seconds` (one trip), `load` (the most it carries) |
+| `carpets` | `size`, `knotSeconds`, `free` (a free carpet's price), `softBonus` (a carpet all of soft yarn pays this much more), `gallery` (carpets kept), `perDay` and `buckets` (the day's orders by sample level), `palette` (each colour: `letter`, `yarn`, `hex`, `like` for soft yarn) and `samples`: `id`, `name`, `level` (also its points in the perfect carpets list), `pay` (at 100% alike), `rows` (9 rows of 9 palette letters, the top row first), `festival: true` (only with its festival, see `events.json → festivals[].sample`) |
+| `fair` | `goods`, `carpet` (how alike the carpet must be) and `pay` |
+| `plus` | New Game Plus, for each level: `needs`, `shop` and `goods` (× per level) |
+| `story` | Bridgy's pages: `intro` (the first visit), `areas` (when an area is bought), `firstCarpet`, `fairOpen` (the last place was bought) and `fair` (the ranch won) |
 | `lessons` | Bridgy's pages when a shop item (by its `id`) is bought |
 | `quests` | The ranch's quests, like `bridgy.json`; goals: `gain`/`have` (ranch goods), `code` (`fn`, `feature`), `research` (a shop item's `id` bought), `earn` (֏ earned), `order` (orders delivered) |
 

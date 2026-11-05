@@ -1,20 +1,23 @@
 // The ranch screen (js/engine/ranch.js): the map, a code tab for every area (each with its own ▶/■;
 // the big ▶ runs them all), the ranch storage and what the selected area's drone holds, the shop and
-// the market board. The farm waits while it is open (GameScreen.openRanch); the main game's
-// autosave keeps saving the ranch with it.
+// the market board with the fair, the loom's window. The farm waits while it is open (GameScreen.openRanch);
+// the main game's autosave keeps saving the ranch with it. The ranch's weekly challenge shows a test ranch
+// on this screen too (`challenge`: js/ui/ranchChallenge.js), with only what a try needs.
 import { h, icon, pixelImg, mobileQuery, sizeFarm, CALENDAR_ICONS } from './dom.js';
 import { RanchView } from './ranchView.js';
+import { LoomScreen } from './loom.js';
 import { EditorPanel } from './editor.js';
 import { Controls, InventoryPanel, QuestBar } from './panels.js';
 import { describeError, describeWarning } from './errorText.js';
-import { openModal } from './modal.js';
-import { formatCount } from '../core/util.js';
+import { openModal, confirmModal } from './modal.js';
+import { formatCount, formatClock } from '../core/util.js';
 
 export class RanchScreen {
   // main: the main Game (main.ranch is shown); bridgy: the game's Bridgy; first(key): true the first
   // time (GameScreen's «firsts»); onDirty: the scripts changed; onClose: back to the farm.
-  constructor({ app, main, bridgy, first, onDirty, onClose }) {
+  constructor({ app, main, bridgy, first, onDirty, onClose, challenge = null }) {
     this.app = app;
+    this.challenge = challenge;
     this.main = main;
     this.ranch = main.ranch;
     this.bridgy = bridgy;
@@ -28,7 +31,7 @@ export class RanchScreen {
     this.inventoryList = h('ul', { class: 'inventory-list' });
     this.handsEl = h('div', { class: 'ranch-hands' });
     this.controlbar = h('footer', { class: 'controlbar' });
-    this.questSlot = h('div', { style: { flex: '1', minWidth: '0', display: 'flex' } });
+    this.questSlot = h('div', { class: 'ranch-quest-slot', style: { flex: '1', minWidth: '0', display: 'flex' } });
     this.dramChip = h('span', { class: 'chip ranch-dram', title: app.i18n.item('Dram') });
     this.zoomBtn = h('button', { class: 'btn btn-sm ranch-zoom', onclick: () => this.toggleZoom() });
     this.tabButtons = [
@@ -37,22 +40,29 @@ export class RanchScreen {
       ['storage', icon(app.sprites, 'storage'), t('ui.inventory')],
     ].map(([id, ico, label]) => h('button', { class: 'btn mobile-tab', dataset: { tab: id }, onclick: () => this.setTab(id) }, h('span', { class: 'ico' }, ico), label));
     this.calendarChip = h('span', { class: 'chip calendar-chip' });
+    this.boostChip = h('span', { class: 'chip boost-chip', hidden: true });
+    this.loomBtn = h('button', { class: 'btn ranch-loom-button', hidden: true, title: t('ui.ranchLoom'), onclick: () => this.openLoom() }, icon(app.sprites, 'loom'), h('span', { class: 'btn-label' }, t('ui.ranchLoom')));
+    this.timeChip = h('span', { class: 'chip challenge-chip', title: t('ui.challengeTime') });
+    this.bestChip = h('span', { class: 'chip challenge-chip', title: t('ui.challengeBestTitle') });
     const avatar = app.config.bridgy.avatar || 'assets/bridgy/bridgy-head.png';
+    const topbar = challenge
+      ? [h('div', { class: 'challenge-task' }, h('b', {}, icon(app.sprites, 'cap'), ` ${challenge.task.name}`), h('span', {}, challenge.task.about)), this.loomBtn, this.bestChip, this.timeChip, h('button', { class: 'btn', title: t('ui.challengeBack'), onclick: () => this.close() }, '⬅', h('span', { class: 'btn-label' }, t('ui.challengeBack')))]
+      : [
+          h('div', { class: 'logo' }, h('span', { class: 'ranch-logo' }, icon(app.sprites, 'ranch')), h('span', {}, t('ui.ranchTitle'))),
+          this.questSlot,
+          h('button', { class: 'btn help-button', onclick: () => this.bridgy.helpMenu(), title: t('ui.helpButton') }, h('img', { src: avatar, alt: '' }), h('span', { class: 'btn-label' }, t('ui.helpButton'))),
+          this.calendarChip,
+          this.boostChip,
+          this.dramChip,
+          this.loomBtn,
+          h('button', { class: 'btn btn-gold ranch-shop-button', title: t('ui.ranchShop'), onclick: () => this.openShop() }, icon(app.sprites, 'cart'), h('span', { class: 'btn-label' }, t('ui.ranchShop'))),
+          h('button', { class: 'btn ranch-market-button', title: t('ui.ranchMarket'), onclick: () => this.openMarket() }, icon(app.sprites, 'board'), h('span', { class: 'btn-label' }, t('ui.ranchMarket'))),
+          h('button', { class: 'btn ranch-back-button', title: t('ui.ranchBack'), onclick: () => this.close() }, icon(app.sprites, 'farm'), h('span', { class: 'btn-label' }, t('ui.ranchBack'))),
+        ];
     this.el = h(
       'section',
       { class: 'screen screen-game screen-ranch' },
-      h(
-        'header',
-        { class: 'topbar' },
-        h('div', { class: 'logo' }, h('span', { class: 'ranch-logo' }, icon(app.sprites, 'ranch')), h('span', {}, t('ui.ranchTitle'))),
-        this.questSlot,
-        h('button', { class: 'btn help-button', onclick: () => this.bridgy.helpMenu(), title: t('ui.helpButton') }, h('img', { src: avatar, alt: '' }), h('span', { class: 'btn-label' }, t('ui.helpButton'))),
-        this.calendarChip,
-        this.dramChip,
-        h('button', { class: 'btn btn-gold ranch-shop-button', title: t('ui.ranchShop'), onclick: () => this.openShop() }, icon(app.sprites, 'cart'), h('span', { class: 'btn-label' }, t('ui.ranchShop'))),
-        h('button', { class: 'btn ranch-market-button', title: t('ui.ranchMarket'), onclick: () => this.openMarket() }, icon(app.sprites, 'board'), h('span', { class: 'btn-label' }, t('ui.ranchMarket'))),
-        h('button', { class: 'btn ranch-back-button', title: t('ui.ranchBack'), onclick: () => this.close() }, icon(app.sprites, 'farm'), h('span', { class: 'btn-label' }, t('ui.ranchBack'))),
-      ),
+      h('header', { class: 'topbar' }, topbar),
       h(
         'main',
         { class: 'game-main' },
@@ -95,7 +105,7 @@ export class RanchScreen {
       app,
       game: ranch,
       container: this.controlbar,
-      onRun: () => this.runAll(),
+      onRun: () => (challenge && ranch.state() !== 'paused' ? challenge.run() : this.runAll()),
       onStop: () => ranch.stopAll(),
       onPause: () => this.togglePause(),
       onStep: () => this.step(),
@@ -105,17 +115,19 @@ export class RanchScreen {
       },
     });
     this.inventory = new InventoryPanel({ app, game: ranch, list: this.inventoryList });
-    this.questBar = new QuestBar({
-      app,
-      game: ranch,
-      quests: ranch.quests,
-      container: this.questSlot,
-      onHint: () => this.bridgy.helpHint(true),
-      onOpen: () => {
-        const q = ranch.quests.current();
-        if (q) this.bridgy.say([{ emotion: 'happy', text: `${q.title}. ${q.text}` }], { key: 'menu', replaceSame: true, interrupt: true });
-      },
-    });
+    if (!challenge) {
+      this.questBar = new QuestBar({
+        app,
+        game: ranch,
+        quests: ranch.quests,
+        container: this.questSlot,
+        onHint: () => this.bridgy.helpHint(true),
+        onOpen: () => {
+          const q = ranch.quests.current();
+          if (q) this.bridgy.say([{ emotion: 'happy', text: `${q.title}. ${q.text}` }], { key: 'menu', replaceSame: true, interrupt: true });
+        },
+      });
+    }
     this.wire();
     this.updateSide();
     this.onResize = () => this.layout();
@@ -156,7 +168,7 @@ export class RanchScreen {
   // The small ▶ / ■ on an area's code tab.
   tabButton(name) {
     const pen = this.ranch.penOfScript(name);
-    if (!pen) return null;
+    if (!pen || this.challenge) return null; // (a challenge's try starts all areas)
     const t = this.app.i18n.t;
     const active = pen.runner.isActive();
     return h(
@@ -187,7 +199,8 @@ export class RanchScreen {
   // Ctrl+Enter: the open tab's area (all areas from a helper file).
   runTab() {
     const pen = this.activePen();
-    if (pen) this.runArea(pen);
+    if (this.challenge) this.challenge.run();
+    else if (pen) this.runArea(pen);
     else this.runAll();
   }
 
@@ -251,14 +264,19 @@ export class RanchScreen {
       ev.on('pickup', () => app.audio.play('harvest')),
       ev.on('sold', () => app.audio.play('unlock')),
       ev.on('order', () => app.audio.play('quest')),
-      ev.on('questProgress', () => this.questBar.render()),
+      ev.on('questProgress', () => this.questBar && this.questBar.render()),
       ev.on('questComplete', (e) => {
+        if (!this.questBar) return;
         this.questBar.render();
         this.questBar.flash();
         app.audio.play('quest');
         this.bridgy.toast(e.quest.done || e.quest.title, 4500);
       }),
       ev.on('shop', (e) => this.onBought(e)),
+      ev.on('bell', () => app.audio.play('quest')),
+      ev.on('carpet', (e) => this.onCarpet(e)),
+      ev.on('fair', () => this.onFair()),
+      ev.on('restart', () => this.onRestart()),
     ];
   }
 
@@ -269,7 +287,37 @@ export class RanchScreen {
     this.editor.addDocs();
     if (item.kind === 'area' && stories[id]) this.talk.push([stories[id], `ranchStory:${id}`]);
     if ((cfg.lessons || {})[id]) this.talk.push([cfg.lessons[id], `ranchLesson:${id}`]);
+    // the last place bought: the village invites the ranch to the fair
+    const fair = this.ranch.shopItem('Fair');
+    if (fair && item.kind === 'area' && !this.ranch.missingNeed(fair) && (cfg.story || {}).fairOpen) this.talk.push([cfg.story.fairOpen, 'ranchFairOpen']);
     this.updateSide();
+  }
+
+  // A carpet is finished: its result, and Bridgy after the very first one.
+  onCarpet(e) {
+    const t = this.app.i18n.t;
+    this.app.audio.play('quest');
+    this.app.toast(e.alike === null ? t('ui.ranchCarpetFree', { pay: e.price }) : t('ui.ranchCarpetDone', { n: Math.round(e.alike * 100), pay: e.price }));
+    const story = (this.ranch.cfg.story || {}).firstCarpet;
+    if (!this.challenge && story && this.ranch.counts.carpets === 1) this.bridgy.say(story, { key: 'ranchFirstCarpet', interrupt: true });
+  }
+
+  // The ranch won its prize at the fair.
+  onFair() {
+    const app = this.app;
+    if (app.prefs.animations !== false && !app.prefs.lowGraphics) app.confetti.burst(window.innerWidth / 2, window.innerHeight / 3, 140);
+    app.audio.play('quest');
+    if (!this.challenge) this.bridgy.say((this.ranch.cfg.story || {}).fair || [], { key: 'ranchFair', interrupt: true });
+  }
+
+  // New Game Plus: the same screen on an empty ranch.
+  onRestart() {
+    this.view.focus = null;
+    this.view.layoutKey = '';
+    this.editor.switchTo(this.ranch.activeScript, true);
+    this.editor.renderTabs();
+    this.updateSide();
+    this.layout();
   }
 
   tick(now) {
@@ -286,6 +334,8 @@ export class RanchScreen {
     }
     if (this.tab === 'farm' || !mobileQuery.matches) this.view.render(now);
     this.controls.update(!!this.lastError);
+    if (this.challenge) this.challenge.tick();
+    if (this.closed) return;
     const node = pen && pen.runner.isActive() && pen.drone.interp && pen.drone.interp.currentNode;
     if (node && node.loc) this.editor.setExecLine(node._mod, node.loc.start.line);
     else this.editor.setExecLine(null, null);
@@ -296,6 +346,7 @@ export class RanchScreen {
       this.slowTimer = 0;
       this.inventory.update();
       this.updateSide();
+      if (this.loom) this.loom.update();
     }
     this.raf = requestAnimationFrame((t) => this.tick(t));
   }
@@ -313,6 +364,10 @@ export class RanchScreen {
       if (cal) this.calendarChip.title = `${app.i18n.t(`seasons.${cal.season}`)} · ${app.i18n.t(`weathers.${cal.weather}`)}`;
     }
     this.dramChip.replaceChildren(pixelImg(app.sprites.url('item:Dram', 2)), formatCount(Math.floor(ranch.inventory.get('Dram'))));
+    this.loomBtn.hidden = !ranch.loom();
+    const boost = ranch.boosts.speed && ranch.boosts.speed.until > ranch.time ? ranch.boosts.speed : null;
+    this.boostChip.hidden = !boost;
+    if (boost) this.boostChip.replaceChildren(pixelImg(app.sprites.url(`item:${boost.item}`, 2)), formatClock(boost.until - ranch.time));
     const pen = this.activePen();
     const hands = pen ? Object.entries(pen.drone.hands) : [];
     const key = `${pen && pen.id}:${JSON.stringify(hands)}:${ranch.handsCapacity()}`;
@@ -327,7 +382,12 @@ export class RanchScreen {
     );
   }
 
-  // ---------------------------------------------------------------- the shop and the market
+  // ---------------------------------------------------------------- the loom, the shop and the market
+
+  openLoom() {
+    if (this.loom) return;
+    this.loom = new LoomScreen({ app: this.app, ranch: this.ranch, container: this.el, test: !!this.challenge, onClose: () => (this.loom = null) });
+  }
 
   openShop() {
     const app = this.app;
@@ -363,7 +423,7 @@ export class RanchScreen {
     const state = ranch.shopState(item.id);
     const notes = [];
     if (item.costs && state !== 'soon') notes.push(t('ui.ranchShopLevel', { n: ranch.level(item.id), max: ranch.maxLevel(item) }));
-    if (item.kind === 'trough' && ranch.tokens[item.id]) notes.push(t('ui.ranchShopTokens', { n: ranch.tokens[item.id] }));
+    if ((item.kind === 'trough' || item.kind === 'machine') && ranch.tokens[item.id]) notes.push(t('ui.ranchShopTokens', { n: ranch.tokens[item.id] }));
     const pen = item.kind === 'animal' && ranch.penOf(item.animal);
     if (pen) notes.push(`${pen.animals.length} / ${pen.capacity()}`);
     let action;
@@ -386,7 +446,7 @@ export class RanchScreen {
         owned: t('ui.ranchShopOwned'),
         soon: [icon(app.sprites, 'soon'), ` ${t('ui.ranchShopSoon')}`],
         full: t('ui.ranchShopFull'),
-        locked: [icon(app.sprites, 'lock'), ` ${t('ui.ranchShopNeeds', { name: item.needs ? ranch.shopName(ranch.shopItem(item.needs)) : '' })}`],
+        locked: [icon(app.sprites, 'lock'), ` ${t('ui.ranchShopNeeds', { name: ranch.missingNeed(item) ? ranch.shopName(ranch.shopItem(ranch.missingNeed(item))) : '' })}`],
       }[state];
       action = h('span', { class: 'ranch-shop-state' }, text);
     }
@@ -423,7 +483,7 @@ export class RanchScreen {
         h('span', { class: 'ranch-order-pay' }, q.done ? t('ui.ranchOrderDone') : `${q.pay} ֏`),
       );
     });
-    openModal({
+    const market = openModal({
       title: t('ui.ranchMarketTitle'),
       className: 'ranch-market-modal',
       body: [
@@ -432,8 +492,43 @@ export class RanchScreen {
         h('h4', {}, t('ui.ranchOrders')),
         ranch.hasFunction('orders') ? null : h('div', { class: 'board-note' }, t('ui.ranchOrdersLocked', { name: ranch.api.displayName('orders') })),
         orders.length ? h('div', { class: 'ranch-orders' }, orders) : h('div', { class: 'board-note' }, t('ui.ranchNoOrders')),
+        this.fairPart(() => market.close()),
       ],
     });
+  }
+
+  // The fair in the market's window: what it asks for, and New Game Plus after it.
+  fairPart(close) {
+    const app = this.app;
+    const { t, costText } = app.i18n;
+    const ranch = this.ranch;
+    const fair = ranch.cfg.fair;
+    if (!fair || ranch.level('Cows') === 0) return null;
+    let text;
+    if (ranch.fairDone) text = t('ui.fairDone');
+    else if (ranch.level('Fair')) text = t('ui.fairHelp', { list: costText(fair.goods), n: Math.round(fair.carpet * 100) });
+    else text = t('ui.fairClosed');
+    const name = t('ui.ranchPlusBadge', { n: ranch.plus + 1 });
+    return h(
+      'div',
+      { class: 'ranch-fair' },
+      h('h4', {}, icon(app.sprites, 'party'), ` ${t('ui.fairTitle')}`),
+      h('p', {}, text),
+      ranch.fairDone
+        ? h(
+            'button',
+            {
+              class: 'btn btn-danger',
+              onclick: async () => {
+                if (!(await confirmModal(app.i18n, { title: t('ui.plusButton', { name }), text: t('ui.plusAsk'), okLabel: t('ui.plusButton', { name }) }))) return;
+                close();
+                ranch.restart();
+              },
+            },
+            t('ui.plusButton', { name }),
+          )
+        : null,
+    );
   }
 
   // ---------------------------------------------------------------- closing

@@ -1,13 +1,13 @@
 // Start screen (login / registration / leaderboard), the profile window and the leaderboard table.
-import { h, icon, pixelImg } from './dom.js';
+import { h, icon, pixelImg, carpetCanvas } from './dom.js';
 import { openModal, confirmModal } from './modal.js';
 import { formatClock, formatCount, formatTenths, dayKey, prevDayKey, prevMonthKey, dayNumber, keyOfDay, weekKey } from '../core/util.js';
-import { boardField, playerRow, ascending } from '../storage/account.js';
+import { boardField, playerRow, ascending, CARPET_RE } from '../storage/account.js';
 import { festivalOn } from '../engine/festivals.js';
 
 const AVATAR_COLORS = ['#2d6be0', '#36a852', '#e2483d', '#f08a24', '#7c3aed', '#0e7490', '#c026d3', '#b45309'];
 const MEDALS = ['medal1', 'medal2', 'medal3'];
-const WHAT = ['points', 'code', 'challenge', 'perfect', 'ranch', 'festival']; // the festival only while one runs
+const WHAT = ['points', 'code', 'challenge', 'ranchChallenge', 'perfect', 'ranch', 'carpets', 'festival']; // the festival only while one runs
 const WHEN = ['day', 'month', 'all']; // (for points and the ranch's ֏)
 
 export function accountErrorText(i18n, e) {
@@ -182,8 +182,8 @@ export function leaderboardView(app, me = null, before = null) {
   });
   const load = async (refresh = false) => {
     const mine = ++seq;
-    const tab = what === 'points' ? when : what === 'ranch' ? `ranch_${when}` : what;
-    whenSelect.hidden = what !== 'points' && what !== 'ranch';
+    const tab = what === 'points' ? when : what === 'ranch' || what === 'carpets' ? `${what}_${when}` : what;
+    whenSelect.hidden = what !== 'points' && what !== 'ranch' && what !== 'carpets';
     help.textContent = t(`ui.boardHelp.${what}`);
     body.replaceChildren(h('div', { class: 'board-note' }, t('ui.loading')));
     const today = todayKey(app);
@@ -220,12 +220,12 @@ function boardContent(app, ctx) {
   const crowns = ['day', 'month', 'week'].map((k) => champs && champs[k] && t(`ui.champion_${k}`, { name: champs[k].name })).filter(Boolean);
   if (crowns.length) out.push(h('div', { class: 'board-champs' }, crowns.map((c) => h('span', {}, c))));
   if (rows.length) out.push(h('ol', { class: 'board' }, rows.map((r, i) => boardRow(app, r, i + 1, ctx))));
-  else out.push(h('div', { class: 'board-note' }, t({ day: 'ui.leadersEmptyDay', code: 'ui.leadersEmptyCode', challenge: 'ui.leadersEmptyChallenge' }[tab] || (tab.startsWith('ranch') ? 'ui.leadersEmptyRanch' : 'ui.leadersEmpty'))));
+  else out.push(h('div', { class: 'board-note' }, t({ day: 'ui.leadersEmptyDay', code: 'ui.leadersEmptyCode', challenge: 'ui.leadersEmptyChallenge' }[tab] || (tab === 'ranchChallenge' ? 'ui.leadersEmptyChallenge' : tab.startsWith('carpets') ? 'ui.leadersEmptyCarpets' : tab.startsWith('ranch') ? 'ui.leadersEmptyRanch' : 'ui.leadersEmpty'))));
   const myValue = me ? me[field] || 0 : 0;
   if (myValue > 0 && !rows.some((r) => r.id === me.id)) out.push(h('ol', { class: 'board board-mine' }, boardRow(app, me, place, ctx)));
-  const what = ['day', 'month', 'all'].includes(tab) ? 'points' : tab.startsWith('ranch') ? 'ranch' : tab;
+  const what = ['day', 'month', 'all'].includes(tab) ? 'points' : tab === 'ranchChallenge' ? tab : tab.startsWith('carpets') ? 'carpets' : tab.startsWith('ranch') ? 'ranch' : tab;
   const gap = Math.abs(myValue - (rival ? rival[field] : 0));
-  if (rival) out.push(h('div', { class: 'board-place' }, t(`ui.rival.${what}`, { name: rival.name, n: what === 'challenge' ? (gap / 10).toFixed(1) : formatCount(gap) })));
+  if (rival) out.push(h('div', { class: 'board-place' }, t(`ui.rival.${what}`, { name: rival.name, n: what === 'challenge' || what === 'ranchChallenge' ? (gap / 10).toFixed(1) : formatCount(gap) })));
   else if (myValue > 0 && (place === 1 || !ascending(field))) out.push(h('div', { class: 'board-place' }, t('ui.rivalFirst')));
   return out;
 }
@@ -303,7 +303,8 @@ function openCard(app, r, ctx) {
       avatar(app, r.name, r.hat, 'big'),
       h('div', { class: 'card-name' }, r.name),
       tier ? h('div', { class: 'card-tier' }, icon(app.sprites, tier.icon), ` ${tier.name}`) : null,
-      h('div', { class: 'card-badges' }, crownsOf(app, r, ctx.champs).map(([name, title]) => h('span', { class: 'chip' }, icon(app.sprites, name), ` ${title}`))),
+      h('div', { class: 'card-badges' }, crownsOf(app, r, ctx.champs).map(([name, title]) => h('span', { class: 'chip' }, icon(app.sprites, name), ` ${title}`)), r.ranchPlus ? h('span', { class: 'chip' }, icon(app.sprites, 'ranch'), ` ${t('ui.ranchPlusBadge', { n: r.ranchPlus })}`) : null),
+      CARPET_RE.test(r.carpet) ? h('div', { class: 'card-carpet' }, h('div', { class: 'muted' }, t('ui.cardCarpet')), carpetCanvas(app.config.ranch.carpets.palette, r.carpet, 10)) : null,
       h(
         'div',
         { class: 'card-stats' },
@@ -321,6 +322,55 @@ function openCard(app, r, ctx) {
       { label: t('ui.close'), class: 'btn-primary' },
     ].filter(Boolean),
   });
+}
+
+// My carpets (the newest first), each can go on my player card; a free one can enter the contest
+// (onEnter: async (cells), no button without it).
+export function carpetGallery(app, ranch, { onEnter = null } = {}) {
+  const t = app.i18n.t;
+  const box = h('div', { class: 'loom-grid' });
+  const render = () => {
+    const list = ranch.gallery.slice().reverse();
+    if (!list.length) return box.replaceChildren(h('div', { class: 'board-note' }, t('ui.loomGalleryEmpty', { n: ranch.carpetCfg.gallery ?? 12 })));
+    box.replaceChildren(
+      ...list.map((c) =>
+        h(
+          'div',
+          { class: 'loom-card' },
+          carpetCanvas(ranch.carpetCfg.palette, c.cells, 10),
+          h('div', {}, c.alike === null ? t('ui.loomGalleryFree') : `${ranch.sample(c.sample) ? ranch.sample(c.sample).name : ''} · ${Math.round(c.alike * 100)}%`),
+          h(
+            'button',
+            {
+              class: 'btn btn-sm',
+              disabled: ranch.favorite === c.cells,
+              onclick: () => {
+                ranch.favorite = c.cells;
+                render();
+              },
+            },
+            t(ranch.favorite === c.cells ? 'ui.loomFavoriteOn' : 'ui.loomFavorite'),
+          ),
+          onEnter && c.alike === null
+            ? h(
+                'button',
+                {
+                  class: 'btn btn-sm btn-gold',
+                  onclick: () =>
+                    onEnter(c.cells).catch((e) => {
+                      console.warn('Contest:', e);
+                      app.toast(t('ui.contestOffline'), 'warn');
+                    }),
+                },
+                t('ui.loomEnter'),
+              )
+            : null,
+        ),
+      ),
+    );
+  };
+  render();
+  return box;
 }
 
 // What the points are made of: amount × weight = points for each item (gold counts ×20, …).
@@ -426,7 +476,7 @@ function openRename(app, onRename, closeProfile) {
   name.focus();
 }
 
-export function openProfile(app, { stats, sync, onLogout, onRename }) {
+export function openProfile(app, { stats, sync, onLogout, onRename, ranch }) {
   const t = app.i18n.t;
   const user = app.account.user;
   const { tier, next } = tierOf(app.config.settings, stats.points);
@@ -435,6 +485,8 @@ export function openProfile(app, { stats, sync, onLogout, onRename }) {
   const breakdown = breakdownView(app, stats.breakdown);
   const perfect = perfectionView(app, stats.parts);
   const album = albumView(app, stats.stickers);
+  const carpets = ranch && ranch.gallery.length ? h('div', { class: 'profile-carpets' }, h('h4', {}, t('ui.profileCarpets')), carpetGallery(app, ranch)) : null;
+  if (carpets) carpets.hidden = true;
   breakdown.hidden = perfect.hidden = album.hidden = true;
   const profile = openModal({
     title: [icon(app.sprites, 'player'), ` ${t('ui.profileTitle')}`],
@@ -459,11 +511,14 @@ export function openProfile(app, { stats, sync, onLogout, onRename }) {
         h('span', { class: 'chip', title: t('ui.colCode') }, icon(app.sprites, 'code'), ` ${formatCount(stats.code)}`),
         h('span', { class: 'chip', title: t('ui.colPerfect') }, icon(app.sprites, 'star'), ` ${stats.perfect}%`, questionButton(perfect)),
         h('span', { class: 'chip', title: t('ui.stickersShort') }, icon(app.sprites, 'tag'), ` ${stats.stickers.length} / ${((app.config.events || {}).stickers || []).length}`, questionButton(album)),
+        carpets ? h('span', { class: 'chip', title: t('ui.profileCarpets') }, icon(app.sprites, 'carpet'), ` ${ranch.gallery.length}`, questionButton(carpets)) : null,
+        ranch && ranch.plus ? h('span', { class: 'chip' }, icon(app.sprites, 'ranch'), ` ${t('ui.ranchPlusBadge', { n: ranch.plus })}`) : null,
         streak >= 2 ? h('span', { class: 'chip', title: t('ui.colStreak') }, t('ui.streakDays', { n: streak })) : null,
       ),
       breakdown,
       perfect,
       album,
+      carpets,
       leaderboardView(app, { id: user.id, ...stats }, sync),
       app.account.online ? null : h('p', { class: 'form-hint' }, t('ui.localMode')),
       h('button', { class: 'link-quiet', onclick: () => openRename(app, onRename, profile.close) }, t('ui.renameTitle')),

@@ -22,10 +22,14 @@ export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-proj
   // Like the Firestore rules in config/README.md: owners write their own saves / players unless
   // deleted/{name} exists; the teachers write anything, deleted/ included.
   const isAdmin = (email) => email && admins.includes(email.split('@')[0]);
-  const ownsDoc = (email, path) => {
+  const ownsDoc = (email, path, fields) => {
     const id = path.split('/').pop();
     if (isAdmin(email)) return true;
-    return email && !path.includes('deleted/') && email.split('@')[0] === id && !docs.has(`deleted/${id}`);
+    const me = email && email.split('@')[0];
+    if (docs.has(`deleted/${me}`)) return false;
+    if (path.includes('carpets/')) return !!fields && fields.owner.stringValue === me && id === `${fields.week.stringValue}~${me}`;
+    if (path.includes('likes/')) return !!fields && fields.voter.stringValue === me && fields.owner.stringValue !== me && id === `${fields.week.stringValue}~${fields.owner.stringValue}~${me}`;
+    return email && !path.includes('deleted/') && me === id;
   };
   const num = (fields, f) => (fields[f] && 'integerValue' in fields[f] ? Number(fields[f].integerValue) : undefined);
 
@@ -86,7 +90,7 @@ export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-proj
       const email = owner(req);
       if (!email) return fail(401, 'Request had invalid authentication credentials.', { status: 'UNAUTHENTICATED' });
       const doc = (w) => (w.update ? w.update.name : w.delete).replace(`${prefix}/`, '');
-      for (const w of body.writes) if (!ownsDoc(email, doc(w))) return fail(403, 'Missing or insufficient permissions.', { status: 'PERMISSION_DENIED' });
+      for (const w of body.writes) if (!ownsDoc(email, doc(w), w.update && w.update.fields)) return fail(403, 'Missing or insufficient permissions.', { status: 'PERMISSION_DENIED' });
       for (const w of body.writes) w.update ? docs.set(doc(w), w.update.fields) : docs.delete(doc(w));
       return json(200, { commitTime: new Date().toISOString() });
     }
@@ -95,6 +99,11 @@ export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-proj
       // Like Firestore: documents without the sort field are left out, and an inequality filter
       // must be on the first sort field.
       const q = body.structuredQuery;
+      if (q.from[0].collectionId !== 'players') {
+        const { field, value } = q.where.fieldFilter;
+        const found = [...docs].filter(([k, fields]) => k.startsWith(`${q.from[0].collectionId}/`) && fields[field.fieldPath].stringValue === value.stringValue);
+        return json(200, found.length ? found.map(([k, fields]) => ({ document: { name: `${prefix}/${k}`, fields }, readTime: 'now' })) : [{ readTime: 'now' }]);
+      }
       const f = q.orderBy[0].field.fieldPath;
       const where = q.where && q.where.fieldFilter;
       if (where && where.field.fieldPath !== f) return fail(400, 'inequality filter property and first sort order must be the same', { status: 'INVALID_ARGUMENT' });

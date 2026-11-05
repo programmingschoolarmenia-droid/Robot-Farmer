@@ -3,14 +3,15 @@
 // luck, boosts or village). Every run starts a fresh farm; the score is the game time the goal was
 // reached at (tenths of a second, lower is better), so watching faster (×8) changes nothing.
 // The player's part is kept in the main game: game.challenge = { week, code, best, bestCode, prev }.
+// The ranch has its own weekly challenge on a test ranch, kept in game.ranch.challenge.
 import { Game } from './game.js';
 import { dayNumber, weekKey } from '../core/util.js';
 
 export const CHALLENGE_SCRIPT = 'challenge';
 
 // This week's task for day 'YYYYMMDD' (the list goes round, a new task every Monday), plus `week`.
-export function weekTask(events, day) {
-  const list = (events && events.challenges) || [];
+export function weekTask(events, day, group = 'challenges') {
+  const list = (events && events[group]) || [];
   if (!list.length) return null;
   const n = Math.floor((dayNumber(day) + 3) / 7); // weeks since Monday 1969-12-29
   return { ...list[n % list.length], week: weekKey(day) };
@@ -71,6 +72,69 @@ export function recordResult(game, tenths, code) {
   if (better) Object.assign(ch, { best: tenths, bestCode: code });
   if (first) game.inventory.add('Star', ((game.config.events || {}).challenge || {}).stars ?? 5, 'challenge');
   return { better, first };
+}
+
+// A fresh test game for a ranch task: its places and commands (`owned`), `animals` on top of the ones
+// that come with the ranch, `items` and the code of each tab. Its prices and orders are those of one
+// fixed day, so every student on every day of the week has the same ranch.
+const TEST_DAY = Date.UTC(2026, 0, 5, 8);
+export function testRanch(config, task, scripts = {}) {
+  const cfg = (config.events && config.events.challenge) || {};
+  const settings = { ...config.settings, game: { ...config.settings.game, speedOptions: cfg.speeds || [1, 2, 4, 8], defaultSpeed: 1 }, dev: { ...config.settings.dev, unlockAll: false } };
+  delete settings.calendar;
+  const game = new Game(
+    { ...config, settings },
+    { seed: task.seed ?? 1, research: { ...cfg.levels, ...(config.events.ranchChallenge || {}).levels, ...task.levels }, ranch: { seed: (task.seed ?? 1) * 7919, owned: { ...task.owned }, storage: { ...(config.ranch.start || {}).items, ...task.items } } },
+  );
+  game.stats.clock = () => TEST_DAY;
+  const ranch = game.ranch;
+  for (const [type, n] of Object.entries(task.animals || {})) for (let i = 0; i < n; i++) ranch.addAnimal(type);
+  for (const [name, code] of Object.entries(scripts)) ranch.setScriptCode(name, code);
+  return game;
+}
+
+// Watches a test ranch for the task's goal; returns { done } with the ranch time it was reached at.
+// Goals: { items: { Egg: 15 } } gathered, { count: { sheared: 8 } } Ranch.counts, { earn: 300 } ֏.
+export function watchRanchGoal(game, goal) {
+  const ranch = game.ranch;
+  const [kind, v] = Object.entries(goal || {})[0] || [];
+  const met = () => {
+    if (kind === 'items') return Object.entries(v).every(([item, n]) => game.stats.total(item) >= n);
+    if (kind === 'count') return Object.entries(v).every(([key, n]) => (ranch.counts[key] || 0) >= n);
+    return kind === 'earn' && ranch.earned.total >= v;
+  };
+  const run = { done: null };
+  const check = () => {
+    if (run.done === null && met()) run.done = ranch.stepping ? ranch.stepping.time : ranch.time;
+  };
+  run.offs = [ranch.events.on('items', check), game.events.on('ranch', check)];
+  return run;
+}
+
+// The ranch's challenge: a new week starts with empty tabs; last week's result is kept as `prev`.
+export function rollRanchWeek(ranch, week) {
+  const ch = ranch.challenge;
+  if (ch.week === week) return ch;
+  if (ch.best) ch.prev = { week: ch.week, best: ch.best, bestCode: ch.bestCode };
+  return Object.assign(ch, { week, scripts: {}, best: 0, bestCode: '' });
+}
+
+// A finished run of the ranch's challenge; the first one pays ⭐.
+export function recordRanchResult(game, tenths, code) {
+  const ch = game.ranch.challenge;
+  const first = !ch.best;
+  const better = first || tenths < ch.best;
+  if (better) Object.assign(ch, { best: tenths, bestCode: code });
+  if (first) game.inventory.add('Star', ((game.config.events || {}).ranchChallenge || {}).stars ?? 5, 'challenge');
+  return { better, first };
+}
+
+// Last week's top 3 of the carpet contest (place 1–3): its hat and medals.
+export function giveContestPrize(game, place) {
+  const cfg = (game.config.events || {}).contest || {};
+  game.earnHat(cfg.hat);
+  game.inventory.add('Medal', (cfg.medals || [3, 2, 1])[place - 1] || 0, 'contest');
+  game.events.emit('contestPrize', { place });
 }
 
 // Last week's top 3 (place 1–3): the challenge hat and medals.

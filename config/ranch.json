@@ -1,5 +1,5 @@
 {
-  "_readme": "Բրիջիի ռանչոն։ research՝ ռանչոն բացող հետազոտությունը։ map.layout՝ վայրերի դասավորությունը քարտեզի վրա (3×3, առաջին շարքը վերևում)։ start՝ ինչով է սկսվում ռանչոն։ areas՝ վայրերը (դրոնն ու կոդի ներդիրը՝ script, չափերը՝ sizes, սկզբի իրերի տեղերը՝ objects, available: false՝ «շուտով»)։ animals՝ կենդանիները. needs-ը քանի միավոր է աճում քաղցը, ծարավը և վանդակի աղտը ամեն վայրկյանում, every՝ քանի վայրկյանում է տալիս ձու կամ կաթ (ուրախ կենդանին), space՝ քանի վանդակ է պետք մեկ կենդանուն, step՝ քանի վայրկյանը մեկ է քայլում։ needs՝ ընդհանուր կանոններ (seek՝ այս քաղցից/ծարավից սկսում է գնալ ամանի մոտ, fill՝ որքան է իջնում ուտելիս/խմելիս, unhappy՝ այս քաղցից/ծարավից տխրում է, dirty՝ այս աղտից տխրում է, sad՝ այս տրամադրությունից ցածր ոչինչ չի տալիս)։ items՝ ապրանքները (sell՝ վաճառքի գինը ֏-ով, buy՝ գնման գինը, feed՝ կեր է), prices.spread՝ գինն ամեն օր փոխվում է այսքան մասով (0.3 = ±30%)։ cart՝ ֆերմայից քանի իր է պետք ռանչոյի մեկ կերի համար։ orders՝ գյուղացիների պատվերները։ hands՝ դրոնի ձեռքը ըստ «Մեծ ձեռքեր»-ի մակարդակի։ shop՝ խանութը (cost կամ costs՝ գինը ֏-ով, needs՝ նախ պետք է գնել այն, grants՝ բացվող հրամանները)։",
+  "_readme": "Բրիջիի ռանչոն։ research՝ ռանչոն բացող հետազոտությունը։ map.layout՝ վայրերի դասավորությունը քարտեզի վրա (3×3, առաջին շարքը վերևում)։ start՝ ինչով է սկսվում ռանչոն։ areas՝ վայրերը (դրոնն ու կոդի ներդիրը՝ script, չափերը՝ sizes, սկզբի իրերի տեղերը՝ objects, available: false՝ «շուտով»)։ animals՝ կենդանիները. needs-ը քանի միավոր է աճում քաղցը, ծարավը և վանդակի աղտը ամեն վայրկյանում, every՝ քանի վայրկյանում է տալիս ձու կամ կաթ (ուրախ կենդանին), space՝ քանի վանդակ է պետք մեկ կենդանուն, step՝ քանի վայրկյանը մեկ է քայլում։ needs՝ ընդհանուր կանոններ (seek՝ այս քաղցից/ծարավից սկսում է գնալ ամանի մոտ, fill՝ որքան է իջնում ուտելիս/խմելիս, unhappy՝ այս քաղցից/ծարավից տխրում է, dirty՝ այս աղտից տխրում է, sad՝ այս տրամադրությունից ցածր ոչինչ չի տալիս)։ items՝ ապրանքները (sell՝ վաճառքի գինը ֏-ով, buy՝ գնման գինը, feed՝ կեր է), prices.spread՝ գինն ամեն օր փոխվում է այսքան մասով (0.3 = ±30%)։ cart՝ ֆերմայից քանի իր է պետք ռանչոյի մեկ կերի համար։ orders՝ գյուղացիների պատվերները։ hands՝ դրոնի ձեռքը ըստ «Մեծ ձեռքեր»-ի մակարդակի։ shop՝ խանութը (cost կամ costs՝ գինը ֏-ով, needs՝ նախ պետք է գնել այն կամ դրանք, grants՝ բացվող հրամանները)։ machines՝ մեքենաների բաղադրատոմսերը (count՝ քանի հատ է ստացվում)։ flowers՝ ծաղիկները, hive՝ փեթակը (every՝ քանի վայրկյանում է լցվում մեկ տեսակ ծաղկով, radius՝ քանի վանդակ հեռու է ծաղիկը հաշվվում, sting՝ դրոնի արագությունը խայթելիս), dishes՝ դրոններին արագացնող ուտելիքները, donkey՝ էշը (seconds՝ ճանապարհը, load՝ մեկ բեռը)։ carpets՝ գորգերը (palette՝ գույները, samples՝ նմուշները. rows-ը 9 տող է վերևից ներքև, level՝ դժվարությունը և միավորները, pay՝ վճարը 100%-ի համար, free՝ ազատ գորգի գինը, softBonus՝ փափուկ թելի հավելումը, perDay և buckets՝ օրվա պատվերները ըստ մակարդակների)։ fair՝ տոնավաճառի ապրանքները, գորգի նմանությունը և մրցանակը։ plus՝ նոր խաղի դժվարությունը ամեն մակարդակի համար (needs՝ կարիքները, shop՝ խանութի գները, goods՝ ապրանքների գները)։",
   "research": "Ranch",
   "map": {
     "layout": [
@@ -48,7 +48,16 @@
       "objects": { "Basket": [0, 0], "Dairy": [3, 1] },
       "code": "// Արհեստանոց։ Այստեղ կաթից մածուն, պանիր և կարագ են պատրաստում։\n// Զամբյուղը (0, 0) վանդակում է, կաթնատունը՝ (3, 1)։\n\n"
     },
-    "Sheep": { "icon": "sheep", "name": "Փարախ", "available": false },
+    "Sheep": {
+      "icon": "sheep",
+      "name": "Փարախ",
+      "script": "parax",
+      "animal": "Sheep",
+      "sizes": [6, 7, 8],
+      "corner": 2,
+      "objects": { "Basket": [0, 0], "Well": [5, 0], "Wheel": [2, 0], "Loom": [3, 0], "FeedTrough": [0, 5], "WaterTrough": [1, 5] },
+      "code": "// Փարախ։ Ոչխարները հեռանում են դրոնից։ Խուզել կարելի է միայն վերևի աջ անկյունում։\n// Զամբյուղը (0, 0) վանդակում է, ճախարակը՝ (2, 0), դազգահը՝ (3, 0), ջրհորը՝ (5, 0)։\n\n"
+    },
     "Goats": {
       "icon": "goat",
       "name": "Այծանոց",
@@ -58,22 +67,73 @@
       "objects": { "Basket": [0, 0], "Well": [4, 0], "FeedTrough": [0, 4], "WaterTrough": [4, 4] },
       "code": "// Այծանոց։ Այծերը կաթ են տալիս, բայց հրում են ցանկապատը։\n\n"
     },
-    "Bees": { "icon": "bee", "name": "Մեղվանոց", "available": false },
-    "Buffalo": { "icon": "buffalo", "name": "Գոմեշանոց", "available": false },
-    "Rabbits": { "icon": "rabbit", "name": "Ճագարանոց", "available": false }
+    "Bees": {
+      "icon": "bee",
+      "name": "Մեղվանոց",
+      "script": "mexvanoc",
+      "flowers": true,
+      "stings": true,
+      "sizes": [5, 6, 7],
+      "objects": { "Basket": [0, 0], "HoneyHouse": [1, 0], "Hive": [2, 2] },
+      "code": "// Մեղվանոց։ Փեթակը լցվում է, երբ մոտը տարբեր ծաղիկներ են աճում։\n// Զամբյուղը (0, 0) վանդակում է, մեղրատունը՝ (1, 0), փեթակը՝ (2, 2)։\n\n"
+    },
+    "Buffalo": {
+      "icon": "buffalo",
+      "name": "Գոմեշանոց",
+      "script": "gomeshanoc",
+      "animal": "Buffalo",
+      "sizes": [5, 6, 7],
+      "objects": { "Basket": [0, 0], "Well": [4, 0], "FeedTrough": [0, 4], "WaterTrough": [4, 4], "Pool": [2, 2] },
+      "code": "// Գոմեշանոց։ Շոգած գոմեշը կաթ չի տալիս. լճակը պետք է միշտ ջուր ունենա։\n// Լճակը (2, 2) վանդակում է, ջրհորը՝ (4, 0)։\n\n"
+    },
+    "Rabbits": {
+      "icon": "rabbit",
+      "name": "Ճագարանոց",
+      "script": "chagaranoc",
+      "animal": "Rabbit",
+      "sizes": [4, 5, 6],
+      "objects": { "Basket": [0, 0], "Well": [3, 0], "FeedTrough": [0, 3], "WaterTrough": [3, 3] },
+      "code": "// Ճագարանոց։ Ճագարները շատ արագ են բազմանում։ Հաշվիր նրանց և ավելորդներին վաճառիր։\n\n"
+    }
   },
   "animals": {
     "Hen": { "feed": "Grain", "product": "Egg", "lays": true, "every": 60, "space": 4, "step": 2, "needs": { "hunger": 0.5, "thirst": 0.6, "dirt": 0.25 }, "colors": ["White", "Brown", "Black"], "rare": "Gold", "hatch": 90, "grow": 120, "price": 25 },
     "Cow": { "feed": "Bale", "product": "Milk", "lays": false, "every": 120, "space": 8, "step": 4, "needs": { "hunger": 0.4, "thirst": 0.5, "dirt": 0.5 }, "colors": ["Spotted", "Brown", "Black"], "rare": "Red", "breed": 300, "grow": 240, "price": 120 },
-    "Goat": { "feed": "Bale", "product": "GoatMilk", "lays": false, "every": 90, "space": 6, "step": 2, "needs": { "hunger": 0.45, "thirst": 0.5, "dirt": 0.4 }, "colors": ["White", "Brown", "Black"], "rare": "Gold", "breed": 240, "grow": 180, "price": 90, "butt": 0.25 }
+    "Goat": { "feed": "Bale", "product": "GoatMilk", "lays": false, "every": 90, "space": 6, "step": 2, "needs": { "hunger": 0.45, "thirst": 0.5, "dirt": 0.4 }, "colors": ["White", "Brown", "Black"], "rare": "Gold", "breed": 240, "grow": 180, "price": 90, "butt": 0.25 },
+    "Sheep": { "feed": "Bale", "product": "WoolWhite", "products": { "White": "WoolWhite", "Brown": "WoolBrown", "Black": "WoolBlack", "Gold": "WoolGold" }, "shear": true, "flees": 2, "flock": 0.6, "lays": false, "every": 60, "space": 4, "step": 1.5, "needs": { "hunger": 0.4, "thirst": 0.45, "dirt": 0.25 }, "colors": ["White", "Brown", "Black"], "rare": "Gold", "breed": 300, "grow": 180, "price": 110 },
+    "Buffalo": { "feed": "Bale", "product": "BuffaloMilk", "lays": false, "every": 70, "space": 7, "step": 5, "needs": { "hunger": 0.6, "thirst": 0.6, "dirt": 0.5, "heat": 0.7 }, "colors": ["Black", "Brown"], "rare": "Gold", "breed": 420, "grow": 300, "price": 300 },
+    "Rabbit": { "feed": "Carrot", "product": "Down", "shear": true, "crowd": 1.5, "pairs": true, "lays": false, "every": 45, "space": 2, "step": 1, "needs": { "hunger": 0.5, "thirst": 0.4, "dirt": 0.35 }, "colors": ["White", "Black", "Brown"], "rare": "Gold", "breed": 150, "grow": 90, "price": 40 }
   },
-  "needs": { "seek": 50, "fill": 60, "unhappy": 70, "dirty": 60, "sad": 25, "petBoost": 25, "petSeconds": 60, "moodSpeed": 2, "happy": 70, "rareChance": 0.05, "rarePrice": 3, "sickDirt": 70, "sickSeconds": 60, "runaway": 15, "fenceHit": 25, "ropeSeconds": 6 },
-  "seasons": { "Spring": { "breed": 2 }, "Summer": { "thirst": 1.5 }, "Winter": { "hunger": 1.5 }, "Rain": { "dirt": 1.5 } },
+  "needs": { "seek": 50, "fill": 60, "unhappy": 70, "dirty": 60, "sad": 25, "petBoost": 25, "petSeconds": 60, "moodSpeed": 2, "happy": 70, "rareChance": 0.05, "rarePrice": 3, "sickDirt": 70, "sickSeconds": 60, "runaway": 15, "fenceHit": 25, "ropeSeconds": 6, "bellSeconds": 15 },
+  "seasons": { "Spring": { "breed": 2 }, "Summer": { "thirst": 1.5, "heat": 1.5 }, "Winter": { "hunger": 1.5, "wool": 1.5, "honey": 0.5 }, "Rain": { "dirt": 1.5 } },
   "machines": {
-    "Dairy": { "Matsun": { "in": { "Milk": 1 }, "seconds": 20 }, "Cheese": { "in": { "Milk": 3 }, "seconds": 60 }, "Butter": { "in": { "Milk": 4 }, "seconds": 45 } },
-    "Stove": { "Omelet": { "in": { "Egg": 2, "Butter": 1 }, "seconds": 30 } }
+    "Dairy": { "Matsun": { "in": { "Milk": 1 }, "seconds": 20 }, "Cheese": { "in": { "Milk": 3 }, "seconds": 60 }, "Butter": { "in": { "Milk": 4 }, "seconds": 45 }, "LoriCheese": { "in": { "BuffaloMilk": 3 }, "seconds": 60 } },
+    "Stove": { "Omelet": { "in": { "Egg": 2, "Butter": 1 }, "seconds": 30 }, "HoneyCake": { "in": { "Honey": 1, "Egg": 2, "Butter": 1, "Flour": 1 }, "seconds": 45 } },
+    "Wheel": {
+      "YarnWhite": { "in": { "WoolWhite": 1 }, "seconds": 6, "count": 5 },
+      "YarnBrown": { "in": { "WoolBrown": 1 }, "seconds": 6, "count": 5 },
+      "YarnBlack": { "in": { "WoolBlack": 1 }, "seconds": 6, "count": 5 },
+      "YarnGold": { "in": { "WoolGold": 1 }, "seconds": 6, "count": 5 },
+      "YarnSoft": { "in": { "Down": 2 }, "seconds": 6, "count": 5 }
+    },
+    "DyePot": {
+      "YarnRed": { "in": { "YarnWhite": 5, "Pumpkin": 1 }, "seconds": 10, "count": 5 },
+      "YarnOrange": { "in": { "YarnWhite": 5, "Carrot": 1 }, "seconds": 10, "count": 5 },
+      "YarnYellow": { "in": { "YarnWhite": 5, "Sunflower": 1 }, "seconds": 10, "count": 5 },
+      "YarnGreen": { "in": { "YarnWhite": 5, "Bale": 1 }, "seconds": 10, "count": 5 },
+      "YarnBlue": { "in": { "YarnWhite": 5, "Cactus": 1 }, "seconds": 10, "count": 5 }
+    },
+    "HoneyHouse": {
+      "Honey": { "in": { "Comb": 1 }, "seconds": 15 },
+      "Wax": { "in": { "Comb": 1 }, "seconds": 15 },
+      "Candle": { "in": { "Wax": 2 }, "seconds": 25 }
+    }
   },
-  "troughs": { "capacity": 10 },
+  "troughs": { "capacity": 10, "pool": 20 },
+  "flowers": { "Poppy": {}, "Daisy": {}, "Rose": {}, "Jasmine": {}, "Sunflower": {} },
+  "hive": { "every": 240, "radius": 2, "sting": 0.5, "stingRadius": 1 },
+  "dishes": { "Omelet": { "multiplier": 1.5, "seconds": 30 }, "HoneyCake": { "multiplier": 2, "seconds": 60 } },
+  "donkey": { "seconds": 20, "load": 100 },
   "items": {
     "Dram": {},
     "Egg": { "sell": 4 },
@@ -87,15 +147,44 @@
     "Omelet": { "sell": 100 },
     "Manure": {},
     "Medicine": { "buy": 10 },
-    "Plank": { "buy": 8 }
+    "Plank": { "buy": 8 },
+    "WoolWhite": { "sell": 12 },
+    "WoolBrown": { "sell": 14 },
+    "WoolBlack": { "sell": 14 },
+    "WoolGold": { "sell": 60 },
+    "YarnWhite": {},
+    "YarnBrown": {},
+    "YarnBlack": {},
+    "YarnGold": {},
+    "YarnRed": {},
+    "YarnOrange": {},
+    "YarnYellow": {},
+    "YarnGreen": {},
+    "YarnBlue": {},
+    "YarnSoft": {},
+    "Carpet": {},
+    "Down": { "sell": 18 },
+    "Carrot": { "feed": true },
+    "Pumpkin": {},
+    "Sunflower": {},
+    "Cactus": {},
+    "Flour": {},
+    "Seed": { "buy": 3 },
+    "Comb": { "sell": 20 },
+    "Honey": { "sell": 70 },
+    "Wax": { "sell": 35 },
+    "Candle": { "sell": 110 },
+    "BuffaloMilk": { "sell": 35 },
+    "LoriCheese": { "sell": 170 },
+    "HoneyCake": { "sell": 420 }
   },
   "prices": { "spread": 0.3 },
-  "cart": { "Bale": { "Hay": 10000 }, "Plank": { "Wood": 10000 } },
-  "ship": { "Manure": { "Fertilizer": 3 }, "Egg": { "Egg": 1 }, "Milk": { "Milk": 1 }, "Cheese": { "Cheese": 1 }, "Butter": { "Butter": 1 } },
+  "cart": { "Bale": { "Hay": 10000 }, "Plank": { "Wood": 10000 }, "Carrot": { "Carrot": 2000 }, "Pumpkin": { "Pumpkin": 1000 }, "Sunflower": { "Power": 1000 }, "Cactus": { "Cactus": 1000 }, "Flour": { "Flour": 5 } },
+  "ship": { "Manure": { "Fertilizer": 3 }, "Egg": { "Egg": 1 }, "Milk": { "Milk": 1 }, "Cheese": { "Cheese": 1 }, "Butter": { "Butter": 1 }, "Honey": { "Honey": 1 }, "Candle": { "Candle": 1 } },
   "orders": {
     "perDay": 3,
     "pay": 1.6,
-    "base": { "Egg": 6, "Milk": 2, "GoatMilk": 2 },
+    "base": { "Egg": 6, "Milk": 2, "GoatMilk": 2, "WoolWhite": 3, "BuffaloMilk": 2, "Down": 3 },
     "animals": 0.3,
     "lines": [
       "Վաղը տոն է. ինձ պետք է {list}։ Կվճարեմ {pay} ֏։",
@@ -104,6 +193,53 @@
       "Մեր տան համար {list}, խնդրում եմ։ Կտամ {pay} ֏։"
     ]
   },
+  "carpets": {
+    "size": 9,
+    "knotSeconds": 1,
+    "perDay": 3,
+    "free": 250,
+    "softBonus": 0.5,
+    "gallery": 12,
+    "buckets": [[1, 2], [3], [4, 5]],
+    "palette": {
+      "White": { "letter": "W", "yarn": "YarnWhite", "hex": "#f4efe3" },
+      "Brown": { "letter": "B", "yarn": "YarnBrown", "hex": "#8a5a36" },
+      "Black": { "letter": "K", "yarn": "YarnBlack", "hex": "#2c2a33" },
+      "Gold": { "letter": "G", "yarn": "YarnGold", "hex": "#e0ab2c" },
+      "Red": { "letter": "R", "yarn": "YarnRed", "hex": "#b4202a" },
+      "Orange": { "letter": "O", "yarn": "YarnOrange", "hex": "#e8741e" },
+      "Yellow": { "letter": "Y", "yarn": "YarnYellow", "hex": "#f2c93a" },
+      "Green": { "letter": "N", "yarn": "YarnGreen", "hex": "#2f8f4e" },
+      "Blue": { "letter": "L", "yarn": "YarnBlue", "hex": "#27508f" },
+      "Soft": { "letter": "S", "yarn": "YarnSoft", "hex": "#fff8f2", "like": "White" }
+    },
+    "samples": [
+      {"id": "rows", "name": "Շերտեր", "level": 1, "pay": 300, "rows": ["KKKKKKKKK", "WWWWWWWWW", "KKKKKKKKK", "WWWWWWWWW", "KKKKKKKKK", "WWWWWWWWW", "KKKKKKKKK", "WWWWWWWWW", "KKKKKKKKK"]},
+      {"id": "columns", "name": "Սյուներ", "level": 1, "pay": 300, "rows": ["BWWBWWBWW", "BWWBWWBWW", "BWWBWWBWW", "BWWBWWBWW", "BWWBWWBWW", "BWWBWWBWW", "BWWBWWBWW", "BWWBWWBWW", "BWWBWWBWW"]},
+      {"id": "frame", "name": "Շրջանակ", "level": 1, "pay": 350, "rows": ["KKKKKKKKK", "KWWWWWWWK", "KWWWWWWWK", "KWWWWWWWK", "KWWWWWWWK", "KWWWWWWWK", "KWWWWWWWK", "KWWWWWWWK", "KKKKKKKKK"]},
+      {"id": "checks", "name": "Շախմատ", "level": 2, "pay": 500, "rows": ["WBWBWBWBW", "BWBWBWBWB", "WBWBWBWBW", "BWBWBWBWB", "WBWBWBWBW", "BWBWBWBWB", "WBWBWBWBW", "BWBWBWBWB", "WBWBWBWBW"]},
+      {"id": "cross", "name": "Խաչ", "level": 2, "pay": 500, "rows": ["WWWWKWWWW", "WWWWKWWWW", "WWWWKWWWW", "WWWWKWWWW", "KKKKKKKKK", "WWWWKWWWW", "WWWWKWWWW", "WWWWKWWWW", "WWWWKWWWW"]},
+      {"id": "xshape", "name": "Անկյունագծեր", "level": 2, "pay": 550, "rows": ["BWWWWWWWB", "WBWWWWWBW", "WWBWWWBWW", "WWWBWBWWW", "WWWWBWWWW", "WWWBWBWWW", "WWBWWWBWW", "WBWWWWWBW", "BWWWWWWWB"]},
+      {"id": "rings", "name": "Օղակներ", "level": 3, "pay": 800, "rows": ["RRRRRRRRR", "RWWWWWWWR", "RWLLLLLWR", "RWLRRRLWR", "RWLRYRLWR", "RWLRRRLWR", "RWLLLLLWR", "RWWWWWWWR", "RRRRRRRRR"]},
+      {"id": "diamond", "name": "Ադամանդ", "level": 3, "pay": 800, "rows": ["LLLLRLLLL", "LLLRYRLLL", "LLRYRYRLL", "LRYRYRYRL", "RYRYRYRYR", "LRYRYRYRL", "LLRYRYRLL", "LLLRYRLLL", "LLLLRLLLL"]},
+      {"id": "star", "name": "Ճառագայթներ", "level": 3, "pay": 900, "rows": ["YLLLYLLLY", "LYLLYLLYL", "LLYLYLYLL", "LLLYYYLLL", "YYYYYYYYY", "LLLYYYLLL", "LLYLYLYLL", "LYLLYLLYL", "YLLLYLLLY"]},
+      {"id": "waves", "name": "Զիգզագ", "level": 4, "pay": 1200, "rows": ["RLYRLRYLR", "LYRLYLRYL", "YRLYRYLRY", "RLYRLRYLR", "LYRLYLRYL", "YRLYRYLRY", "RLYRLRYLR", "LYRLYLRYL", "YRLYRYLRY"]},
+      {"id": "diamonds3", "name": "Ռոմբերի պարտեզ", "level": 4, "pay": 1300, "rows": ["LRYLRLYRL", "RYLRYRLYR", "YLRYLYRLY", "LRYLRLYRL", "RYLRYRLYR", "LRYLRLYRL", "YLRYLYRLY", "RYLRYRLYR", "LRYLRLYRL"]},
+      {"id": "octagram", "name": "Ութաթև աստղ", "level": 4, "pay": 1400, "rows": ["LLLLRLLLL", "LRLRRRLRL", "LLRRRRRLL", "LLRRYRRLL", "LRRYYYRRL", "LLRRYRRLL", "LLRRRRRLL", "LRLRRRLRL", "LLLLRLLLL"]},
+      {"id": "khachkar", "name": "Խաչքար", "level": 5, "pay": 1800, "rows": ["KKKKKKKKK", "KWWWYWWWK", "KWWRYRWWK", "KWRWYWRWK", "KYYYRYYYK", "KWRWYWRWK", "KWWRYRWWK", "KWWWYWWWK", "KKKKKKKKK"]},
+      {"id": "artsakh", "name": "Արցախի վարդ", "level": 5, "pay": 2000, "rows": ["RRRRRRRRR", "RYLNNNLYR", "RLNNWNNLR", "RNNWRWNNR", "RNWRORWNR", "RNNWRWNNR", "RLNNWNNLR", "RYLNNNLYR", "RRRRRRRRR"]},
+      {"id": "dragon", "name": "Վիշապագորգ", "level": 5, "pay": 2200, "rows": ["LLLLLLLLL", "LRYRYRYRL", "LYWWWWWYL", "LRWWOWWRL", "LYWOKOWYL", "LRWWOWWRL", "LYWWWWWYL", "LRYRYRYRL", "LLLLLLLLL"]},
+      {"id": "fest_Trndez", "name": "Տրնդեզի կրակ", "level": 3, "pay": 1500, "rows": ["LLLLRLLLL", "LLLRORLLL", "LLLRORLLL", "LLROYORLL", "LLROYORLL", "LROYYYORL", "LROYWYORL", "ROYYWYYOR", "KBKBKBKBK"], "festival": true},
+      {"id": "fest_Easter", "name": "Զատկի ձու", "level": 3, "pay": 1500, "rows": ["NNNNNNNNN", "NNNRRRNNN", "NNRRRRRNN", "NNRYRYRNN", "NYYYYYYYN", "NRRYRYRRN", "NRRRRRRRN", "NNRRRRRNN", "NNNRRRNNN"], "festival": true},
+      {"id": "fest_Vardavar", "name": "Վարդավառի ալիքներ", "level": 3, "pay": 1500, "rows": ["WLLLWLLLW", "LWLWLWLWL", "LLWLLLWLL", "LLLLLLLLL", "WLLLWLLLW", "LWLWLWLWL", "LLWLLLWLL", "LLLLLLLLL", "WLLLWLLLW"], "festival": true},
+      {"id": "fest_Navasard", "name": "Նավասարդի արև", "level": 3, "pay": 1500, "rows": ["OLLLOLLLO", "LOLLOLLOL", "LLOLYLOLL", "LLLYYYLLL", "OOYYYYYOO", "LLLYYYLLL", "LLOLYLOLL", "LOLLOLLOL", "OLLLOLLLO"], "festival": true},
+      {"id": "fest_KnowledgeDay", "name": "Գիրք", "level": 3, "pay": 1500, "rows": ["LLLLLLLLL", "LWWWKWWWL", "LWKWKWKWL", "LWWWKWWWL", "LWKWKWKWL", "LWWWKWWWL", "LWKWKWKWL", "LWWWKWWWL", "LLLLLLLLL"], "festival": true},
+      {"id": "fest_TeachersDay", "name": "Ուսուցչի վարդ", "level": 3, "pay": 1500, "rows": ["WWWWWWWWW", "WWRRWRRWW", "WRRRRRRRW", "WRRRRRRRW", "WWRRRRRWW", "WWWRRRWWW", "WWWWRWWWW", "WWWWNWWWW", "WWWNNNWWW"], "festival": true},
+      {"id": "fest_NewYear", "name": "Ամանորի տոնածառ", "level": 3, "pay": 1500, "rows": ["WWWWYWWWW", "WWWNNNWWW", "WWNRNNNWW", "WWWNNNWWW", "WWNNNYNWW", "WNYNNNRNW", "NNNNRNNNN", "WWWWBWWWW", "WWWBBBWWW"], "festival": true}
+    ]
+  },
+  "fair": { "goods": { "Cheese": 20, "Butter": 10, "Honey": 20, "Candle": 10, "LoriCheese": 10, "HoneyCake": 5, "WoolWhite": 20 }, "carpet": 0.95, "pay": 5000 },
+  "plus": { "needs": 1.25, "shop": 1.5, "goods": 1.2 },
   "hands": [3, 5, 10, 20],
   "shop": [
     { "id": "Cows", "kind": "area", "icon": "cow", "name": "Գոմ", "about": "Վերանորոգում է գոմը։ Ներսում արդեն 2 կով կա, և բացվում է kitel() հրամանը։", "cost": 300, "animals": 2, "grants": ["milk"] },
@@ -122,7 +258,7 @@
     { "id": "cart", "kind": "command", "icon": "wagon", "about": "Սայլը ֆերմայից բերում է խոտի հակեր (10 000 չոր խոտ → 1 հակ)։", "cost": 60, "grants": ["bring"] },
     { "id": "orders", "kind": "command", "icon": "scroll", "about": "Գյուղացիների պատվերները. նրանք վճարում են շուկայից ավելի շատ։", "cost": 60, "grants": ["orders", "deliver"] },
     { "id": "Workshop", "kind": "area", "icon": "workshop", "name": "Արհեստանոց", "about": "Վերանորոգում է արհեստանոցը՝ կաթնատնով։ Բացվում է patrastel() հրամանը՝ մածուն, պանիր և կարագ։", "cost": 500, "needs": "Cows", "grants": ["make"] },
-    { "id": "Stove", "kind": "machine", "icon": "stove", "name": "Վառարան", "about": "Ձվածեղ արհեստանոցում (2 ձու և կարագ)։ Դիր այն karucel(Sarqer.Vararan)-ով։", "cost": 250, "needs": "Workshop" },
+    { "id": "Stove", "kind": "machine", "icon": "stove", "name": "Վառարան", "about": "Ձվածեղ արհեստանոցում (2 ձու և կարագ)։ Դիր այն karucel(Sarqer.Vararan)-ով։", "cost": 250, "needs": "Workshop", "area": "Workshop" },
     { "id": "Goats", "kind": "area", "icon": "goat", "name": "Այծանոց", "about": "Վերանորոգում է այծանոցը, ներսում 2 այծ կա։ Այծերը հրում են ցանկապատը. բացվում են norogel() և kapel() հրամանները։", "cost": 600, "animals": 2, "needs": "Cows", "grants": ["repair", "rope"] },
     { "id": "Goat", "kind": "animal", "animal": "Goat", "icon": "goat", "name": "Այծ", "about": "Եվս մեկ այծ այծանոցում, եթե տեղ կա։", "cost": 100, "needs": "Goats" },
     { "id": "GoatsBig", "kind": "size", "area": "Goats", "icon": "bigger", "name": "Մեծ այծանոց", "about": "Այծանոցը մեծանում է մեկ վանդակով (6×6, 7×7)։", "costs": [400, 900], "needs": "Goats" },
@@ -133,10 +269,24 @@
     { "id": "heal", "kind": "command", "icon": "medicine", "about": "buzhel()՝ բուժում է դրոնի տակ կանգնած հիվանդ կենդանուն, եթե ձեռքում դեղ կա։", "cost": 60, "grants": ["heal"] },
     { "id": "ship", "kind": "command", "icon": "wagon", "about": "tanel()՝ սայլը ռանչոյի ապրանքները տանում է ֆերմա. գոմաղբը դառնում է պարարտանյութ։", "cost": 80, "grants": ["ship"] },
     { "id": "FarmSpeed", "kind": "boost", "icon": "speed", "name": "Արագ ֆերմա", "about": "Ֆերմայի դրոնները 10 րոպե 1,5 անգամ արագ են։ Կարելի է գնել նորից։", "cost": 150, "boost": { "kind": "speed", "multiplier": 1.5, "seconds": 600 } },
-    { "id": "Sheep", "kind": "area", "icon": "sheep", "name": "Փարախ", "about": "Ոչխարներ, բուրդ և հայկական գորգեր։", "available": false },
-    { "id": "Bees", "kind": "area", "icon": "bee", "name": "Մեղվանոց", "about": "Մեղուներ, ծաղիկներ և մեղր։", "available": false },
-    { "id": "Buffalo", "kind": "area", "icon": "buffalo", "name": "Գոմեշանոց", "about": "Գոմեշները շատ կաթ են տալիս և սիրում են ջուր։", "available": false },
-    { "id": "Rabbits", "kind": "area", "icon": "rabbit", "name": "Ճագարանոց", "about": "Ճագարները շատ արագ են բազմանում։", "available": false }
+    { "id": "Sheep", "kind": "area", "icon": "sheep", "name": "Փարախ", "about": "Վերանորոգում է փարախը՝ 3 ոչխարով, ճախարակով և դազգահով։ Բացվում են xuzel(), gorg(), hyusel(), gorgPatverner() և vacharelGorg() հրամանները։", "cost": 1500, "animals": 3, "needs": ["Goats", "Workshop"], "grants": ["shear", "carpet", "weave", "carpetOrders", "sellCarpet"] },
+    { "id": "OneSheep", "kind": "animal", "animal": "Sheep", "icon": "sheep", "name": "Ոչխար", "about": "Եվս մեկ ոչխար փարախում, եթե տեղ կա։", "cost": 130, "needs": "Sheep" },
+    { "id": "SheepBig", "kind": "size", "area": "Sheep", "icon": "bigger", "name": "Մեծ փարախ", "about": "Փարախը մեծանում է մեկ վանդակով (7×7, 8×8)։ Խուզելու անկյունը միշտ վերևի աջ անկյունում է։", "costs": [800, 1500], "needs": "Sheep" },
+    { "id": "Bell", "kind": "command", "icon": "bell", "about": "zangel()՝ ոչխարները գալիս են այն վանդակը, որտեղ զանգը հնչեց, և մի քանի վայրկյան մնում են այնտեղ։", "cost": 300, "needs": "Sheep", "grants": ["bell"] },
+    { "id": "Gampr", "kind": "command", "icon": "gampr", "about": "Գամփռը փարախում է։ gamprGnal()-ը քայլեցնում է նրան, իսկ ոչխարները խուսափում են նրանից, ինչպես դրոնից։", "cost": 500, "needs": "Sheep", "grants": ["moveDog"] },
+    { "id": "DyePot", "kind": "machine", "icon": "dye", "name": "Ներկաման", "about": "Սպիտակ թելը ներկում է բույսերով։ Դիր այն փարախում՝ karucel(Sarqer.Nerkaman)։", "cost": 400, "needs": "Sheep", "area": "Sheep" },
+    { "id": "Bees", "kind": "area", "icon": "bee", "name": "Մեղվանոց", "about": "Վերանորոգում է մեղվանոցը՝ փեթակով և մեղրատնով։ Բացվում են tnkel() և caxkiTesak() հրամանները։", "cost": 2500, "needs": "Sheep", "grants": ["plant", "flowerKinds"] },
+    { "id": "Hive", "kind": "machine", "icon": "hive", "name": "Փեթակ", "about": "Եվս մեկ փեթակ մեղվանոցում։ Դիր այն karucel(Sarqer.Petak)-ով։", "cost": 300, "needs": "Bees", "area": "Bees" },
+    { "id": "BeesBig", "kind": "size", "area": "Bees", "icon": "bigger", "name": "Մեծ մեղվանոց", "about": "Մեղվանոցը մեծանում է մեկ վանդակով (6×6, 7×7)։", "costs": [1000, 2000], "needs": "Bees" },
+    { "id": "Buffalo", "kind": "area", "icon": "buffalo", "name": "Գոմեշանոց", "about": "Վերանորոգում է գոմեշանոցը՝ 2 գոմեշով և լճակով։ Գոմեշները շատ կաթ են տալիս և սիրում են ջուր։", "cost": 3500, "animals": 2, "needs": "Bees" },
+    { "id": "OneBuffalo", "kind": "animal", "animal": "Buffalo", "icon": "buffalo", "name": "Գոմեշ", "about": "Եվս մեկ գոմեշ գոմեշանոցում, եթե տեղ կա։", "cost": 400, "needs": "Buffalo" },
+    { "id": "BuffaloBig", "kind": "size", "area": "Buffalo", "icon": "bigger", "name": "Մեծ գոմեշանոց", "about": "Գոմեշանոցը մեծանում է մեկ վանդակով (6×6, 7×7)։", "costs": [1500, 3000], "needs": "Buffalo" },
+    { "id": "Rabbits", "kind": "area", "icon": "rabbit", "name": "Ճագարանոց", "about": "Վերանորոգում է ճագարանոցը՝ 2 ճագարով։ Նրանք գազար են ուտում, տալիս են աղվամազ և շատ արագ են բազմանում։", "cost": 1500, "animals": 2, "needs": "Sheep" },
+    { "id": "OneRabbit", "kind": "animal", "animal": "Rabbit", "icon": "rabbit", "name": "Ճագար", "about": "Եվս մեկ ճագար ճագարանոցում, եթե տեղ կա։", "cost": 50, "needs": "Rabbits" },
+    { "id": "RabbitsBig", "kind": "size", "area": "Rabbits", "icon": "bigger", "name": "Մեծ ճագարանոց", "about": "Ճագարանոցը մեծանում է մեկ վանդակով (5×5, 6×6)։", "costs": [800, 1500], "needs": "Rabbits" },
+    { "id": "Donkey", "kind": "command", "icon": "donkey", "name": "Էշ", "about": "Էշը մեծ բեռներ է տանում ֆերմա և բերում այնտեղից։ eshBerel() և eshTanel() հրամանները աշխատում են ցանկացած վայրից։", "cost": 800, "needs": "Workshop", "grants": ["donkeyBring", "donkeyShip"] },
+    { "id": "dishes", "kind": "command", "icon": "dish", "about": "utel()՝ ձվածեղը և մեղրաբլիթը մի որոշ ժամանակ արագացնում են ռանչոյի բոլոր դրոնները։", "cost": 200, "needs": "Workshop", "grants": ["eat"] },
+    { "id": "Fair", "kind": "command", "icon": "party", "name": "Տոնավաճառի հրավեր", "about": "Երբ բոլոր վայրերը վերանորոգված են, գյուղը քեզ հրավիրում է տոնավաճառ։ Բացվում է tonavachar() հրամանը։", "cost": 2000, "needs": ["Cows", "Workshop", "Goats", "Sheep", "Bees", "Buffalo", "Rabbits"], "grants": ["fair"] }
   ],
   "story": {
     "intro": [
@@ -161,8 +311,42 @@
       "Goats": [
         { "emotion": "celebrating", "text": "Այծանոցում երկու այծ կա։ Նրանք կաթ են տալիս, բայց շատ համառ են՝ գլխով հրում են ցանկապատը։" },
         { "emotion": "worried", "text": "Երբ ցանկապատի մի կտոր կոտրվում է, անցք է բացվում, և այծը փախչում է գյուղ։ norogel()-ը տախտակով նորոգում է անցքը, իսկ kapel()-ը պարանով վերադարձնում է փախածին։" }
+      ],
+      "Sheep": [
+        { "emotion": "celebrating", "text": "Փարախը նորից կենդանի է։ Ներսում երեք ոչխար կա, իսկ կողքին՝ ճախարակն ու հին դազգահը։ Այստեղ են ծնվում հայկական գորգերը։" },
+        { "emotion": "thinking", "text": "Ոչխարները վախկոտ են։ Երբ դրոնը 2 վանդակից մոտ է, նրանք հեռանում են, իսկ մնացած ժամանակ իրար մոտ են մնում։" },
+        { "emotion": "happy", "text": "Խուզել կարելի է միայն վերևի աջ անկյունում՝ նշված 2×2 վանդակներում։ Մոտեցիր ոչխարին այնպես, որ նրա և անկյան մեջտեղում չլինես. նա ինքը կգնա այնտեղ։ Անկյունում նա այլևս տեղ չունի գնալու։" }
+      ],
+      "Bees": [
+        { "emotion": "celebrating", "text": "Մեղուները վերադարձան։ Մեղվանոցում արդեն մի փեթակ և մեղրատուն կա։" },
+        { "emotion": "thinking", "text": "Փեթակը լցվում է այնքան արագ, որքան շատ տարբեր ծաղիկներ կան նրա մոտ՝ մինչև 2 վանդակ հեռու։ Հինգ նույն ծաղիկը մեկ տեսակ է, իսկ հինգ տարբերը՝ հինգ անգամ ավելի արագ մեղր։" },
+        { "emotion": "worried", "text": "Զգույշ. փեթակի կողքին մեղուները խայթում են, և դրոնը երկու անգամ դանդաղ է աշխատում։ Երբ առաջին մեղրը պատրաստես, կստանաս մեղվապահի գլխարկը, և մեղուներն այլևս չեն խայթի։" }
+      ],
+      "Buffalo": [
+        { "emotion": "celebrating", "text": "Գոմեշները մեծ են, ուժեղ և շատ կաթ են տալիս։ Նրանց կաթից ստացվում է ամենաթանկ պանիրը՝ Լոռի պանիրը։" },
+        { "emotion": "thinking", "text": "Բայց գոմեշը շուտ է շոգում։ Շոգած գոմեշը կաթ չի տալիս, մինչև չլողանա լճակում։ Ամառը նա ավելի շուտ է շոգում։ Լճակը միշտ պետք է ջուր ունենա՝ բեր այն ջրհորից և լցրու lcnel()-ով։" }
+      ],
+      "Rabbits": [
+        { "emotion": "celebrating", "text": "Ճագարները տանն են։ Նրանք գազար են ուտում, և նրանց աղվամազից ստացվում է փափուկ թել։ Փափուկ թելով գորգը ավելի թանկ է։" },
+        { "emotion": "worried", "text": "Ճագարները շատ արագ են բազմանում, և որքան շատ են, այնքան ավելի արագ։ Երբ ճագարանոցը լցվում է, նեղվածքում նրանք աղվամազ չեն տալիս։ Հաշվիր նրանց kendaniner()-ով և ավելորդներին վաճառիր գյուղացիներին՝ vacharelKendani()-ով։" }
       ]
-    }
+    },
+    "firstCarpet": [
+      { "emotion": "celebrating", "text": "Առաջին գորգը պատրաստ է, և գյուղը քեզ փափախ է նվիրում։ Շուկայի դրոնը գորգերը վաճառում է vacharelGorg()-ով։" },
+      { "emotion": "thinking", "text": "Մի շարքի համար մեկ ցիկլը բավական է։ Բայց գորգն ունի 9 շարք. եթե այդ ցիկլը դնես մեկ այլ ցիկլի մեջ՝ y-ի համար, երկու տող կոդը կհյուսի բոլոր 81 հանգույցները։" },
+      { "emotion": "thinking", "text": "Գույնը կարող է կախված լինել x-ից և y-ից։ Օրինակ՝ y % 2-ը ամեն երկրորդ շարքի համար տարբեր է. այդպես ստացվում են շերտերը։ Իսկ (x + y) % 2-ով՝ շախմատը։" },
+      { "emotion": "happy", "text": "Հայկական նախշերը համաչափ են։ Math.abs(x - 4)-ը ասում է՝ որքան է x-ը մեջտեղից հեռու, նույնն էլ y-ի համար։ Երբ գույնն ընտրում ես այս հեռավորություններով, նախշն ինքն իրեն համաչափ է ստացվում՝ օղակներ, խաչեր, ադամանդներ։" }
+    ],
+    "fairOpen": [
+      { "emotion": "celebrating", "text": "Բոլոր վայրերը վերանորոգված են։ Գյուղացիները չեն հավատում իրենց աչքերին։ Նրանք ռանչոն հրավիրում են տարվա մեծ տոնավաճառին։" },
+      { "emotion": "happy", "text": "«Խանութ»-ից գնիր տոնավաճառի հրավերը։ «Շուկա» պատուհանում կտեսնես, թե ինչ է պետք բերել՝ ապրանքներ և մեկ շատ լավ գորգ։" }
+    ],
+    "fair": [
+      { "emotion": "celebrating", "text": "Ամբողջ գյուղը հավաքվել է հրապարակում։ Պանիրները, մեղրը, մոմերը և մանավանդ քո գորգը բոլորին զարմացրին։" },
+      { "emotion": "celebrating", "text": "Ռանչոն շահեց տոնավաճառի մրցանակը։ Քեզ տրվում է ռանչոյի գլխարկը. հիմա դու իսկական ռանչոյի տեր ես։" },
+      { "emotion": "happy", "text": "Հին ռանչոն, որ կիսավեր էր, հիմա գյուղի հպարտությունն է։ Եվ այդ ամենը քո կոդն է արել։ Շնորհակալ եմ, ընկեր։" },
+      { "emotion": "thinking", "text": "Եթե ուզում ես ավելի դժվար խաղ, «Շուկա» պատուհանից կարող ես ռանչոն սկսել նորից. կոդդ կմնա, կենդանիներն ավելի արագ կքաղցեն, բայց ապրանքները ավելի թանկ կվաճառվեն։" }
+    ]
   },
   "lessons": {
     "buy": [
@@ -190,7 +374,7 @@
     "events": [
       { "emotion": "happy", "text": "erb(«անուն», ֆունկցիա)՝ դրոնը սկսում է լսել իրադարձությունը։ Երբ այն տեղի ունենա, ֆունկցիան կկանչվի։ Այդպես են աշխատում բոլոր կայքերի կոճակները։", "code": "erb(\"dzu\", (e) => {\n  tpel(\"Նոր ձու\", e.x, e.y);\n});" },
       { "emotion": "thinking", "text": "Կարևոր գաղտնիք՝ JavaScript-ը միաժամանակ մեկ բան է անում։ Ֆունկցիան կանչվում է միայն այն ժամանակ, երբ դրոնն ազատ է՝ նրա կոդն ավարտվել է։ Մինչ այդ իրադարձությունները հերթ են կանգնում։" },
-      { "emotion": "worried", "text": "Եթե կոդդ while (true) է, այն երբեք չի ավարտվում, և erb-ի ֆունկցիաները երբեք չեն կանչվի։ Իրադարձություններն են՝ dzu, kat, sovac, datark, patrast, ancq և grum։" }
+      { "emotion": "worried", "text": "Եթե կոդդ while (true) է, այն երբեք չի ավարտվում, և erb-ի ֆունկցիաները երբեք չեն կանչվի։ Իրադարձություններն են՝ dzu, kat, sovac, datark, patrast, ancq, grum, esh և gorg։" }
     ],
     "board": [
       { "emotion": "happy", "text": "Ռանչոյի տախտակը բոլոր դրոններինն է։ grel(«անուն», արժեք)՝ գրում է, kardal(«անուն»)՝ կարդում։ Այդպես հավանոցի դրոնը կարող է շուկայի դրոնին ասել, որ հատիկ է պետք։", "code": "grel(\"hatik\", 5);\ntpel(kardal(\"hatik\"));" },
@@ -208,6 +392,48 @@
     ],
     "Drones": [
       { "emotion": "happy", "text": "Հիմա ամեն վայրում կարող է աշխատել ևս մեկ դրոն։ norDron(ֆունկցիա)-ն աշխատում է ինչպես ֆերմայում, իսկ դրոնները կարող են խոսել տախտակով։" }
+    ],
+    "Sheep": [
+      { "emotion": "happy", "text": "xuzel()՝ խուզում է դրոնի տակ կանգնած ոչխարին, եթե բուրդը պատրաստ է և նա անկյունում է։ kendaniner()-ում patrast-ը ասում է, թե ում բուրդն է պատրաստ։ Սպիտակ ոչխարը սպիտակ բուրդ է տալիս, սևը՝ սև։" },
+      { "emotion": "thinking", "text": "Ճախարակը բուրդը թել է դարձնում։ Բուրդը լցրու ճախարակի մեջ lcnel()-ով, հետո patrastel(Irer.TelSpitak)։ Մեկ բուրդից ստացվում է 5 թել։ Երբ պատրաստ է, havaqel()-ը վերցնում է այն։" },
+      { "emotion": "happy", "text": "Գորգն ունի 9 շարք՝ 9-ական հանգույցով։ Թելը լցրու դազգահի մեջ lcnel()-ով, հետո դազգահի վանդակում gorg(0)-ն սկսում է առաջին պատվերը, իսկ gorg()-ը՝ քո սեփական գորգը։", "code": "gorg(0);\nhyusel(0, 0, Guyner.Sev);" },
+      { "emotion": "thinking", "text": "hyusel(x, y, գույն)-ը մեկ հանգույց է հյուսում մեկ վայրկյանում։ Հանգույցը հնարավոր չէ փոխել, ուստի մտածիր նախքան հյուսելը։ Գորգը ավարտվում է 81-րդ հանգույցով։ Մի ամբողջ շարքը գրվում է մեկ ցիկլով.", "code": "for (let x = 0; x < 9; x++) {\n  hyusel(x, 0, Guyner.Sev);\n}" },
+      { "emotion": "happy", "text": "«Դազգահ» կոճակը բացում է մեծ պատուհանը. այնտեղ նմուշի կողքին երևում է քո գորգը և նրանց նմանությունը։ Պատվերը վճարում է գինը՝ բազմապատկած նմանության տոկոսով։" }
+    ],
+    "Bell": [
+      { "emotion": "happy", "text": "zangel()՝ զանգը հնչում է դրոնի վանդակում։ Ոչխարները գալիս են այնտեղ և մի քանի վայրկյան չեն վախենում։ Գնա անկյուն, զանգիր, սպասիր. հետո կարող ես խուզել։" }
+    ],
+    "Gampr": [
+      { "emotion": "happy", "text": "Գամփռը հայկական գամփռ է։ gamprGnal(ուղղություն)-ը քայլեցնում է նրան, և ոչխարները խուսափում են նրանից, ինչպես դրոնից։ Երկուսով կարող եք հոտը քշել երկու կողմից։" }
+    ],
+    "DyePot": [
+      { "emotion": "happy", "text": "Ներկամանը 5 սպիտակ թելը և մեկ բույս դարձնում է 5 գունավոր թել. դդումը՝ կարմիր, գազարը՝ նարնջագույն, արևածաղիկը՝ դեղին, խոտի հակը՝ կանաչ, կակտուսը՝ կապույտ։" },
+      { "emotion": "thinking", "text": "Բույսերը ֆերմայից բերում է շուկայի դրոնը՝ berel(Irer.Ddum, 1)։ Նախ դիր ներկամանը փարախի դատարկ վանդակում՝ karucel(Sarqer.Nerkaman), լցրու թելն ու բույսը և patrastel(Irer.TelKarmir)։" }
+    ],
+    "Bees": [
+      { "emotion": "happy", "text": "tnkel(Caxikner.Vard)-ը դրոնի տակ ծաղիկ է տնկում։ Սերմը գնում է շուկայի դրոնը՝ gnel(Irer.Serm, 5), իսկ մեղվանոցի դրոնը վերցնում է այն զամբյուղից։ Ծաղիկներն են՝ Kakach, Ericuk, Vard, Hasmik և Arevacaxik։" },
+      { "emotion": "thinking", "text": "caxkiTesak()-ը ասում է, թե քանի տարբեր ծաղիկ կա դրոնի շուրջը։ Երբ փեթակի վանդակում 5 է, ավելի լավ չի լինի։ maqrel()-ը հեռացնում է ծաղիկը, եթե ուզում ես ուրիշ տեղ տնկել։" },
+      { "emotion": "happy", "text": "Լիքը փեթակից havaqel()-ը խորիսխ է վերցնում։ Մեղրատանը խորիսխը դառնում է մեղր (patrastel(Irer.Mexr)) կամ մեղրամոմ (patrastel(Irer.Mexramom)), իսկ 2 մեղրամոմը՝ մոմ։ erb(\"patrast\", …)-ը ասում է, երբ փեթակը լցվեց։" }
+    ],
+    "Hive": [
+      { "emotion": "happy", "text": "Եվս մեկ փեթակ։ Դիր այն մեղվանոցի դատարկ վանդակում՝ karucel(Sarqer.Petak)։ Մտածիր. ո՞ր տեղում նույն ծաղիկները կօգնեն երկու փեթակին էլ։" }
+    ],
+    "Buffalo": [
+      { "emotion": "thinking", "text": "kendaniner()-ում shog-ը ցույց է տալիս, թե որքան է գոմեշը շոգել։ Երբ շոգը մեծ է, նա ինքը գնում է լճակ, եթե այնտեղ ջուր կա։ Գոմեշի կաթը կթում ես kitel()-ով, իսկ կաթնատանը նրանից ստացվում է Irer.LoriPanir։" }
+    ],
+    "Rabbits": [
+      { "emotion": "happy", "text": "xuzel()-ը ճագարից աղվամազ է վերցնում, և այստեղ անկյուն պետք չէ։ Ճախարակում 2 աղվամազը դառնում է 5 փափուկ թել՝ patrastel(Irer.TelPapuk)։ Գորգում այն հաշվվում է որպես սպիտակ՝ hyusel(x, y, Guyner.Papuk), բայց գորգը թանկացնում է։" },
+      { "emotion": "thinking", "text": "Գազարը բերում է շուկայի դրոնը՝ berel(Irer.Gazar, 1), մեկ արկղն արժե ֆերմայի 2000 գազար։" }
+    ],
+    "Donkey": [
+      { "emotion": "happy", "text": "Էշը մեծ բեռներ է տանում. eshBerel(իր, քանակ)-ը բերում է ֆերմայից, eshTanel(իր, քանակ)-ը տանում է ֆերմա։ Այս հրամանները աշխատում են ցանկացած վայրից։" },
+      { "emotion": "thinking", "text": "Էշը միանգամից մեկ ճանապարհ է անում, և այն մի քանի վայրկյան է տևում։ Մինչ նա քայլում է, դրոնը կարող է ուրիշ գործ անել։ Երբ նա հասնի, erb(\"esh\", ֆունկցիա)-ն կիմանա այդ մասին. e.ir և e.qanak ասում են, թե ինչ է բերել։" }
+    ],
+    "dishes": [
+      { "emotion": "happy", "text": "utel(Irer.Mexrablit)՝ ռանչոյի բոլոր դրոնները որոշ ժամանակ ավելի արագ են աշխատում։ Ուտելիքը վերցվում է պահեստից։ Մեղրաբլիթը պատրաստվում է վառարանում՝ մեղրից, ձվից, կարագից և ալյուրից։" }
+    ],
+    "Fair": [
+      { "emotion": "happy", "text": "tonavachar()՝ շուկայի դրոնը հանձնում է տոնավաճառի բոլոր ապրանքները և մեկ գորգ։ «Շուկա» պատուհանում տես, թե ինչ է պետք։ Գորգը չպետք է վաճառված լինի։" }
     ],
     "orders": [
       { "emotion": "happy", "text": "patverner()՝ այսօրվա պատվերների ցուցակն է։ Ամեն պատվեր օբյեկտ է՝ anun, irer, gin և katarvac։ hanznel(համար)՝ հանձնում է պատվերը, եթե պահեստում բոլոր ապրանքները կան։", "code": "let p = patverner();\ntpel(p[0].irer, p[0].gin);" }
@@ -433,6 +659,150 @@
       "goals": [{ "type": "earn", "amount": 500 }],
       "hints": ["Ավելի շատ հավ, ավելի շատ ձու։ Կովերի կաթը թանկ է, իսկ պատվերները վճարում են ավելի շատ։"],
       "done": "Ռանչոն կենդանացել է"
+    },
+    {
+      "id": "ranch_sheep",
+      "title": "Փարախը",
+      "text": "Վերանորոգիր փարախը և խուզիր ոչխարին։",
+      "goals": [{ "type": "research", "id": "Sheep" }, { "type": "count", "key": "sheared", "amount": 1 }],
+      "hints": [
+        "Փարախն արժե 1500 ֏, և նախ պետք են այծանոցն ու արհեստանոցը։",
+        "kendaniner()-ը ցույց է տալիս ոչխարի տեղը։ Մոտեցիր նրան այն կողմից, որ անկյունից հակառակն է, և նա կգնա դեպի անկյուն։",
+        "Երբ ոչխարը վերևի աջ անկյունում է, գնա նրա վանդակը և կանչիր xuzel()։ Բուրդը պետք է պատրաստ լինի՝ patrast։"
+      ],
+      "done": "Առաջին բուրդը ձեռքում է"
+    },
+    {
+      "id": "ranch_yarn",
+      "title": "Թել ճախարակից",
+      "text": "Ճախարակով բուրդը դարձրու թել։",
+      "goals": [{ "type": "count", "key": "yarn", "amount": 1 }],
+      "hints": [
+        "Դրոնի ձեռքում պետք է բուրդ լինի, իսկ դրոնը՝ ճախարակի վանդակում։ lcnel()-ը բուրդը լցնում է ճախարակի մեջ։",
+        "patrastel()-ին տուր այն թելը, որ ուզում ես. սպիտակ բրդից՝ Irer.TelSpitak։",
+        "Մի քանի վայրկյան հետո havaqel()-ը թելը վերցնում է։ Եթե ձեռքը փոքր է, մնացածը կմնա ճախարակում։"
+      ],
+      "done": "Թելը պատրաստ է"
+    },
+    {
+      "id": "ranch_carpet",
+      "title": "Առաջին գորգը",
+      "text": "Հյուսիր քո առաջին գորգը։ Այն կարող է լինել ցանկացած գույնի։",
+      "goals": [{ "type": "count", "key": "carpets", "amount": 1 }],
+      "hints": [
+        "Գորգին պետք է 81 թել։ Բեր թելը դազգահի վանդակ քանի անգամ որ պետք է և ամեն անգամ lcnel()։",
+        "Դազգահի վանդակում նախ gorg() կամ gorg(0), հետո ամեն հանգույցի համար hyusel(x, y, գույն)։",
+        "Մեկ շարքի ցիկլը դիր մեկ այլ ցիկլի մեջ. արտաքինը փոխում է y-ը 0-ից 8, ներքինը՝ x-ը։",
+        "«Դազգահ» պատուհանում տես, թե ինչպես է գորգն աճում։"
+      ],
+      "done": "Գյուղը խոսում է քո գորգի մասին"
+    },
+    {
+      "id": "ranch_perfect",
+      "title": "Կատարյալ գորգ",
+      "text": "Հյուսիր պատվերի գորգ, որ նմուշին նման է 100%-ով։",
+      "goals": [{ "type": "count", "key": "perfect", "amount": 1 }],
+      "hints": [
+        "«Դազգահ» պատուհանի «Պատվերներ» ներդիրում ընտրիր ամենահեշտ նմուշը։",
+        "Նայիր նմուշին և մտածիր՝ ի՞նչն է փոխվում շարքից շարք կամ սյունից սյուն։ Գույնն ընտրիր if-ով՝ ըստ x-ի և y-ի։",
+        "Շրջանակի համար՝ եզրի վանդակներում x-ը կամ y-ը 0 է կամ 8։ Խաչի համար՝ x-ը կամ y-ը 4 է։",
+        "Math.abs(x - 4)-ը և Math.abs(y - 4)-ը օգնում են, երբ նախշը համաչափ է մեջտեղի շուրջը։"
+      ],
+      "done": "Կատարյալ գորգ"
+    },
+    {
+      "id": "ranch_dye",
+      "title": "Գույներ",
+      "text": "Գնիր ներկամանը և ներկիր թելը։",
+      "goals": [{ "type": "research", "id": "DyePot" }, { "type": "count", "key": "dyed", "amount": 1 }],
+      "hints": [
+        "Դիր ներկամանը փարախում՝ karucel(Sarqer.Nerkaman)։",
+        "Շուկայի դրոնը բերում է բույսը՝ berel(Irer.Ddum, 1), իսկ փարախի դրոնը վերցնում է այն զամբյուղից։",
+        "Ներկամանի մեջ լցրու 5 սպիտակ թել և բույսը, հետո patrastel(Irer.TelKarmir)։"
+      ],
+      "done": "Թելերը գունավոր են"
+    },
+    {
+      "id": "ranch_bees",
+      "title": "Ծաղիկներ մեղուների համար",
+      "text": "Վերանորոգիր մեղվանոցը, տնկիր ծաղիկներ և իմացիր քանի տեսակ կա փեթակի մոտ։",
+      "goals": [{ "type": "research", "id": "Bees" }, { "type": "code", "fn": "plant" }, { "type": "code", "fn": "flowerKinds" }],
+      "hints": [
+        "Սերմը գնում է շուկայի դրոնը՝ gnel(Irer.Serm, 5)։ Մեղվանոցի դրոնը վերցնում է այն զամբյուղից՝ vercnel(Irer.Serm, 3)։",
+        "Գնա փեթակի մոտ և տնկիր տարբեր ծաղիկներ՝ tnkel(Caxikner.Vard), tnkel(Caxikner.Kakach)…",
+        "Փեթակի վանդակում կանչիր tpel(caxkiTesak())։ Որքան մեծ է թիվը, այնքան արագ է փեթակը լցվում։"
+      ],
+      "done": "Մեղուները բզզում են"
+    },
+    {
+      "id": "ranch_honey",
+      "title": "Մեղր",
+      "text": "Պատրաստիր մեղր և դիր այն պահեստ։",
+      "goals": [{ "type": "gain", "item": "Honey", "amount": 1 }],
+      "hints": [
+        "Երբ փեթակը լիքն է, դրա վանդակում havaqel()-ը խորիսխ է վերցնում։",
+        "Մեղրատան վանդակում lcnel() և patrastel(Irer.Mexr)։",
+        "Երբ պատրաստ է, havaqel() և datarkel() զամբյուղի վանդակում։"
+      ],
+      "done": "Քաղցր է"
+    },
+    {
+      "id": "ranch_buffalo",
+      "title": "Գոմեշներ",
+      "text": "Վերանորոգիր գոմեշանոցը և հավաքիր գոմեշի կաթ։",
+      "goals": [{ "type": "research", "id": "Buffalo" }, { "type": "gain", "item": "BuffaloMilk", "amount": 1 }],
+      "hints": [
+        "Գոմեշին պետք են կեր, ջուր և լճակ։ Ջուրը վերցրու ջրհորից և լցրու լճակի վանդակում՝ lcnel()։",
+        "kendaniner()-ում shog-ը ցույց է տալիս շոգը։ Երբ լճակում ջուր կա, գոմեշը ինքն է գնում լողանալու։",
+        "Պատրաստ գոմեշի վանդակում kitel(), հետո datarkel() զամբյուղի մոտ։"
+      ],
+      "done": "Որքա՜ն կաթ"
+    },
+    {
+      "id": "ranch_rabbits",
+      "title": "Ճագարների ընտանիք",
+      "text": "Վերանորոգիր ճագարանոցը, հավաքիր 5 աղվամազ և վաճառիր ավելորդ ճագարին։",
+      "goals": [{ "type": "research", "id": "Rabbits" }, { "type": "gain", "item": "Down", "amount": 5 }, { "type": "code", "fn": "sellAnimal" }],
+      "hints": [
+        "Ճագարները գազար են ուտում. շուկայի դրոնը բերում է այն՝ berel(Irer.Gazar, 1)։",
+        "xuzel()-ը աշխատում է ճագարանոցի ցանկացած վանդակում, եթե ճագարը պատրաստ է։",
+        "Երբ ճագարները շատ են, դրանք իրար նեղում են և աղվամազ չեն տալիս։ Համեմատիր kendaniner().length-ը և վաճառիր ավելորդին՝ շուկայի կոդում vacharelKendani(id)։"
+      ],
+      "done": "Ճագարներն ուրախ են"
+    },
+    {
+      "id": "ranch_donkey",
+      "title": "Էշը ճանապարհին",
+      "text": "Գնիր էշին և ուղարկիր նրան ֆերմա՝ բեռի համար։",
+      "goals": [{ "type": "research", "id": "Donkey" }, { "type": "code", "fn": "donkeyBring" }],
+      "hints": [
+        "eshBerel(Irer.Gazar, 5)-ը աշխատում է ցանկացած վայրի կոդից։",
+        "Եթե ֆերմայում բավարար գազար չկա, էշը քիչ կբերի կամ չի գնա. տես զգուշացումը։"
+      ],
+      "done": "Էշը գիտի ճանապարհը"
+    },
+    {
+      "id": "ranch_cake",
+      "title": "Մեղրաբլիթ",
+      "text": "Պատրաստիր մեղրաբլիթ՝ ամենաթանկ ուտելիքը։",
+      "goals": [{ "type": "gain", "item": "HoneyCake", "amount": 1 }],
+      "hints": [
+        "Վառարանին պետք են 1 մեղր, 2 ձու, 1 կարագ և 1 ալյուր։",
+        "Ալյուրը բերում է շուկայի դրոնը՝ berel(Irer.Aljur, 1)։"
+      ],
+      "done": "Համեղ է"
+    },
+    {
+      "id": "ranch_fair",
+      "title": "Գյուղի տոնավաճառ",
+      "text": "Վերանորոգիր բոլոր վայրերը, գնիր հրավերը և հանձնիր ամեն ինչ տոնավաճառին։",
+      "goals": [{ "type": "research", "id": "Fair" }, { "type": "count", "key": "fairs", "amount": 1 }],
+      "hints": [
+        "«Շուկա» պատուհանի ներքևում գրված է, թե ինչ է պետք տոնավաճառին։",
+        "Մի վաճառիր լավագույն գորգդ։ Տոնավաճառին պետք է գորգ, որ նմուշին շատ նման է։",
+        "Երբ ամեն ինչ պահեստում է, շուկայի կոդում կանչիր tonavachar()։"
+      ],
+      "done": "Ռանչոն հաղթեց"
     }
   ]
 }

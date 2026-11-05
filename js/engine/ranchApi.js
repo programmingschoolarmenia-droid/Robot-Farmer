@@ -9,15 +9,15 @@ import { GameError } from '../lang/errors.js';
 
 // Farm commands the ranch does not have.
 const FARM_ONLY = [
-  'plant', 'canHarvest', 'till', 'getGroundType', 'changeHat', 'useItem', 'getWater', 'measure', 'swap', 'getCost', 'unlock', 'numUnlocked',
-  'digPond', 'findTreasure', 'festivalDistance', 'catchFish', 'getSeason', 'getWeather', 'getNextWeather', 'eat', 'buildGreenhouse',
+  'canHarvest', 'till', 'getGroundType', 'changeHat', 'useItem', 'getWater', 'measure', 'swap', 'getCost', 'unlock', 'numUnlocked',
+  'findTreasure', 'catchFish', 'getSeason', 'getWeather', 'getNextWeather', 'buildGreenhouse',
   'getCompanion',
 ];
-export const RANCH_THINGS = ['FeedTrough', 'WaterTrough', 'Well', 'Basket', 'Stall', 'Dairy', 'Stove'];
-const TROUGHS = ['FeedTrough', 'WaterTrough'];
+export const RANCH_THINGS = ['FeedTrough', 'WaterTrough', 'Well', 'Basket', 'Stall', 'Dairy', 'Stove', 'Wheel', 'Loom', 'DyePot', 'HoneyHouse', 'Hive', 'Pool'];
+const TROUGHS = ['FeedTrough', 'WaterTrough', 'Pool'];
 // What erb() listens for: an egg laid, a cow ready, an animal got hungry, a trough got empty, a machine
-// finished, a hole in the fence, something written on the board.
-export const RANCH_EVENTS = ['dzu', 'kat', 'sovac', 'datark', 'patrast', 'ancq', 'grum'];
+// finished, a hole in the fence, something written on the board, the donkey arrived, a carpet is finished.
+export const RANCH_EVENTS = ['dzu', 'kat', 'sovac', 'datark', 'patrast', 'ancq', 'grum', 'esh', 'gorg'];
 
 // Board values are kept as plain JSON (numbers, text, true/false, lists and objects); enum values
 // such as Irer.Dzu are kept by their name.
@@ -50,7 +50,8 @@ export class RanchApi extends GameApi {
     this.makeEnum(aliases, 'Items', [...Object.keys(cfg.items || {}), 'Water']);
     this.makeEnum(aliases, 'Animals', Object.keys(cfg.animals || {}));
     this.makeEnum(aliases, 'Machines', RANCH_THINGS);
-    this.makeEnum(aliases, 'Colors', [...new Set(Object.values(cfg.animals || {}).flatMap((a) => [...(a.colors || []), ...(a.rare ? [a.rare] : [])]))]);
+    this.makeEnum(aliases, 'Colors', [...new Set([...Object.values(cfg.animals || {}).flatMap((a) => [...(a.colors || []), ...(a.rare ? [a.rare] : [])]), ...Object.keys((cfg.carpets || {}).palette || {})])]);
+    this.makeEnum(aliases, 'Flowers', Object.keys(cfg.flowers || {}));
     this.buildConstants(aliases);
   }
 
@@ -58,10 +59,11 @@ export class RanchApi extends GameApi {
     return I.drone.pen.runner;
   }
 
-  // What is on the drone's square: an egg (Irer.Dzu), else a thing (Sarqer.Keraman, …), else an animal.
+  // What is on the drone's square: an egg (Irer.Dzu), a flower, else a thing (Sarqer.Keraman, …), else an animal.
   squareValue(pen, x, y) {
     const item = pen.ground[`${x},${y}`];
     if (item) return this.enums.Items.get(item);
+    if (pen.flowers[`${x},${y}`]) return this.enums.Flowers.get(pen.flowers[`${x},${y}`]);
     const o = pen.objectAt(x, y);
     if (o) return this.enums.Machines.get(o.type);
     const a = pen.animalsAt(x, y)[0];
@@ -116,6 +118,7 @@ export class RanchApi extends GameApi {
       const dir = api.needDirection(args[0], 'move', node);
       const d = I.drone;
       const [dx, dy] = DIRECTIONS[dir];
+      here(I); // (the area catches up first: sheep react to where the drone was until now)
       if (!d.pen.inside(d.x + dx, d.y + dy)) return fail(I);
       const fromX = d.x;
       const fromY = d.y;
@@ -163,13 +166,17 @@ export class RanchApi extends GameApi {
       if (!pen.ground[`${d.x},${d.y}`] && !(machine && machine.ready)) return fail(I);
       if (space(I) < 1) return fail(I, 'ranch_handsFull', { n: ranch.handsCapacity() }, node);
       let item;
+      let n = 1;
       if (machine && machine.ready) {
+        // (a machine may have made several: what does not fit stays there)
         item = machine.ready;
-        machine.ready = null;
+        n = Math.min(space(I), machine.count || 1);
+        machine.count = (machine.count || 1) - n;
+        if (machine.count <= 0) machine.ready = null;
       } else item = pen.takeGround(d.x, d.y);
-      hold(I, item, 1);
+      hold(I, item, n);
       api.act(I, true);
-      ranch.events.emit('pickup', { pen: pen.id, x: d.x, y: d.y, item });
+      ranch.events.emit('pickup', { pen: pen.id, x: d.x, y: d.y, item, n });
       return true;
     });
 
@@ -193,7 +200,7 @@ export class RanchApi extends GameApi {
       const o = pen.objectAt(I.drone.x, I.drone.y);
       const at = o && o.type;
       if (at !== 'Basket' && at !== 'Well') return fail(I, 'ranch_takeWhere', {}, node);
-      if ((at === 'Well') !== (item === 'Water') || item === 'Dram') return fail(I, 'ranch_takeWhat', { item }, node);
+      if ((at === 'Well') !== (item === 'Water') || item === 'Dram' || item === 'Carpet') return fail(I, 'ranch_takeWhat', { item }, node);
       const have = at === 'Well' ? Infinity : Math.floor(ranch.inventory.get(item));
       const n = Math.min(want, space(I), have);
       if (space(I) < 1) return fail(I, 'ranch_handsFull', { n: ranch.handsCapacity() }, node);
@@ -208,9 +215,9 @@ export class RanchApi extends GameApi {
       const pen = here(I);
       const o = pen.objectAt(I.drone.x, I.drone.y);
       const recipes = o && (cfg().machines || {})[o.type];
-      if (recipes) {
-        // a machine takes from the hands what its recipes need
-        const wanted = new Set(Object.values(recipes).flatMap((r) => Object.keys(r.in)));
+      if (recipes || (o && o.type === 'Loom')) {
+        // a machine takes from the hands what its recipes need, the loom any yarn
+        const wanted = new Set(recipes ? Object.values(recipes).flatMap((r) => Object.keys(r.in)) : Object.values((cfg().carpets || {}).palette || {}).map((c) => c.yarn));
         let n = 0;
         o.inside = o.inside || {};
         for (const [item, k] of Object.entries(hands(I))) {
@@ -225,8 +232,8 @@ export class RanchApi extends GameApi {
         return n;
       }
       if (!o || !TROUGHS.includes(o.type)) return fail(I, 'ranch_noTrough', {}, node) || 0;
-      const item = o.type === 'WaterTrough' ? 'Water' : pen.animalCfg && pen.animalCfg.feed;
-      const n = Math.min(hands(I)[item] || 0, ((cfg().troughs || {}).capacity ?? 10) - o.amount);
+      const item = o.type === 'FeedTrough' ? pen.animalCfg && pen.animalCfg.feed : 'Water';
+      const n = Math.min(hands(I)[item] || 0, (o.type === 'Pool' ? (cfg().troughs || {}).pool ?? 20 : (cfg().troughs || {}).capacity ?? 10) - o.amount);
       if (!hands(I)[item]) return fail(I, 'ranch_wrongFeed', { item: item || 'Grain' }, node) || 0;
       if (n <= 0) return fail(I, 'ranch_troughFull', {}, node) || 0;
       drop(I, item, n);
@@ -262,11 +269,12 @@ export class RanchApi extends GameApi {
       const type = api.needEnum(args[0], 'Machines', 'build', 1, node);
       const pen = here(I);
       const d = I.drone;
-      const kind = (ranch.shopItem(type) || {}).kind;
+      const shop = ranch.shopItem(type) || {};
+      const kind = shop.kind;
       if (kind !== 'trough' && kind !== 'machine') return fail(I, 'ranch_cantBuild', { machine: type }, node);
       if (!ranch.tokens[type]) return fail(I, 'ranch_noToken', { machine: type }, node);
-      if (pen.objectAt(d.x, d.y) || pen.ground[`${d.x},${d.y}`]) return fail(I, 'ranch_occupied', {}, node);
-      if ((kind === 'machine') !== !pen.cfg.animal) return fail(I, 'ranch_wrongArea', { machine: type }, node);
+      if (pen.objectAt(d.x, d.y) || pen.ground[`${d.x},${d.y}`] || pen.flowers[`${d.x},${d.y}`]) return fail(I, 'ranch_occupied', {}, node);
+      if (kind === 'machine' ? shop.area !== pen.id : !pen.cfg.animal) return fail(I, 'ranch_wrongArea', { machine: type }, node);
       ranch.tokens[type]--;
       pen.objects.push({ type, x: d.x, y: d.y, amount: 0 });
       api.act(I, true);
@@ -309,6 +317,7 @@ export class RanchApi extends GameApi {
           carav: Math.round(a.thirst),
           tramadrutyun: Math.round(a.mood),
           patrast: a.prod >= 1 && !cfg().animals[a.type].lays,
+          shog: Math.round(a.heat || 0),
           guyn: a.color ? api.enums.Colors.get(a.color) : null,
           dzag: here(I).young(a, api.now(I)),
           hivand: !!a.sick,
@@ -392,6 +401,159 @@ export class RanchApi extends GameApi {
       o.until = api.now(I) + r.seconds;
       api.act(I, true);
       ranch.events.emit('make', { pen: pen.id, x: o.x, y: o.y, item });
+      return true;
+    });
+
+    // --- sheep, the bell and the gampr
+    this.def('shear', (I, args, node) => {
+      const pen = here(I);
+      const d = I.drone;
+      if (space(I) < 1) return fail(I, 'ranch_handsFull', { n: ranch.handsCapacity() }, node);
+      const item = pen.shear(d.x, d.y);
+      if (item === 'corner') return fail(I, 'ranch_shearCorner', {}, node);
+      if (!item) return fail(I);
+      hold(I, item, 1);
+      api.act(I, true);
+      ranch.events.emit('pickup', { pen: pen.id, x: d.x, y: d.y, item });
+      ranch.counts.sheared++;
+      ranch.main.events.emit('ranch', { sheared: item });
+      return true;
+    });
+
+    this.def('bell', (I, args, node) => {
+      const pen = here(I);
+      const d = I.drone;
+      if (!pen.animalCfg || !pen.animalCfg.flees) return fail(I, 'ranch_bellWhere', {}, node);
+      pen.bell = { x: d.x, y: d.y, until: api.now(I) + ((cfg().needs || {}).bellSeconds ?? 15) };
+      api.act(I, true);
+      ranch.events.emit('bell', { pen: pen.id, x: d.x, y: d.y });
+      return true;
+    });
+
+    this.def('moveDog', (I, args, node) => {
+      api.needArgs(args, 1, 'moveDog', node);
+      const [dx, dy] = DIRECTIONS[api.needDirection(args[0], 'moveDog', node)];
+      const pen = here(I);
+      const dog = pen.dogHere();
+      if (!dog) return fail(I, 'ranch_noDog', {}, node);
+      if (!pen.inside(dog.x + dx, dog.y + dy)) return fail(I);
+      Object.assign(dog, { fromX: dog.x, fromY: dog.y, movedAt: api.now(I), x: dog.x + dx, y: dog.y + dy });
+      api.act(I, true);
+      return true;
+    });
+
+    // --- the loom: gorg() starts a carpet, hyusel() ties its knots
+    const loomHere = (I, node) => {
+      const o = here(I).objectAt(I.drone.x, I.drone.y);
+      if (o && o.type === 'Loom') return o;
+      fail(I, 'ranch_noLoom', {}, node);
+      return null;
+    };
+
+    this.def('carpet', (I, args, node) => {
+      const loom = loomHere(I, node);
+      if (!loom) return false;
+      const i = args[0] === undefined || args[0] === null ? null : Math.floor(Number(args[0]));
+      const r = ranch.startCarpet(loom, i);
+      if (!r.ok) return fail(I, `ranch_carpet_${r.reason}`, { n: args[0] }, node);
+      api.act(I, true);
+      ranch.events.emit('loom', { pen: I.drone.pen.id });
+      return true;
+    });
+
+    this.def('weave', (I, args, node) => {
+      api.needArgs(args, 3, 'weave', node);
+      const color = api.needEnum(args[2], 'Colors', 'weave', 3, node);
+      const loom = loomHere(I, node);
+      if (!loom) return false;
+      if (!loom.carpet) return fail(I, 'ranch_noCarpet', {}, node);
+      const r = ranch.knot(I.drone.pen, loom, args[0], args[1], color, api.now(I));
+      if (!r.ok) return fail(I, `ranch_knot_${r.reason}`, { item: r.item, x: args[0], y: args[1] }, node);
+      // a knot takes its seconds at any drone speed
+      const d = I.drone;
+      I.action(Math.max(1, Math.round(((cfg().carpets || {}).knotSeconds ?? 1) * d.tickRate())), true);
+      ranch.afterAction(d);
+      ranch.events.emit('loom', { pen: d.pen.id });
+      return true;
+    });
+
+    this.def('carpetOrders', (I) => {
+      api.getter(I);
+      return ranch.carpetOrders().list.map((q) => {
+        const s = ranch.sample(q.sample);
+        return Object.assign(makeObject(), { anun: s.name, makardak: s.level, gin: q.pay, vercvac: q.taken });
+      });
+    });
+
+    this.def('sellCarpet', (I, args, node) => {
+      if (!market(I, node)) return 0;
+      const r = ranch.sellCarpets();
+      if (!r.n) return fail(I, 'ranch_noCarpets', {}, node) || 0;
+      api.act(I, true);
+      return r.dram;
+    });
+
+    // --- the bee yard: flowers around the hives
+    this.def('plant', (I, args, node) => {
+      api.needArgs(args, 1, 'plant', node);
+      const kind = api.needEnum(args[0], 'Flowers', 'plant', 1, node);
+      const pen = here(I);
+      const k = `${I.drone.x},${I.drone.y}`;
+      if (!pen.cfg.flowers) return fail(I, 'ranch_flowersWhere', {}, node);
+      if (!hands(I).Seed) return fail(I, 'ranch_noSeed', {}, node);
+      if (pen.objectAt(I.drone.x, I.drone.y) || pen.flowers[k]) return fail(I, 'ranch_occupied', {}, node);
+      drop(I, 'Seed', 1);
+      pen.flowers[k] = kind;
+      api.act(I, true);
+      ranch.events.emit('flower', { pen: pen.id, x: I.drone.x, y: I.drone.y });
+      return true;
+    });
+
+    this.def('flowerKinds', (I) => {
+      api.getter(I);
+      return here(I).flowerKinds(I.drone.x, I.drone.y);
+    });
+
+    // --- dishes, the donkey, the festival's hunt and the fair
+    this.def('eat', (I, args, node) => {
+      api.needArgs(args, 1, 'eat', node);
+      const item = api.needEnum(args[0], 'Items', 'eat', 1, node);
+      const r = ranch.eat(item, api.now(I));
+      api.act(I, r.ok);
+      if (!r.ok) ranch.warn(`ranch_eat_${r.reason}`, { item }, node, I.drone);
+      return r.ok;
+    });
+
+    const donkey = (kind, fn) => (I, args, node) => {
+      api.needArgs(args, 1, fn, node);
+      const item = api.needEnum(args[0], 'Items', fn, 1, node);
+      const n = count(args[1], fn, node);
+      const pen = here(I);
+      const r = ranch.sendDonkey(pen, kind, item, n, api.now(I));
+      if (!r.ok) return fail(I, `ranch_donkey_${r.reason}`, { item, cost: r.need }, node) || 0;
+      api.act(I, true);
+      return r.n;
+    };
+    this.def('donkeyBring', donkey('bring', 'donkeyBring'));
+    this.def('donkeyShip', donkey('ship', 'donkeyShip'));
+
+    this.def('festivalDistance', (I) => {
+      api.getter(I);
+      return ranch.huntDistance(here(I), I.drone);
+    });
+
+    this.def('digPond', (I, args, node) => {
+      const r = ranch.huntDig(here(I), I.drone.x, I.drone.y);
+      api.act(I, r === 'found');
+      if (!r) ranch.warn('ranch_noHunt', {}, node, I.drone);
+      return r === 'found';
+    });
+
+    this.def('fair', (I, args, node) => {
+      if (!market(I, node)) return false;
+      const r = ranch.deliverFair();
+      if (!r.ok) return fail(I, `ranch_fair_${r.reason}`, { cost: r.missing, n: Math.round(((cfg().fair || {}).carpet ?? 0) * 100) }, node);
+      api.act(I, true);
       return true;
     });
 

@@ -7,7 +7,8 @@ import { h } from './dom.js';
 import { FarmView, SEASON_TINT } from './farmView.js';
 
 const WALK = 0.45; // game seconds an animal takes for one square
-const FILL = { Water: '#3d8fe0', Grain: '#ffd541', Bale: '#c9b458' };
+const FILL = { Water: '#3d8fe0', Grain: '#ffd541', Bale: '#c9b458', Carrot: '#f2873a' };
+const BIG = new Set(['Cow', 'Buffalo']);
 
 export class RanchView extends FarmView {
   // game: the Ranch. focus: an area id to zoom to (phones), or null for the whole ranch.
@@ -28,7 +29,7 @@ export class RanchView extends FarmView {
       );
     on('pickup', (e) => {
       this.puff(e.x, e.y, ['#ffffff', '#f4ead0', '#ffd541'], 8);
-      this.popup(e.x, e.y, '+1', `item:${e.item}`);
+      this.popup(e.x, e.y, `+${e.n || 1}`, `item:${e.item}`);
     });
     on('laid', (e) => this.puff(e.x, e.y, ['#ffffff', '#f4ead0'], 4));
     on('fill', (e) => this.puff(e.x, e.y, e.item === 'Water' ? ['#249fde', '#a6fcdb', '#ffffff'] : ['#ffd541', '#f9a31b'], 10));
@@ -40,6 +41,9 @@ export class RanchView extends FarmView {
     on('heal', (e) => this.puff(e.x, e.y, ['#59c135', '#ffffff'], 12));
     on('hole', (e) => this.puff(e.x, e.y, ['#71413b', '#bb7547'], 12));
     on('made', (e) => this.popup(e.x, e.y, '✓', `item:${e.item}`));
+    on('bell', (e) => this.puff(e.x, e.y, ['#ffd541', '#f9a31b', '#ffffff'], 14));
+    on('flower', (e) => this.puff(e.x, e.y, ['#59c135', '#e0457b', '#ffffff'], 8));
+    on('carpet', (e) => this.popup(e.x, e.y, e.alike === null ? '✓' : `${Math.round(e.alike * 100)}%`, 'item:Carpet'));
     const market = (fn) => (e) => {
       const pen = this.game.pens.get(this.game.marketId);
       if (pen && this.cellPx) this.withPen(pen, () => fn(e));
@@ -48,6 +52,11 @@ export class RanchView extends FarmView {
       ev.on('sold', market((e) => this.popup(1, 1, `+${e.dram} ֏`, `item:${e.item}`))),
       ev.on('order', market((e) => this.popup(1, 1, `+${e.pay} ֏`, 'item:Dram'))),
       ev.on('shop', () => (this.layoutKey = '')),
+      ev.on('restart', () => {
+        this.layoutKey = '';
+        this.hover = null;
+        this.tip.hidden = true;
+      }),
     );
   }
 
@@ -154,15 +163,29 @@ export class RanchView extends FarmView {
   // An open area's ground: grass for animals, packed soil for the market.
   drawGround(ctx, pen) {
     const cell = this.cellRect(pen.id);
-    ctx.fillStyle = pen.cfg.animal ? '#5f9a3a' : '#9a6a44';
+    const grass = pen.cfg.animal || pen.cfg.flowers;
+    ctx.fillStyle = grass ? '#5f9a3a' : '#9a6a44';
     ctx.fillRect(cell.x, cell.y, cell.s, cell.s);
     const p = this.penRect(pen);
     const n = pen.size;
     for (let y = 0; y < n; y++) {
       for (let x = 0; x < n; x++) {
-        const name = pen.cfg.animal ? `grassland${(x * 3 + y * 5) & 3}` : `soil${(x + y) & 1}`;
+        const name = grass ? `grassland${(x * 3 + y * 5) & 3}` : `soil${(x + y) & 1}`;
         ctx.drawImage(this.sprites.get(name), p.x + x * p.tile, p.y + (n - 1 - y) * p.tile, p.tile, p.tile);
       }
+    }
+    // the shearing corner: a marked piece of the top right
+    const corner = pen.cfg.corner || 0;
+    if (corner) {
+      const x = p.x + (n - corner) * p.tile;
+      const size = corner * p.tile;
+      ctx.fillStyle = 'rgba(244, 210, 156, 0.35)';
+      ctx.fillRect(x, p.y, size, size);
+      ctx.strokeStyle = 'rgba(113, 65, 59, 0.8)';
+      ctx.lineWidth = Math.max(1, this.px);
+      ctx.setLineDash([this.px * 3, this.px * 2]);
+      ctx.strokeRect(x + 1, p.y + 1, size - 2, size - 2);
+      ctx.setLineDash([]);
     }
   }
 
@@ -259,6 +282,7 @@ export class RanchView extends FarmView {
       ctx.fillStyle = tint;
       ctx.fillRect(this.fx0, this.fy0, g.world.width * this.cellPx, g.world.height * this.cellPx);
     }
+    this.drawDonkey(ctx);
     for (const pen of g.pens.values()) this.withPen(pen, () => this.drawPenDrone(ctx, pen, t));
     if (this.selected && g.pens.has(this.selected)) {
       const c = this.cellRect(this.selected);
@@ -299,6 +323,11 @@ export class RanchView extends FarmView {
         ctx.fill();
       }
     }
+    for (const [k, kind] of Object.entries(pen.flowers)) {
+      const [x, y] = k.split(',').map(Number);
+      const r = this.tileRect(x, y);
+      ctx.drawImage(this.sprites.get(`flower:${kind}`), r.x + tile * 0.1, r.y + tile * 0.1, tile * 0.8, tile * 0.8);
+    }
     const cap = (g.cfg.troughs && g.cfg.troughs.capacity) || 10;
     for (const thing of pen.objects) {
       const r = this.tileRect(thing.x, thing.y);
@@ -308,8 +337,24 @@ export class RanchView extends FarmView {
         const k = Math.min(1, thing.amount / cap);
         ctx.fillRect(r.x + tile * 0.19, r.y + tile * (0.44 + 0.18 * (1 - k)), tile * 0.62, tile * 0.18 * k + 1);
       }
+      if (thing.type === 'Pool' && thing.amount > 0) {
+        const k = Math.min(1, thing.amount / ((g.cfg.troughs && g.cfg.troughs.pool) || 20));
+        ctx.fillStyle = FILL.Water;
+        ctx.beginPath();
+        ctx.ellipse(r.x + tile / 2, r.y + tile * 0.53, tile * (0.15 + 0.2 * k), tile * (0.1 + 0.17 * k), 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (thing.type === 'Loom' && thing.carpet) this.drawCarpet(ctx, thing.carpet.cells, r.x + tile * 0.19, r.y + tile * 0.19, tile * 0.62);
+      if (thing.type === 'Hive' && this.fx) this.drawBees(ctx, pen, thing, r, t);
     }
     for (const o of pen.objects) {
+      if (o.type === 'Hive' && !o.ready && o.comb > 0) {
+        const r = this.tileRect(o.x, o.y);
+        ctx.fillStyle = 'rgba(20, 30, 40, 0.6)';
+        ctx.fillRect(r.x + tile * 0.1, r.y + tile * 0.04, tile * 0.8, tile * 0.1);
+        ctx.fillStyle = '#ffd541';
+        ctx.fillRect(r.x + tile * 0.1, r.y + tile * 0.04, tile * 0.8 * Math.min(1, o.comb), tile * 0.1);
+      }
       if (!o.making && !o.ready) continue;
       const r = this.tileRect(o.x, o.y);
       if (o.ready) ctx.drawImage(this.sprites.get(`item:${o.ready}`), r.x + tile * 0.55, r.y - tile * 0.1, tile * 0.42, tile * 0.42);
@@ -330,7 +375,17 @@ export class RanchView extends FarmView {
     this.drawHoles(ctx, pen, p);
     if (!pen.cfg.animal) return;
     const kind = pen.cfg.animal.toLowerCase();
-    const big = pen.cfg.animal === 'Cow';
+    const big = BIG.has(pen.cfg.animal);
+    if (pen.bell && g.time < pen.bell.until) {
+      const r = this.tileRect(pen.bell.x, pen.bell.y);
+      ctx.drawImage(this.sprites.get('icon:bell'), r.x + tile * 0.25, r.y + tile * 0.05 + (this.fx ? Math.sin(t * 9) * tile * 0.03 : 0), tile * 0.5, tile * 0.5);
+    }
+    const dog = pen.dogHere();
+    if (dog) {
+      const q = dog.movedAt === undefined ? 1 : Math.min(1, Math.max(0, (g.time - dog.movedAt) / WALK));
+      const r = this.tileRect(dog.fromX === undefined ? dog.x : dog.fromX + (dog.x - dog.fromX) * q, dog.fromY === undefined ? dog.y : dog.fromY + (dog.y - dog.fromY) * q);
+      ctx.drawImage(this.sprites.get('gampr'), r.x + tile * 0.05, r.y + tile * 0.05, tile * 0.9, tile * 0.9);
+    }
     for (const a of pen.animals) {
       const q = a.movedAt === undefined ? 1 : Math.min(1, Math.max(0, (g.time - a.movedAt) / WALK));
       const ax = a.fromX === undefined ? a.x : a.fromX + (a.x - a.fromX) * q;
@@ -345,8 +400,10 @@ export class RanchView extends FarmView {
       if (a.mood < need.sad) ctx.globalAlpha = 0.75;
       ctx.drawImage(this.sprites.get(a.color && this.sprites.has(`${kind}:${a.color}`) ? `${kind}:${a.color}` : kind), -size / 2, -size, size, size);
       ctx.restore();
-      const ready = a.prod >= 1 && !pen.animalCfg.lays;
-      const icon = a.sick ? 'item:Medicine' : ready ? `item:${pen.animalCfg.product}` : a.thirst >= need.seek ? 'item:Water' : a.hunger >= need.seek ? `item:${pen.animalCfg.feed}` : null;
+      const c = pen.animalCfg;
+      const ready = a.prod >= 1 && !c.lays;
+      const hot = a.heat >= need.seek;
+      const icon = a.sick ? 'item:Medicine' : ready ? `item:${(c.products && c.products[a.color]) || c.product}` : a.thirst >= need.seek || hot ? 'item:Water' : a.hunger >= need.seek ? `item:${c.feed}` : null;
       if (icon) {
         const s = tile * 0.36;
         const wob = this.fx ? Math.sin(t * 4 + a.id) * tile * 0.03 : 0;
@@ -355,6 +412,47 @@ export class RanchView extends FarmView {
         ctx.globalAlpha = 1;
       }
     }
+  }
+
+  // A carpet's knots in a square of `size` pixels (the first letter is the top left).
+  drawCarpet(ctx, cells, x, y, size) {
+    if (!this.letterHex) this.letterHex = Object.fromEntries(Object.values(this.game.carpetCfg.palette || {}).map((c) => [c.letter, c.hex]));
+    const n = Math.round(Math.sqrt(cells.length));
+    const k = size / n;
+    for (let i = 0; i < cells.length; i++) {
+      if (cells[i] === '.') continue;
+      ctx.fillStyle = this.letterHex[cells[i]];
+      ctx.fillRect(x + (i % n) * k, y + Math.floor(i / n) * k, Math.ceil(k), Math.ceil(k));
+    }
+  }
+
+  // Bees around a hive that has flowers near it.
+  drawBees(ctx, pen, hive, r, t) {
+    const n = pen.flowerKinds(hive.x, hive.y);
+    const dot = Math.max(1, this.tile * 0.05);
+    ctx.fillStyle = '#ffd541';
+    for (let i = 0; i < n; i++) {
+      const a = t * (1.6 + i * 0.3) + i * 2;
+      ctx.fillRect(r.x + this.tile * (0.5 + 0.48 * Math.cos(a)), r.y + this.tile * (0.45 + 0.42 * Math.sin(a * 1.3)), dot, dot);
+    }
+  }
+
+  // The donkey on its trip, along the outside of the field's bottom fence (loaded on the way home).
+  drawDonkey(ctx) {
+    const g = this.game;
+    const d = g.donkey;
+    if (!d) return;
+    const k = Math.min(1, Math.max(0, (g.time - d.start) / Math.max(1e-6, d.until - d.start)));
+    const s = this.cellPx * 0.2;
+    const w = g.world.width * this.cellPx;
+    const x = this.fx0 + (k < 0.5 ? 1 - 2 * k : 2 * k - 1) * (w - s);
+    const y = this.fy0 + g.world.height * this.cellPx + this.px * 2;
+    ctx.save();
+    ctx.translate(x + s / 2, y);
+    if (k < 0.5) ctx.scale(-1, 1);
+    ctx.drawImage(this.sprites.get('donkey'), -s / 2, 0, s, s);
+    ctx.restore();
+    if ((d.kind === 'bring') === k >= 0.5) ctx.drawImage(this.sprites.get(`item:${d.item}`), x + s * 0.25, y - s * 0.2, s * 0.45, s * 0.45);
   }
 
   // Holes in the pen's fence (inside withPen) and a sign with how many animals ran away.
@@ -453,8 +551,17 @@ export class RanchView extends FarmView {
         if (thing.making) lines.push(h('div', { class: 'bar' }, h('span', { style: { width: `${Math.floor(100 * (1 - Math.max(0, thing.until - g.time) / recipes[thing.making].seconds))}%` } })));
         const inside = Object.entries(thing.inside || {});
         if (inside.length) lines.push(h('div', {}, t('ui.ranchTipInside', { list: inside.map(([it, n]) => `${n} ${i18n.item(it)}`).join(', ') })));
-      } else if (thing) lines.push(h('div', {}, t(`machines.${thing.type}`), thing.type.endsWith('Trough') ? ` · ${thing.amount} / ${(g.cfg.troughs || {}).capacity || 10}` : ''));
+      } else if (thing && thing.type === 'Hive') {
+        lines.push(h('div', {}, thing.ready ? t('ui.ranchTipMachine', { machine: t('machines.Hive'), state: t('ui.ranchTipReadyItem', { item: i18n.item(thing.ready) }) }) : t('ui.ranchTipHive', { n: Math.floor((thing.comb || 0) * 100), kinds: pen.flowerKinds(hv.x, hv.y) })));
+      } else if (thing && thing.type === 'Loom') {
+        lines.push(h('div', {}, t('machines.Loom'), thing.carpet ? ` · ${t('ui.ranchTipLoom', { n: thing.carpet.knots, max: thing.carpet.cells.length })}` : ''));
+        const inside = Object.entries(thing.inside || {});
+        if (inside.length) lines.push(h('div', {}, t('ui.ranchTipInside', { list: inside.map(([it, n]) => `${n} ${i18n.item(it)}`).join(', ') })));
+      } else if (thing) lines.push(h('div', {}, t(`machines.${thing.type}`), thing.type.endsWith('Trough') ? ` · ${thing.amount} / ${(g.cfg.troughs || {}).capacity || 10}` : thing.type === 'Pool' ? ` · ${thing.amount} / ${(g.cfg.troughs || {}).pool || 20}` : ''));
       if (pen.holeAt(hv.x, hv.y)) lines.push(h('div', {}, t('ui.ranchTipHole')));
+      if (pen.flowers[`${hv.x},${hv.y}`]) lines.push(h('div', {}, t('ui.ranchTipFlower', { name: t(`ui.flowers.${pen.flowers[`${hv.x},${hv.y}`]}`) })));
+      if (pen.inCorner(hv.x, hv.y) && pen.cfg.corner) lines.push(h('div', {}, t('ui.ranchTipCorner')));
+      if (pen.dog && pen.dog.x === hv.x && pen.dog.y === hv.y) lines.push(h('div', {}, t('ui.ranchTipGampr')));
       const item = pen.ground[`${hv.x},${hv.y}`];
       if (item) lines.push(h('div', {}, i18n.item(item)));
       const dirt = Math.round(pen.dirtAt(hv.x, hv.y));
@@ -465,8 +572,11 @@ export class RanchView extends FarmView {
         lines.push(h('div', { class: 'ranch-tip-animal' }, `${i18n.entity(a.type)} #${a.id}`, a.color ? ` · ${t(`ui.colors.${a.color}`)}` : ''));
         if (pen.young(a, g.time)) lines.push(h('div', {}, t('ui.ranchTipYoung')));
         if (a.sick) lines.push(h('div', {}, t('ui.ranchTipSick')));
-        lines.push(bar(t('ui.ranchTipHunger'), a.hunger, a.hunger >= need.seek), bar(t('ui.ranchTipThirst'), a.thirst, a.thirst >= need.seek), bar(t('ui.ranchTipMood'), a.mood, a.mood < need.sad));
-        if (a.prod >= 1 && !pen.animalCfg.lays) lines.push(h('div', {}, t('ui.ranchTipReady')));
+        lines.push(bar(t('ui.ranchTipHunger'), a.hunger, a.hunger >= need.seek), bar(t('ui.ranchTipThirst'), a.thirst, a.thirst >= need.seek));
+        if (a.heat !== undefined) lines.push(bar(t('ui.ranchTipHeat'), a.heat, a.heat >= need.seek));
+        lines.push(bar(t('ui.ranchTipMood'), a.mood, a.mood < need.sad));
+        if (a.heat >= need.unhappy) lines.push(h('div', {}, t('ui.ranchTipHot')));
+        if (a.prod >= 1 && !pen.animalCfg.lays) lines.push(h('div', {}, t(pen.animalCfg.shear ? 'ui.ranchTipWool' : 'ui.ranchTipReady')));
       }
     }
     this.tip.replaceChildren(...lines);

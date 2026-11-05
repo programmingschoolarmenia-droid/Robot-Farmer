@@ -546,6 +546,10 @@ export class Game {
       festival: this.festivals.latest(),
       challenge: this.challenge,
       ranch: this.ranch.earned,
+      carpets: this.ranch.perfect,
+      favorite: this.ranch.favorite,
+      ranchPlus: this.ranch.plus,
+      ranchChallenge: this.ranch.challenge,
     };
   }
 

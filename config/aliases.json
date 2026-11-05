@@ -107,7 +107,10 @@
       "Milk": ["Kat", "Կաթ"],
       "Cheese": ["Panir", "Պանիր"],
       "Butter": ["Karag", "Կարագ"],
-      "Nazook": ["Nazuk", "Նազուկ"]
+      "Nazook": ["Nazuk", "Նազուկ"],
+      "Honey": ["Mexr", "Մեղր"],
+      "Candle": ["Mom", "Մոմ"],
+      "Honey_Gata": ["MexrotGata", "ՄեղրոտԳաթա"]
     },
     "Machines": {
       "Mill": ["Jraxac", "Ջրաղաց"],
@@ -169,7 +172,11 @@
       "Challenge_Silver_Hat": ["MrcuytiArcate", "ՄրցույթիԱրծաթե"],
       "Challenge_Bronze_Hat": ["MrcuytiBronze", "ՄրցույթիԲրոնզե"],
       "Treasure_Hat": ["Gandzorsi", "Գանձորսի"],
-      "Legend_Hat": ["Legendi", "Լեգենդի"]
+      "Legend_Hat": ["Legendi", "Լեգենդի"],
+      "Papakh_Hat": ["Papax", "Փափախ"],
+      "Beekeeper_Hat": ["Mexvapah", "Մեղվապահ"],
+      "Rancher_Hat": ["Ranchoyi", "Ռանչոյի"],
+      "Carpet_Hat": ["Gorgagorc", "Գորգագործ"]
     },
     "Unlocks": {
       "Loops": ["Krknutyun", "Կրկնություն"],
@@ -236,11 +243,23 @@
       "heal": ["buzhel", "բուժել"],
       "repair": ["norogel", "նորոգել"],
       "rope": ["kapel", "կապել"],
-      "ship": ["tanel", "տանել"]
+      "ship": ["tanel", "տանել"],
+      "shear": ["xuzel", "խուզել"],
+      "bell": ["zangel", "զանգել"],
+      "moveDog": ["gamprGnal", "գամփռգնալ"],
+      "carpet": ["gorg", "գորգ"],
+      "weave": ["hyusel", "հյուսել"],
+      "carpetOrders": ["gorgPatverner", "գորգպատվերներ"],
+      "sellCarpet": ["vacharelGorg", "վաճառելգորգ"],
+      "flowerKinds": ["caxkiTesak", "ծաղկիտեսակ"],
+      "donkeyBring": ["eshBerel", "էշբերել"],
+      "donkeyShip": ["eshTanel", "էշտանել"],
+      "fair": ["tonavachar", "տոնավաճառ"]
     },
     "namespaces": {
       "Animals": ["Tesakner", "Տեսակներ"],
-      "Colors": ["Guyner", "Գույներ"]
+      "Colors": ["Guyner", "Գույներ"],
+      "Flowers": ["Caxikner", "Ծաղիկներ"]
     },
     "members": {
       "Items": {
@@ -252,12 +271,38 @@
         "Omelet": ["Dzvacex", "Ձվածեղ"],
         "Manure": ["Gomaxb", "Գոմաղբ"],
         "Medicine": ["Dex", "Դեղ"],
-        "Plank": ["Taxtak", "Տախտակ"]
+        "Plank": ["Taxtak", "Տախտակ"],
+        "WoolWhite": ["BurdSpitak", "ԲուրդՍպիտակ"],
+        "WoolBrown": ["BurdDarchnaguyn", "ԲուրդԴարչնագույն"],
+        "WoolBlack": ["BurdSev", "ԲուրդՍև"],
+        "WoolGold": ["BurdVoskeguyn", "ԲուրդՈսկեգույն"],
+        "YarnWhite": ["TelSpitak", "ԹելՍպիտակ"],
+        "YarnBrown": ["TelDarchnaguyn", "ԹելԴարչնագույն"],
+        "YarnBlack": ["TelSev", "ԹելՍև"],
+        "YarnGold": ["TelVoskeguyn", "ԹելՈսկեգույն"],
+        "YarnRed": ["TelKarmir", "ԹելԿարմիր"],
+        "YarnOrange": ["TelNarnjaguyn", "ԹելՆարնջագույն"],
+        "YarnYellow": ["TelDexin", "ԹելԴեղին"],
+        "YarnGreen": ["TelKanach", "ԹելԿանաչ"],
+        "YarnBlue": ["TelKapuyt", "ԹելԿապույտ"],
+        "YarnSoft": ["TelPapuk", "ԹելՓափուկ"],
+        "Carpet": ["Gorg", "Գորգ"],
+        "Down": ["Axvamaz", "Աղվամազ"],
+        "Seed": ["Serm", "Սերմ"],
+        "Sunflower": ["Arevacaxik", "Արևածաղիկ"],
+        "Comb": ["Xorisx", "Խորիսխ"],
+        "Wax": ["Mexramom", "Մեղրամոմ"],
+        "BuffaloMilk": ["GomeshiKat", "ԳոմեշիԿաթ"],
+        "LoriCheese": ["LoriPanir", "ԼոռիՊանիր"],
+        "HoneyCake": ["Mexrablit", "Մեղրաբլիթ"]
       },
       "Animals": {
         "Hen": ["Hav", "Հավ"],
         "Cow": ["Kov", "Կով"],
-        "Goat": ["Ayc", "Այծ"]
+        "Goat": ["Ayc", "Այծ"],
+        "Sheep": ["Vochxar", "Ոչխար"],
+        "Buffalo": ["Gomesh", "Գոմեշ"],
+        "Rabbit": ["Chagar", "Ճագար"]
       },
       "Colors": {
         "White": ["Spitak", "Սպիտակ"],
@@ -265,7 +310,19 @@
         "Black": ["Sev", "Սև"],
         "Gold": ["Voskeguyn", "Ոսկեգույն"],
         "Spotted": ["Xayt", "Խայտ"],
-        "Red": ["Karmir", "Կարմիր"]
+        "Red": ["Karmir", "Կարմիր"],
+        "Orange": ["Narnjaguyn", "Նարնջագույն"],
+        "Yellow": ["Dexin", "Դեղին"],
+        "Green": ["Kanach", "Կանաչ"],
+        "Blue": ["Kapuyt", "Կապույտ"],
+        "Soft": ["Papuk", "Փափուկ"]
+      },
+      "Flowers": {
+        "Poppy": ["Kakach", "Կակաչ"],
+        "Daisy": ["Ericuk", "Երիցուկ"],
+        "Rose": ["Vard", "Վարդ"],
+        "Jasmine": ["Hasmik", "Հասմիկ"],
+        "Sunflower": ["Arevacaxik", "Արևածաղիկ"]
       },
       "Machines": {
         "FeedTrough": ["Keraman", "Կերաման"],
@@ -274,7 +331,13 @@
         "Basket": ["Zambyux", "Զամբյուղ"],
         "Stall": ["Krpak", "Կրպակ"],
         "Dairy": ["Katnatun", "Կաթնատուն"],
-        "Stove": ["Vararan", "Վառարան"]
+        "Stove": ["Vararan", "Վառարան"],
+        "Wheel": ["Chaxarak", "Ճախարակ"],
+        "Loom": ["Dazgah", "Դազգահ"],
+        "DyePot": ["Nerkaman", "Ներկաման"],
+        "HoneyHouse": ["Mexratun", "Մեղրատուն"],
+        "Hive": ["Petak", "Փեթակ"],
+        "Pool": ["Lchak", "Լճակ"]
       }
     }
   }

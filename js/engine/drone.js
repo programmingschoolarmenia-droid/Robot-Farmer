@@ -27,6 +27,7 @@ export class Drone {
     let rate = base * Math.pow(time.speedPerTier ?? 1.5, g.research.level(time.speedResearch || 'Speed'));
     if (g.inventory.get('Power') > 0) rate *= (s.power && s.power.speedMultiplier) || 2;
     rate *= g.boost('speed'); // gata (village kitchen)
+    if (g.droneRate) rate *= g.droneRate(this); // the ranch: its dishes and the bees' stings
     if (this.execSpeed > 0) rate = Math.min(rate, base * this.execSpeed);
     return rate;
   }

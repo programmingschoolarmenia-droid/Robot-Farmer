@@ -14,6 +14,7 @@ export const ITEM_NAMES = [
   'Hay', 'Wood', 'Carrot', 'Pumpkin', 'Power', 'Water', 'Fertilizer', 'Weird_Substance', 'Cactus', 'Bone', 'Gold', 'Fish',
   'Flour', 'Jam', 'Lavash', 'Gata', 'Ghapama', 'Grilled_Fish', 'Star', 'Medal',
   'Egg', 'Milk', 'Cheese', 'Butter', 'Nazook', // ranch goods sent to the farm (ranch.json → ship), nazook from them
+  'Honey', 'Candle', 'Honey_Gata',
 ];
 export const GROUND_NAMES = ['Grassland', 'Soil', 'Pond'];
 export const FISH_NAMES = ['Carp', 'Barbel', 'Trout', 'Golden_Fish', 'Whitefish', 'Catfish'];

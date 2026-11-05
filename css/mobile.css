@@ -36,6 +36,16 @@
   .topbar {
     gap: 6px;
   }
+  .screen-ranch .topbar {
+    flex-wrap: wrap;
+    height: auto;
+  }
+  .ranch-quest-slot {
+    flex: 1 1 100% !important;
+  }
+  .screen-ranch .calendar-chip {
+    display: none;
+  }
   .logo,
   .btn-label,
   .quest-card .quest-label,

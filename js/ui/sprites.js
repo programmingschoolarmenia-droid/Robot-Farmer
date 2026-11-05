@@ -232,6 +232,45 @@ export class SpriteBook {
     this.put('item:Nazook', nazook());
     this.put('thing:Dairy', dairy());
     this.put('thing:Stove', stove());
+    // --- part 3: sheep, buffalo, rabbits, the gampr and the donkey; wool, yarn, the loom, bees, goods
+    this.put('sheep', sheep());
+    this.put('buffalo', buffalo());
+    this.put('rabbit', rabbit());
+    this.put('gampr', gampr());
+    this.put('donkey', donkey());
+    for (const color of ['White', 'Brown', 'Black', 'Gold']) {
+      const to = coat[color];
+      this.put(`sheep:${color}`, to ? recolored(sheep(), { [PAL.white]: to[0], [PAL.lightGrey]: to[2] }) : this.get('sheep'));
+      this.put(`rabbit:${color}`, to ? recolored(rabbit(), { [PAL.white]: to[0], [PAL.lightGrey]: to[2] }) : this.get('rabbit'));
+    }
+    this.put('buffalo:Black', this.get('buffalo'));
+    this.put('buffalo:Brown', recolored(buffalo(), { [PAL.darkGrey]: coat.Brown[2] }));
+    this.put('buffalo:Gold', recolored(buffalo(), { [PAL.darkGrey]: coat.Gold[2] }));
+    for (const [color, [light, dark]] of Object.entries(YARN)) this.put(`item:Yarn${color}`, yarnBall(light, dark));
+    for (const color of ['White', 'Brown', 'Black', 'Gold']) this.put(`item:Wool${color}`, woolTuft(...YARN[color]));
+    this.put('item:Down', woolTuft(YARN.Soft[0], '#f4c9d6'));
+    this.put('item:Carpet', carpetIcon());
+    this.put('item:Sunflower', flower('#ffd541', '#71413b', true));
+    this.put('item:Seed', seeds());
+    this.put('item:Comb', comb());
+    this.put('item:Honey', honeyJar());
+    this.put('item:Wax', wax());
+    this.put('item:Candle', candle());
+    this.put('item:Honey_Gata', recolored(gata(), { [PAL.tan]: PAL.amber }));
+    this.put('item:BuffaloMilk', recolored(milkCan(), { [PAL.sky]: PAL.darkPurple }));
+    this.put('item:LoriCheese', recolored(cheese(), { [PAL.yellow]: PAL.sand }));
+    this.put('item:HoneyCake', honeyCake());
+    this.put('thing:Wheel', spinningWheel());
+    this.put('thing:Loom', loomFrame());
+    this.put('thing:DyePot', dyePot());
+    this.put('thing:HoneyHouse', honeyHouse());
+    this.put('thing:Hive', hive());
+    this.put('thing:Pool', pool());
+    this.put('flower:Poppy', flower('#df3e23', '#3b1725'));
+    this.put('flower:Daisy', flower('#ffffff', '#ffd541'));
+    this.put('flower:Rose', flower('#e0457b', '#b4202a'));
+    this.put('flower:Jasmine', flower('#f8f4d0', '#59c135'));
+    this.put('flower:Sunflower', this.get('item:Sunflower'));
     this.put('weeds', weeds());
     this.put('brokenBoard', brokenBoard());
     this.put('ruinShed', ruinShed());
@@ -1319,6 +1358,12 @@ function icons(book) {
   put('flip', flip());
   put('workshop', workshop());
   same('goat', 'goat');
+  same('carpet', 'item:Carpet');
+  same('hive', 'thing:Hive');
+  same('dye', 'thing:DyePot');
+  same('loom', 'thing:Loom');
+  same('gampr', 'gampr');
+  same('donkey', 'donkey');
   put('sheep', sheep());
   put('bee', bee());
   put('buffalo', buffalo());
@@ -2020,6 +2065,240 @@ function bell() {
   p.rect(2, 12, 12, 2, PAL.amber);
   p.disc(8, 14.5, 1.3, PAL.amber);
   p.rect(7, 0, 2, 2, PAL.amber);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// --- part 3 of the ranch
+
+// Yarn colours (light, dark), as in ranch.json → carpets.palette.
+const YARN = {
+  White: ['#f4efe3', '#c9c2ae'],
+  Brown: ['#a8683f', '#6e4426'],
+  Black: ['#4a4a55', '#26262c'],
+  Gold: ['#f2b632', '#b07f14'],
+  Red: ['#c8323a', '#8a1e24'],
+  Orange: ['#ee8530', '#ad5616'],
+  Yellow: ['#f6d548', '#bd9a22'],
+  Green: ['#3ea35f', '#22713d'],
+  Blue: ['#3768b4', '#1f4277'],
+  Soft: ['#fffaf5', '#ead9d2'],
+};
+
+function yarnBall(light, dark) {
+  const p = new Pixels();
+  p.disc(8, 8, 5.6, light);
+  for (const [x0, y0, x1, y1] of [[4, 6, 10, 3], [3, 9, 12, 5], [5, 12, 13, 8], [8, 13, 13, 10]]) p.line(x0, y0, x1, y1, dark);
+  p.line(12, 12, 15, 14, dark);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function woolTuft(light, dark) {
+  const p = new Pixels();
+  for (const [x, y, r] of [[5, 7, 3], [9, 5.5, 3.2], [11.5, 9, 2.8], [7, 10.5, 3]]) p.disc(x, y, r, light);
+  p.shade(light, null, dark);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function carpetIcon() {
+  const p = new Pixels();
+  p.rect(2, 3, 12, 10, PAL.red);
+  p.rect(4, 5, 8, 6, PAL.navy);
+  p.polygon([[8, 5.5], [11, 8], [8, 10.5], [5, 8]], PAL.yellow);
+  p.outline(PAL.outlineBrown);
+  for (let y = 3; y <= 12; y += 2) p.set(0, y, PAL.sand).set(15, y, PAL.sand);
+  return p;
+}
+
+function flower(petal, middle, tall = false) {
+  const p = new Pixels();
+  p.line(8, 8, 8, 15, PAL.green);
+  p.line(8, 12, 11, 10, PAL.lightGreen);
+  p.line(8, 13, 5, 11, PAL.lightGreen);
+  const r = tall ? 2.2 : 1.9;
+  const d = tall ? 3 : 2.5;
+  for (const [dx, dy] of [[-d, 0], [d, 0], [0, -d], [0, d], ...(tall ? [[-2, -2], [2, -2], [-2, 2], [2, 2]] : [])]) p.disc(8 + dx, 6 + dy, r, petal);
+  p.disc(8, 6, tall ? 2 : 1.3, middle);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function seeds() {
+  const p = new Pixels();
+  p.polygon([[3, 5], [13, 5], [14, 14], [2, 14]], PAL.sand);
+  p.shade(PAL.sand, null, PAL.tan);
+  p.rect(5, 2, 6, 3, PAL.tan);
+  for (const [x, y] of [[6, 8], [9, 7], [10, 11], [6, 11], [8, 10]]) p.rect(x, y, 2, 1, PAL.brown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function comb() {
+  const p = new Pixels();
+  p.polygon([[8, 1.5], [14, 5], [14, 11], [8, 14.5], [2, 11], [2, 5]], PAL.amber);
+  for (const [x, y] of [[8, 5], [5, 8], [11, 8], [8, 11]]) p.disc(x, y, 1.4, PAL.yellow);
+  p.outline(PAL.brown);
+  return p;
+}
+
+function honeyJar() {
+  const p = new Pixels();
+  p.rect(4, 5, 8, 9, PAL.amber);
+  p.shade(PAL.amber, PAL.yellow, PAL.orange);
+  p.rect(3, 2, 10, 3, PAL.white);
+  p.rect(6, 8, 4, 3, PAL.sand);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function wax() {
+  const p = new Pixels();
+  p.rect(3, 6, 10, 7, PAL.yellow);
+  p.shade(PAL.yellow, PAL.brightYellow, PAL.amber);
+  p.rect(5, 4, 6, 2, PAL.yellow);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function candle() {
+  const p = new Pixels();
+  p.rect(6, 6, 4, 8, PAL.sand);
+  p.shade(PAL.sand, PAL.white, PAL.tan);
+  p.line(8, 4, 8, 6, PAL.outline);
+  p.disc(8, 2.5, 1.4, PAL.amber);
+  p.rect(4, 14, 8, 1, PAL.brown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function honeyCake() {
+  const p = new Pixels();
+  p.rect(2, 9, 12, 5, PAL.lightBrown);
+  p.rect(2, 7, 12, 2, PAL.sand);
+  p.rect(3, 4, 10, 3, PAL.tan);
+  p.rect(3, 3, 10, 1, PAL.amber);
+  p.rect(2, 11, 12, 1, PAL.sand);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function spinningWheel() {
+  const p = new Pixels();
+  p.line(3, 14, 13, 14, PAL.brown);
+  p.line(6, 14, 8, 9, PAL.brown);
+  p.line(11, 14, 8, 9, PAL.brown);
+  p.disc(8, 7, 6, PAL.lightBrown);
+  p.disc(8, 7, 4.6, PAL.sand);
+  p.line(8, 2, 8, 12, PAL.brown);
+  p.line(3, 7, 13, 7, PAL.brown);
+  p.line(5, 4, 11, 10, PAL.brown);
+  p.line(11, 4, 5, 10, PAL.brown);
+  p.disc(8, 7, 1.2, PAL.darkBrown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function loomFrame() {
+  const p = new Pixels();
+  p.rect(1, 1, 2, 14, PAL.brown);
+  p.rect(13, 1, 2, 14, PAL.brown);
+  p.rect(1, 1, 14, 2, PAL.lightBrown);
+  p.rect(1, 12, 14, 2, PAL.lightBrown);
+  p.rect(3, 3, 10, 9, PAL.sand);
+  for (let x = 4; x < 13; x += 2) p.rect(x, 3, 1, 9, PAL.tan);
+  p.rect(3, 8, 10, 2, PAL.red);
+  p.rect(3, 10, 10, 2, PAL.navy);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function dyePot() {
+  const p = new Pixels();
+  p.ellipse(8, 9, 6.5, 5.5, PAL.darkGrey);
+  p.rect(2, 4, 12, 3, PAL.grey);
+  p.rect(3, 4, 10, 2, PAL.brightRed);
+  p.rect(5, 4, 3, 1, PAL.yellow);
+  p.rect(4, 14, 2, 1, PAL.outline).rect(10, 14, 2, 1, PAL.outline);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function honeyHouse() {
+  const p = new Pixels();
+  p.rect(3, 7, 10, 8, PAL.tan);
+  p.shade(PAL.tan, PAL.sand, PAL.lightBrown);
+  p.polygon([[1, 7.5], [8, 1.5], [15, 7.5]], PAL.amber);
+  p.shade(PAL.amber, PAL.yellow, PAL.orange);
+  p.rect(6, 10, 4, 5, PAL.brown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function hive() {
+  const p = new Pixels();
+  p.ellipse(8, 7.5, 6, 6.5, PAL.tan);
+  for (const y of [4, 7, 10, 13]) p.line(3, y, 13, y, PAL.lightBrown);
+  p.rect(6, 9, 4, 3, PAL.outline);
+  p.rect(3, 14, 10, 1, PAL.brown);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function pool() {
+  const p = new Pixels();
+  p.ellipse(8, 8.5, 7.5, 6.5, PAL.soil);
+  p.ellipse(8, 8.5, 5.8, 4.8, PAL.soilDark);
+  for (const [x, y] of [[2, 6], [13, 11], [11, 3]]) p.rect(x, y, 2, 1, PAL.soilLight);
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function gampr() {
+  const p = new Pixels();
+  p.art(0, 0, [
+    '................',
+    '..........KK....',
+    '.........KWWK...',
+    '.........WWWWW..',
+    '.........WEWWN..',
+    '.W......WWWWWW..',
+    '.WW..WWWWWWWW...',
+    '..WWWWWWWWWWW...',
+    '..WWWWWWWWWWG...',
+    '..WWWWWWWWWWG...',
+    '..WW.WW..WW.W...',
+    '..WW.WW..WW.W...',
+    '..KK.KK..KK.K...',
+    '................',
+    '................',
+    '................',
+  ], { W: PAL.sand, G: PAL.tan, K: PAL.brown, E: PAL.outline, N: PAL.outline });
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+function donkey() {
+  const p = new Pixels();
+  p.art(0, 0, [
+    '...........K.K..',
+    '...........G.G..',
+    '...........GKG..',
+    '..........GGGGG.',
+    '..........GEGGGP',
+    '..........GGGGPP',
+    '.K.......GGGG...',
+    '.KGGGGGGGGGG....',
+    '..GGGGGGGGGG....',
+    '..GGGGGGGGGW....',
+    '..GGGGGGGGGW....',
+    '..G.G.....G.G...',
+    '..G.G.....G.G...',
+    '..K.K.....K.K...',
+    '................',
+    '................',
+  ], { G: PAL.grey, W: PAL.lightGrey, K: PAL.darkGrey, E: PAL.outline, P: PAL.lightGrey });
   p.outline(PAL.outlineBrown);
   return p;
 }

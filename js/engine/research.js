@@ -172,5 +172,7 @@ export function eventHats(events = {}) {
     ...((e.challenge || {}).hats || []),
     (e.notes || {}).hat,
     (e.perfection || {}).hat,
+    ...Object.values(e.ranchHats || {}),
+    (e.contest || {}).hat,
   ].filter(Boolean);
 }

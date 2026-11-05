@@ -22,6 +22,7 @@ export class AccountError extends Error {
 // Day and month points are stored under dated fields (d20261028, m202610), so a new day starts
 // an empty list without deleting anything; yesterday's field stays for the champion's crown.
 const MAX_CODE = 6000; // characters of challenge code kept in the row
+export const CARPET_RE = /^[A-Z]{81}$/; // a finished carpet's knots
 export function playerRow(name, s) {
   const row = { name, hat: s.hat, farm: s.farm, research: s.research, playSeconds: Math.floor(s.playSeconds), points: Math.floor(s.points), code: s.code, streak: s.streak, streakDay: s.day.key };
   for (const [prefix, periods] of [['d', [s.day, s.prevDay]], ['m', [s.month, s.prevMonth]]]) {
@@ -40,17 +41,34 @@ export function playerRow(name, s) {
     if (r.day.key && r.day.dram >= 1) row[`rd${r.day.key}`] = Math.floor(r.day.dram);
     if (r.month.key && r.month.dram >= 1) row[`rm${r.month.key}`] = Math.floor(r.month.dram);
   }
+  // perfect carpets (all time, this day and month), the favourite carpet and the New Game Plus level
+  const g = s.carpets;
+  if (g && g.total >= 1) {
+    row.carpets = g.total;
+    if (g.day.key && g.day.n >= 1) row[`gd${g.day.key}`] = g.day.n;
+    if (g.month.key && g.month.n >= 1) row[`gm${g.month.key}`] = g.month.n;
+  }
+  if (s.favorite) row.carpet = s.favorite;
+  if (s.ranchPlus >= 1) row.ranchPlus = s.ranchPlus;
+  // the ranch's weekly challenge (this week's and last week's)
+  for (const c of s.ranchChallenge ? [s.ranchChallenge, s.ranchChallenge.prev] : []) {
+    if (c && c.best >= 1) Object.assign(row, { [`rc${c.week}`]: c.best, [`rcc${c.week}`]: String(c.bestCode).slice(0, MAX_CODE) });
+  }
   return row;
 }
 
 // The row field a leaderboard list ranks by (today = 'YYYYMMDD'): points of the 'day', the
-// 'month' or 'all' time, 'code', 'perfect', this week's 'challenge' (lower is better, see
-// ASCENDING), the running 'festival' (`festival` = its key, e.g. 'Easter2026') or ֏ earned on the
-// ranch ('ranch_day', 'ranch_month', 'ranch_all').
+// 'month' or 'all' time, 'code', 'perfect', this week's 'challenge' or 'ranchChallenge' (lower is
+// better, see `ascending`), the running 'festival' (`festival` = its key, e.g. 'Easter2026'), ֏ earned
+// on the ranch ('ranch_day', 'ranch_month', 'ranch_all') or perfect carpets ('carpets_day', …).
 export function boardField(tab, today, festival = '') {
   if (tab === 'day') return `d${today}`;
   if (tab === 'month') return `m${today.slice(0, 6)}`;
   if (tab === 'challenge') return `c${weekKey(today)}`;
+  if (tab === 'ranchChallenge') return `rc${weekKey(today)}`;
+  if (tab === 'carpets_day') return `gd${today}`;
+  if (tab === 'carpets_month') return `gm${today.slice(0, 6)}`;
+  if (tab === 'carpets_all') return 'carpets';
   if (tab === 'festival') return `f${festival}`;
   if (tab === 'ranch_day') return `rd${today}`;
   if (tab === 'ranch_month') return `rm${today.slice(0, 6)}`;
@@ -59,7 +77,7 @@ export function boardField(tab, today, festival = '') {
 }
 
 // Lists where the smallest number is the best (the challenge times).
-export const ascending = (field) => /^c\d/.test(field);
+export const ascending = (field) => /^r?c\d/.test(field);
 
 // Upgrades old save formats. (Only version 1 exists so far.)
 export function migrateSave(save) {
@@ -233,6 +251,36 @@ export class Accounts {
     return this.backend.query(field, 0, ascending(field), n);
   }
 
+  // ---- the weekly carpet contest: one entry a player, one like per carpet and voter
+
+  // This week's entries, the most liked first: [{ id, name, cells, likes, liked, at }].
+  async contest(week) {
+    const me = this.session && this.session.id;
+    const [entries, likes] = await Promise.all([this.backend.contestEntries(week), this.backend.contestLikes(week)]);
+    return entries
+      .filter((e) => CARPET_RE.test(e.cells))
+      .map((e) => {
+        const mine = likes.filter((l) => l.owner === e.id);
+        return { ...e, likes: mine.length, liked: mine.some((l) => l.voter === me) };
+      })
+      .sort((a, b) => b.likes - a.likes || a.at - b.at);
+  }
+
+  enterContest(week, cells) {
+    return this.backend.contestEnter(this.session, week, cells, Date.now());
+  }
+
+  likeCarpet(week, owner) {
+    if (!this.session || owner === this.session.id) return Promise.reject(new AccountError('unknown', 'not allowed'));
+    return this.backend.contestLike(this.session, week, owner);
+  }
+
+  // Teachers take a carpet out of the contest.
+  removeEntry(week, owner) {
+    if (!this.isAdmin) return Promise.reject(new AccountError('unknown', 'not allowed'));
+    return this.backend.contestRemove(this.session, week, owner);
+  }
+
   // The #1 rows of yesterday's, last month's and last week's challenge lists: { day, month, week }
   // (null when empty).
   champions(dayField, monthField, weekField) {
@@ -370,6 +418,46 @@ class FirebaseBackend {
     });
   }
 
+  // ---- the carpet contest: carpets/{week}~{player} and likes/{week}~{player}~{voter}
+  async contestDocs(collection, week) {
+    const res = await call(`${this.url}:runQuery?key=${this.key}`, {
+      body: {
+        structuredQuery: {
+          from: [{ collectionId: collection }],
+          where: { fieldFilter: { field: { fieldPath: 'week' }, op: 'EQUAL', value: { stringValue: week } } },
+          limit: 500,
+        },
+      },
+    });
+    return res.filter((r) => r.document).map(({ document: d }) => Object.fromEntries(Object.entries(d.fields).map(([k, v]) => [k, decode(v)])));
+  }
+
+  async contestEntries(week) {
+    return (await this.contestDocs('carpets', week)).map((e) => ({ id: e.owner, name: e.name, cells: e.cells, at: e.at }));
+  }
+
+  contestLikes(week) {
+    return this.contestDocs('likes', week);
+  }
+
+  async contestWrite(s, collection, id, fields) {
+    const name = `${this.docs}/${collection}/${id}`;
+    const data = Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, encode(v)]));
+    await call(`${this.url}:commit`, { token: await this.check(s), body: { writes: [{ update: { name, fields: data } }] } });
+  }
+
+  contestEnter(s, week, cells, at) {
+    return this.contestWrite(s, 'carpets', `${week}~${s.id}`, { week, owner: s.id, name: s.name, cells, at });
+  }
+
+  contestLike(s, week, owner) {
+    return this.contestWrite(s, 'likes', `${week}~${owner}~${s.id}`, { week, owner, voter: s.id });
+  }
+
+  async contestRemove(s, week, owner) {
+    await call(`${this.url}:commit`, { token: await this.check(s), body: { writes: [{ delete: `${this.docs}/carpets/${week}~${owner}` }] } });
+  }
+
   // Another player's documents go and deleted/{id} blocks the name (the Firestore rules let only
   // the teachers do this; Auth accounts can be deleted only in the Firebase console).
   async removePlayer(s, id) {
@@ -468,6 +556,33 @@ class LocalBackend {
 
   async removePlayer(s, id) {
     return this.remove({ id });
+  }
+
+  // the carpet contest, in this browser
+  contestEntries(week) {
+    return Promise.resolve(Object.values(this.table('carpets.v1')).filter((e) => e.week === week));
+  }
+
+  contestLikes(week) {
+    return Promise.resolve(Object.values(this.table('likes.v1')).filter((l) => l.week === week));
+  }
+
+  async contestEnter(s, week, cells, at) {
+    const table = this.table('carpets.v1');
+    table[`${week}~${s.id}`] = { id: s.id, week, name: s.name, cells, at };
+    this.adapter.set('carpets.v1', JSON.stringify(table));
+  }
+
+  async contestLike(s, week, owner) {
+    const table = this.table('likes.v1');
+    table[`${week}~${owner}~${s.id}`] = { week, owner, voter: s.id };
+    this.adapter.set('likes.v1', JSON.stringify(table));
+  }
+
+  async contestRemove(s, week, owner) {
+    const table = this.table('carpets.v1');
+    delete table[`${week}~${owner}`];
+    this.adapter.set('carpets.v1', JSON.stringify(table));
   }
 
   async remove(s) {

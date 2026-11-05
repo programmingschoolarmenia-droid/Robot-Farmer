@@ -6,7 +6,9 @@ import { STEP } from '../js/engine/animals.js';
 import { validateConfig } from '../js/core/config.js';
 import { createI18n } from '../js/core/i18n.js';
 import { describeError } from '../js/ui/errorText.js';
-import { Accounts, boardField } from '../js/storage/account.js';
+import { Accounts, boardField, playerRow, ascending } from '../js/storage/account.js';
+import { testRanch, watchRanchGoal, weekTask, rollRanchWeek, recordRanchResult, giveContestPrize } from '../js/engine/challenge.js';
+import { weekKey } from '../js/core/util.js';
 import { createFakeFirebase } from './fakeFirebase.mjs';
 
 const noon = (key) => Date.UTC(+key.slice(0, 4), +key.slice(4, 6) - 1, +key.slice(6, 8), 8);
@@ -169,7 +171,7 @@ test('orders: three a day for what the ranch makes, the same for everyone; each 
 test('the shop: areas, animals while there is room, bigger pens, troughs built by code, upgrades and commands', () => {
   const game = makeGame({ unlockAll: true });
   const r = game.ranch;
-  assert.deepEqual(['Cows', 'Cow', 'Goats', 'Sheep', 'pet'].map((id) => r.shopState(id)), ['expensive', 'locked', 'locked', 'soon', 'affordable']);
+  assert.deepEqual(['Cows', 'Cow', 'Goats', 'Sheep', 'pet'].map((id) => r.shopState(id)), ['expensive', 'locked', 'locked', 'locked', 'affordable']);
   buy(r, 'Cows');
   assert.deepEqual([[...r.pens.keys()], r.penOf('Cow').animals.length, r.scripts.map((s) => s.name), r.hasFunction('milk')], [['Hens', 'Market', 'Cows'], 2, ['havanoc', 'shuka', 'gom'], true]);
   const pen = r.penOf('Hen');
@@ -187,7 +189,7 @@ test('the shop: areas, animals while there is room, bigger pens, troughs built b
   const locked = runRanch(game, { havanoc: 'shoyel();' });
   const i18n = createI18n(game.config.texts, game.config.research.nodes, game.config.guide);
   assert.deepEqual([locked.errors, describeError(locked.error, i18n, r).message], [['lockedFunction'], 'shoyel() հրամանը դեռ չունես։ Գնիր այն ռանչոյի «Խանութ»-ից։']);
-  assert.deepEqual(runRanch(game, { havanoc: 'tnkel(Buyser.Xot);' }).errors, ['notDefined']);
+  assert.deepEqual(runRanch(game, { havanoc: 'herkel();' }).errors, ['notDefined']);
   buy(r, 'pet');
   assert.deepEqual(runRanch(game, { havanoc: 'tpel(shoyel() || true);' }).errors, []);
 });
@@ -488,7 +490,7 @@ test('links: manure to the farm as fertilizer (not counted twice), farm boosts f
   buy(r, 'FarmSpeed');
   assert.deepEqual([game.boost('speed'), game.boosts.speed.item], [1.5, 'Dram']);
   game.calendar.state = { season: 'Summer', weather: 'Rain' };
-  assert.deepEqual(r.seasonFactors(), { hunger: 1, thirst: 1.5, dirt: 1.5, breed: 1 });
+  assert.deepEqual(r.seasonFactors(), { hunger: 1, thirst: 1.5, dirt: 1.5, breed: 1, heat: 1.5, wool: 1, honey: 1 });
   game.calendar.state = null;
   buy(r, 'Drones');
   const two = runRanch(game, { havanoc: 'let d = norDron(() => 7);\ntpel(maxDronner(), spasel(d));' });
@@ -508,4 +510,601 @@ test('part 2 is saved with the ranch', () => {
   const copy = reload(game).ranch;
   assert.deepEqual(copy.toSave(), r.toSave());
   assert.deepEqual([copy.penOf('Goat').holes(), copy.penOf('Goat').runaways.length, copy.read('plan'), copy.counts.born], [['0,1,W'], 1, [1, 2], 3]);
+});
+
+// ---------------------------------------------------------------- part 3
+
+const sheepRanch = () => {
+  const game = makeGame({ unlockAll: true });
+  const r = game.ranch;
+  buy(r, 'Cows', 'Workshop', 'Goats', 'Sheep', 'animals');
+  return { game, r, pen: r.pens.get('Sheep') };
+};
+const only = (pen, ...at) => {
+  pen.animals.splice(1);
+  const [a] = pen.animals;
+  Object.assign(a, { x: at[0], y: at[1], hunger: 0, thirst: 0, mood: 100, timer: 1 });
+  return a;
+};
+
+test('sheep keep away from the drone; a program can push one into the shearing corner; only there it can be sheared', () => {
+  const { game, r, pen } = sheepRanch();
+  assert.equal(pen.size, 6);
+  assert.equal(pen.animals.length, 3);
+  const a = only(pen, 2, 2);
+  pen.drone.x = 1;
+  pen.drone.y = 2;
+  pen.sync(r.time + 2);
+  assert.ok(Math.abs(a.x - 1) + Math.abs(a.y - 2) > 1, 'it stepped away');
+  // pushed from the bottom left it runs into the top right corner
+  Object.assign(a, { x: 1, y: 1, timer: 1, hunger: 0, thirst: 0 });
+  Object.assign(pen.drone, { x: 0, y: 0 });
+  const out = runRanch(game, {
+    parax: `${GO}while (true) {
+  let s = kendaniner()[0];
+  if (s.x >= 4 && s.y >= 4) { break; }
+  go(Math.max(0, s.x - 1), Math.max(0, s.y - 1));
+}
+tpel("ok");`,
+  }, { seconds: 300 });
+  assert.deepEqual([out.errors, out.out], [[], ['ok']]);
+  assert.ok(pen.inCorner(a.x, a.y));
+  // outside the corner it is refused; inside it gives wool of its colour
+  Object.assign(a, { x: 3, y: 3, prod: 1, color: 'Brown', timer: 1000 });
+  Object.assign(pen.drone, { x: 3, y: 3 });
+  const no = runRanch(game, { parax: 'tpel(xuzel());\ntpel(kitel());' });
+  assert.deepEqual([no.out, no.warnings], [['false', 'false'], ['ranch_shearCorner']]);
+  Object.assign(a, { x: 5, y: 5 });
+  Object.assign(pen.drone, { x: 5, y: 5 });
+  const yes = runRanch(game, { parax: 'tpel(xuzel());\ntpel(dzerqum(Irer.BurdDarchnaguyn));\ntpel(kendaniner()[0].patrast);' });
+  assert.deepEqual([yes.out, r.counts.sheared], [['true', '1', 'false'], 1]);
+});
+
+test('herding gives the same result at any frame rate', () => {
+  const play = (step) => {
+    const { game, r, pen } = sheepRanch();
+    const out = runRanch(game, {
+      parax: `${GO}for (let k = 0; k < 12; k++) {
+  let s = kendaniner()[k % 3];
+  go(Math.max(0, s.x - 1), Math.max(0, s.y - 1));
+}`,
+    }, { seconds: 200, step });
+    assert.deepEqual(out.errors, []);
+    return JSON.stringify(pen.animals.map((a) => [a.x, a.y, a.prod]));
+  };
+  assert.equal(play(0.033), play(0.1));
+});
+
+test('the bell brings the sheep to its square; the gampr frightens them like the drone', () => {
+  const { game, r, pen } = sheepRanch();
+  buy(r, 'Bell', 'Gampr');
+  const a = only(pen, 0, 3);
+  const out = runRanch(game, { parax: `${GO}go(3, 3);\nzangel();\ntpel(dirqX());` });
+  assert.deepEqual(out.errors, []);
+  assert.ok(pen.bell && pen.bell.x === 3 && pen.bell.y === 3);
+  pen.sync(r.time + 12);
+  assert.deepEqual([a.x, a.y], [3, 3], 'it came to the bell (and does not run from the drone)');
+  pen.bell = null;
+  // the gampr: a command walks it, and a sheep next to it runs
+  Object.assign(pen.drone, { x: 0, y: 0 });
+  assert.deepEqual(pen.dogHere(), { x: 5, y: 1 });
+  const walk = runRanch(game, { parax: 'tpel(gamprGnal(Verev));\ntpel(gamprGnal(Aj));' });
+  assert.deepEqual([walk.out, pen.dog.x, pen.dog.y], [['true', 'false'], 5, 2]);
+  Object.assign(a, { x: 4, y: 2, timer: 1, hunger: 0, thirst: 0 });
+  pen.sync(pen.steps * STEP + 3);
+  assert.ok(Math.abs(a.x - 5) + Math.abs(a.y - 2) > 1, 'it ran from the gampr');
+  // the bell and the gampr work only with sheep
+  const hens = runRanch(game, { havanoc: 'tpel(zangel());\ntpel(gamprGnal(Aj));' });
+  assert.deepEqual([hens.out, hens.warnings], [['false', 'false'], ['ranch_bellWhere', 'ranch_noDog']]);
+});
+
+test('wool becomes yarn of its colour on the wheel, white yarn takes a dye from a plant; what does not fit in the hands stays', () => {
+  const { game, r, pen } = sheepRanch();
+  buy(r, 'DyePot');
+  r.inventory.add('WoolBrown', 2);
+  r.inventory.add('YarnWhite', 5);
+  r.inventory.add('Pumpkin', 1);
+  const spin = runRanch(game, {
+    parax: `${GO}vercnel(Irer.BurdDarchnaguyn, 1);
+go(2, 0);
+lcnel();
+tpel(patrastel(Irer.TelSev));
+tpel(patrastel(Irer.TelDarchnaguyn));
+while (!havaqel()) {}
+tpel(dzerqum(Irer.TelDarchnaguyn));
+go(0, 0);
+datarkel();
+go(2, 0);
+havaqel();
+go(0, 0);
+datarkel();
+go(1, 1);
+karucel(Sarqer.Nerkaman);
+go(0, 0);
+vercnel(Irer.TelSpitak, 3);
+go(1, 1);
+lcnel();
+go(0, 0);
+vercnel(Irer.TelSpitak, 2);
+vercnel(Irer.Ddum, 1);
+go(1, 1);
+lcnel();
+tpel(patrastel(Irer.TelKarmir));`,
+  });
+  assert.deepEqual(spin.errors, []);
+  assert.deepEqual(spin.out, ['false', 'true', '3', 'true']);
+  assert.deepEqual(spin.warnings, ['ranch_machineMissing']);
+  assert.equal(r.inventory.get('YarnBrown'), 5);
+  assert.equal(r.counts.yarn, 1);
+  const pot = pen.objectAt(1, 1);
+  pen.sync(pot.until + 1);
+  assert.deepEqual([pot.ready, pot.count, r.counts.dyed], ['YarnRed', 5, 1]);
+});
+
+test('weaving: an order on the loom, knots that cannot be changed, 81 knots end it; the price follows how alike it is', () => {
+  const { game, r, pen } = sheepRanch();
+  buy(r, 'events');
+  const loom = pen.objectAt(3, 0);
+  Object.assign(pen.drone, { x: 3, y: 0 });
+  r.carpetBoard = { day: r.today(), list: [{ sample: 'rows', pay: 300, taken: false }, { sample: 'frame', pay: 400, taken: false }] };
+  const loomOnly = runRanch(game, { parax: 'tpel(hyusel(0, 0, Guyner.Sev));' });
+  assert.deepEqual(loomOnly.warnings, ['ranch_noCarpet']);
+  r.inventory.add('YarnBlack', 1);
+  const orders = runRanch(game, { parax: `let o = gorgPatverner();\ntpel(o.length, o[0].gin, o[0].vercvac);\ntpel(gorg(5));\ntpel(gorg(0));\ntpel(gorg(1));` });
+  assert.deepEqual([orders.out, orders.warnings], [['2 300 false', 'false', 'true', 'false'], ['ranch_carpet_noOrder', 'ranch_carpet_busy']]);
+  assert.equal(r.carpetBoard.list[0].taken, true);
+  assert.deepEqual(runRanch(game, { parax: 'tpel(gorg(0));' }).warnings, ['ranch_carpet_busy'], 'the loom is busy');
+  // no yarn yet, a square outside, a knot twice
+  loom.inside = { YarnBlack: 1 };
+  const knots = runRanch(game, { parax: `tpel(hyusel(0, 0, Guyner.Spitak));\ntpel(hyusel(9, 0, Guyner.Sev));\ntpel(hyusel(1.5, 0, Guyner.Sev));\ntpel(hyusel(0, 0, Guyner.Sev));\ntpel(hyusel(0, 0, Guyner.Sev));` });
+  assert.deepEqual(knots.out, ['false', 'false', 'false', 'true', 'false']);
+  assert.deepEqual(knots.warnings, ['ranch_knot_yarn', 'ranch_knot_outside', 'ranch_knot_outside', 'ranch_knot_taken']);
+  assert.equal(loom.carpet.cells[72], 'K', '(0, 0) is the bottom left: the first letter of the last row');
+  // the rest of the sample: a nested loop; a knot takes a second
+  loom.inside = { YarnBlack: 50, YarnWhite: 50 };
+  const t0 = r.time;
+  let doneAt = 0;
+  r.events.on('carpet', () => (doneAt = doneAt || pen.drone.time));
+  const rest = runRanch(game, {
+    parax: `erb("gorg", (e) => { tpel("done", e.tokos, e.gin); });
+for (let y = 0; y < 9; y++) {
+  for (let x = 0; x < 9; x++) {
+    if (x > 0 || y > 0) {
+      hyusel(x, y, y % 2 == 0 ? Guyner.Sev : Guyner.Spitak);
+    }
+  }
+}`,
+  }, { seconds: 200 });
+  r.stopAll();
+  assert.deepEqual([rest.errors, rest.warnings, rest.out], [[], [], ['done 100 300']]);
+  assert.ok(doneAt - t0 >= 78 && doneAt - t0 < 90, `${doneAt - t0} seconds`);
+  assert.deepEqual([loom.carpet, r.carpets.length, r.inventory.get('Carpet'), r.counts.carpets, r.counts.perfect, r.perfect.total], [null, 1, 1, 1, 1, 1]);
+  assert.deepEqual([r.gallery.length, r.gallery[0].alike], [1, 1]);
+  assert.equal(game.research.hasHat('Papakh_Hat'), true, 'the first carpet gives the papakh');
+  // half alike pays half; soft yarn counts as white and pays more
+  loom.inside = { YarnBlack: 81 };
+  const half = runRanch(game, { parax: 'gorg(1);\nfor (let y = 0; y < 9; y++) {\n  for (let x = 0; x < 9; x++) {\n    hyusel(x, y, Guyner.Sev);\n  }\n}' }, { seconds: 200 });
+  assert.deepEqual(half.errors, []);
+  assert.deepEqual([Math.round(r.carpets[1].alike * 81), r.carpets[1].price], [32, Math.round((400 * 32) / 81)]);
+  loom.inside = { YarnSoft: 81 };
+  runRanch(game, { parax: 'gorg();\nfor (let y = 0; y < 9; y++) {\n  for (let x = 0; x < 9; x++) {\n    hyusel(x, y, Guyner.Papuk);\n  }\n}' }, { seconds: 200 });
+  const free = r.carpets[2];
+  assert.deepEqual([free.alike, free.price], [null, Math.round(250 * 1.5)]);
+  // the market sells them all
+  const dram = r.inventory.get('Dram');
+  const sold = runRanch(game, { shuka: 'tpel(vacharelGorg());\ntpel(vacharelGorg());' });
+  const sum = 300 + Math.round((400 * 32) / 81) + 375;
+  assert.deepEqual([sold.out, sold.warnings, r.inventory.get('Dram') - dram, r.inventory.get('Carpet'), r.carpets], [[String(sum), '0'], ['ranch_noCarpets'], sum, 0, []]);
+  assert.deepEqual(runRanch(game, { parax: 'vacharelGorg();' }).warnings, ['ranch_notMarket']);
+});
+
+test('bees: hives fill faster with more kinds of flowers around; stings slow the drone until the first honey gives the hat', () => {
+  const game = makeGame({ unlockAll: true });
+  const r = game.ranch;
+  buy(r, 'Cows', 'Workshop', 'Goats', 'Sheep', 'Bees');
+  const pen = r.pens.get('Bees');
+  const hive = pen.objectAt(2, 2);
+  r.inventory.add('Seed', 3);
+  // planting takes a seed from the hands, one flower a square, only here
+  const plant = runRanch(game, {
+    mexvanoc: `${GO}tpel(tnkel(Caxikner.Vard));
+vercnel(Irer.Serm, 3);
+go(1, 1);
+tpel(tnkel(Caxikner.Vard));
+tpel(tnkel(Caxikner.Kakach));
+go(3, 1);
+tnkel(Caxikner.Vard);
+tpel(caxkiTesak());
+go(0, 4);
+tnkel(Caxikner.Hasmik);
+tpel(caxkiTesak());`,
+  });
+  assert.deepEqual(plant.errors, []);
+  assert.deepEqual(plant.out, ['false', 'true', 'false', '1', '1']);
+  assert.deepEqual(plant.warnings, ['ranch_noSeed', 'ranch_occupied']);
+  assert.deepEqual(pen.flowers, { '1,1': 'Rose', '3,1': 'Rose', '0,4': 'Jasmine' });
+  assert.equal(pen.flowerKinds(2, 2), 2, 'two kinds within 2 squares');
+  assert.equal(runRanch(game, { havanoc: 'tpel(tnkel(Caxikner.Vard));' }).warnings[0], 'ranch_flowersWhere');
+  const every = r.cfg.hive.every;
+  hive.comb = 0;
+  const t = r.time;
+  pen.sync(t + every / 2 - 1);
+  assert.equal(hive.ready, undefined);
+  pen.sync(t + every / 2 + 1);
+  assert.deepEqual([hive.ready, hive.comb], ['Comb', 0], 'two kinds: twice as fast');
+  // stings: slower by the hive
+  Object.assign(pen.drone, { x: 2, y: 3 });
+  const stung = pen.drone.tickRate();
+  pen.drone.x = 0;
+  pen.drone.y = 0;
+  assert.equal(stung / pen.drone.tickRate(), r.cfg.hive.sting);
+  // comb → honey: the hat, and no more stings
+  Object.assign(pen.drone, { x: 2, y: 2 });
+  const honey = runRanch(game, { mexvanoc: `${GO}havaqel();\ngo(1, 0);\nlcnel();\npatrastel(Irer.Mexr);\nwhile (!havaqel()) {}\ngo(0, 0);\ndatarkel();` }, { seconds: 200 });
+  assert.deepEqual([honey.errors, r.inventory.get('Honey'), game.research.hasHat('Beekeeper_Hat'), r.counts.honey], [[], 1, true, 1]);
+  Object.assign(pen.drone, { x: 2, y: 3 });
+  assert.equal(stung / pen.drone.tickRate(), r.cfg.hive.sting, 'as fast as far from a hive');
+  assert.equal(pen.drone.tickRate(), stung / r.cfg.hive.sting);
+  // maqrel takes a flower away; winter makes half the honey
+  Object.assign(pen.drone, { x: 1, y: 1 });
+  buy(r, 'clean');
+  runRanch(game, { mexvanoc: 'maqrel();' });
+  assert.equal(pen.flowers['1,1'], undefined);
+  game.calendar.state = { season: 'Winter', weather: 'Snow' };
+  assert.equal(r.seasonFactors().honey, 0.5);
+  game.calendar.state = null;
+});
+
+test('buffalo: a hot buffalo gives no milk until it bathes in the pool the code keeps full', () => {
+  const game = makeGame({ unlockAll: true });
+  const r = game.ranch;
+  buy(r, 'Cows', 'Workshop', 'Goats', 'Sheep', 'Bees', 'Buffalo');
+  const pen = r.penOf('Buffalo');
+  pen.animals.splice(1);
+  const a = pen.animals[0];
+  const keepFed = () => Object.assign(a, { hunger: 0, thirst: 0 });
+  Object.assign(a, { heat: 90, prod: 0, mood: 100, x: 0, y: 2, timer: 1 });
+  keepFed();
+  pen.sync(r.time + 20);
+  assert.equal(a.prod, 0, 'hot: no milk');
+  assert.ok(a.mood < 100);
+  const pool = pen.objectAt(2, 2);
+  assert.equal(pool.type, 'Pool');
+  // the drone brings water from the well
+  const fill = runRanch(game, { gomeshanoc: `${GO}go(4, 0);\nvercnel(Irer.Jur, 3);\ngo(2, 2);\ntpel(lcnel());` });
+  assert.deepEqual([fill.errors, fill.out, pool.amount], [[], ['3'], 3]);
+  keepFed();
+  a.heat = 90;
+  let guard = 0;
+  while (a.heat >= 50 && guard++ < 400) {
+    keepFed();
+    a.mood = 100;
+    r.time += 1;
+    pen.sync(r.time);
+  }
+  assert.ok(a.heat < 50 && pool.amount < 3, 'it walked to the pool and bathed');
+  const prod = a.prod;
+  keepFed();
+  pen.sync(r.time + 5);
+  assert.ok(a.prod > prod, 'cool: milk grows');
+  game.calendar.state = { season: 'Summer', weather: 'Sunny' };
+  assert.equal(r.seasonFactors().heat, 1.5);
+  game.calendar.state = null;
+  // Lori cheese in the dairy
+  assert.deepEqual(r.cfg.machines.Dairy.LoriCheese.in, { BuffaloMilk: 3 });
+});
+
+test('rabbits breed past the room of the pen; in a crowd they give no down until the code sells the extras', () => {
+  const game = makeGame({ unlockAll: true });
+  const r = game.ranch;
+  buy(r, 'Cows', 'Workshop', 'Goats', 'Sheep', 'Rabbits', 'sellAnimals', 'animals');
+  const pen = r.penOf('Rabbit');
+  assert.equal(pen.capacity(), 8);
+  const feedAll = () => pen.animals.forEach((a) => Object.assign(a, { hunger: 0, thirst: 0, mood: 100, sick: false, dirtTime: 0 }));
+  for (let i = 0; i < 1000; i++) {
+    feedAll();
+    pen.sync((r.time += 2));
+  }
+  assert.equal(pen.animals.length, 12, 'it stops at 1.5 × the room');
+  feedAll();
+  const a = pen.animals.find((b) => !pen.young(b, r.time));
+  a.prod = 0;
+  pen.sync(r.time + 5);
+  assert.equal(a.prod, 0, 'a crowd: no down');
+  // sold as pets, the rest give down again
+  const ids = pen.animals.filter((b) => !pen.young(b, r.time)).slice(0, 8).map((b) => b.id);
+  const sold = runRanch(game, { shuka: ids.map((id) => `vacharelKendani(${id});`).join('\n') });
+  assert.deepEqual([sold.errors, sold.warnings, pen.animals.length], [[], [], 4]);
+  feedAll();
+  const b = pen.animals[0];
+  delete b.grownAt;
+  b.prod = 0;
+  pen.sync(r.time + 5);
+  assert.ok(b.prod > 0, 'room again: down grows');
+  Object.assign(b, { x: 1, y: 1, prod: 1, timer: 1000, hunger: 0, thirst: 0, mood: 100 });
+  Object.assign(pen.drone, { x: 1, y: 1 });
+  const down = runRanch(game, { chagaranoc: 'tpel(kitel());\ntpel(xuzel());\ntpel(dzerqum(Irer.Axvamaz));' });
+  assert.deepEqual([down.out, down.warnings], [['false', 'true', '1'], []]);
+});
+
+test('the donkey: any area sends it, one trip at a time, the goods arrive at the end and erb hears it (at any frame rate)', () => {
+  const play = (step) => {
+    const game = makeGame({ unlockAll: true, items: { Carrot: 10000, Pumpkin: 5000 } });
+    const r = game.ranch;
+    buy(r, 'Cows', 'Workshop', 'Donkey', 'events');
+    r.inventory.add('Honey', 4);
+    const shipped = game.stats.total('Honey');
+    const out = runRanch(game, {
+      havanoc: `erb("esh", (e) => { tpel("arrived", e.ir, e.qanak, numItems(e.ir)); });
+tpel(eshBerel(Irer.Gazar, 3));
+tpel(eshBerel(Irer.Ddum, 1));
+tpel(numItems(Irer.Gazar));`,
+    }, { seconds: 25, step });
+    r.stopAll();
+    assert.deepEqual(out.errors, []);
+    assert.deepEqual(out.warnings, ['ranch_donkey_busy']);
+    assert.deepEqual([r.donkey, r.inventory.get('Carrot'), game.inventory.get('Carrot')], [null, 3, 10000 - 3 * r.cfg.cart.Carrot.Carrot]);
+    const ship = runRanch(game, { gom: 'tpel(eshTanel(Irer.Mexr, 3));\ntpel(numItems(Irer.Mexr));' }, { seconds: 5, step });
+    assert.deepEqual([ship.out, game.inventory.get('Honey'), r.donkey.n], [['3', '1'], 0, 3]);
+    r.update(0.1);
+    while (r.donkey) r.update(step);
+    assert.equal(game.inventory.get('Honey'), 3);
+    return { out: out.out, stats: game.stats.total('Honey') - shipped };
+  };
+  const a = play(0.1);
+  assert.deepEqual(a.out[3].split(' ').slice(0, 3), ['arrived', 'Irer.Gazar', '3']);
+  assert.equal(a.stats, 0, 'a move, not a harvest');
+  assert.deepEqual(play(0.033).out, a.out);
+});
+
+test('dishes speed the drones for their seconds of drone time; festivals: ranch prices, wool, a special sample and the hunt', () => {
+  const game = makeGame({ unlockAll: true });
+  const r = game.ranch;
+  buy(r, 'Cows', 'Workshop', 'dishes');
+  r.inventory.add('HoneyCake', 1);
+  const pen = r.penOf('Hen');
+  const rate = pen.drone.tickRate();
+  const eat = runRanch(game, { havanoc: 'tpel(utel(Irer.Mexrablit));\ntpel(utel(Irer.Mexrablit));\ntpel(utel(Irer.Dzu));' });
+  assert.deepEqual([eat.out, eat.warnings, r.inventory.get('HoneyCake')], [['true', 'false', 'false'], ['ranch_eat_none', 'ranch_eat_notDish'], 0]);
+  assert.equal(pen.drone.tickRate(), rate * r.cfg.dishes.HoneyCake.multiplier);
+  pen.drone.time = r.boosts.speed.until;
+  assert.equal(pen.drone.tickRate(), rate);
+
+  const day = makeGame({ unlockAll: true, clock: noon('20270328') }); // Easter Sunday 2027
+  const f = day.ranch;
+  assert.equal(day.calendar.state.festival.id, 'Easter');
+  const plain = makeGame({ unlockAll: true });
+  plain.stats.clock = day.stats.clock;
+  assert.equal(f.price('Egg'), Math.round(plain.ranch.price('Egg') * 2));
+  const list = f.carpetOrders().list;
+  assert.deepEqual(list.at(-1).sample, 'fest_Easter');
+  assert.equal(list.length, 4);
+  for (const id of ['Bridge', 'Square']) day.village.repair(id);
+  const hen = f.penOf('Hen');
+  const spots = f.huntSpots(hen);
+  assert.equal(spots.length, 3);
+  const [x, y] = spots[0];
+  const to = `${GO}go(${x}, ${y});\ntpel(hototel());\ntpel(porel());`;
+  const out = runRanch(day, { havanoc: to });
+  assert.deepEqual([out.errors, out.out], [[], ['0', 'true']]);
+  assert.equal(day.festivals.count(day.calendar.state.festival.key), 1, 'it counts for the same festival');
+  assert.equal(runRanch(game, { havanoc: 'tpel(hototel());\ntpel(porel());' }).warnings[0], 'ranch_noHunt');
+});
+
+test('the fair: all places, its goods and a carpet alike enough; New Game Plus keeps the code and the hats and starts over', () => {
+  const game = makeGame({ unlockAll: true });
+  const r = game.ranch;
+  r.inventory.add('Dram', 1e6);
+  assert.equal(r.shopState('Fair'), 'locked');
+  assert.equal(r.missingNeed(r.shopItem('Fair')), 'Cows');
+  for (const id of ['Cows', 'Workshop', 'Goats', 'Sheep', 'Bees', 'Buffalo', 'Rabbits']) assert.deepEqual(r.buy(id), { ok: true }, id);
+  assert.equal(r.fairDone, false);
+  assert.deepEqual(r.buy('Fair'), { ok: true });
+  const goods = r.cfg.fair.goods;
+  const try1 = runRanch(game, { shuka: 'tpel(tonavachar());' });
+  assert.deepEqual([try1.out, try1.warnings], [['false'], ['ranch_fair_missing']]);
+  for (const [item, n] of Object.entries(goods)) r.inventory.add(item, n);
+  const try2 = runRanch(game, { shuka: 'tpel(tonavachar());' });
+  assert.deepEqual(try2.warnings, ['ranch_fair_carpet']);
+  r.carpets.push({ cells: '', sample: 'rows', alike: 0.5, price: 1, pay: 1, soft: 0 }, { cells: '', sample: 'rows', alike: 0.96, price: 1, pay: 1, soft: 0 });
+  r.inventory.add('Carpet', 2);
+  const dram = r.inventory.get('Dram');
+  const try3 = runRanch(game, { shuka: 'tpel(tonavachar());\ntpel(tonavachar());' });
+  assert.deepEqual([try3.out, try3.warnings], [['true', 'false'], ['ranch_fair_done']]);
+  assert.deepEqual([r.fairDone, r.fairs, r.inventory.get('Carpet'), r.inventory.get('Dram') - dram, r.carpets.length], [true, 1, 1, r.cfg.fair.pay - 0, 1]);
+  assert.equal(game.research.hasHat('Rancher_Hat'), true);
+  // New Game Plus
+  r.setScriptCode('gom', 'tpel("my code");');
+  r.gallery.push({ cells: 'x', sample: null, alike: null });
+  const reached = r.progress().value;
+  assert.deepEqual(r.restart(), { ok: true });
+  assert.deepEqual(r.restart(), { ok: false }, 'only after a fair');
+  assert.deepEqual([r.plus, [...r.pens.keys()], r.inventory.toSave(), r.owned, r.fairDone, r.carpets], [1, ['Hens', 'Market'], { Dram: 50, Grain: 6 }, {}, false, []]);
+  assert.equal(r.script('gom').code, 'tpel("my code");', 'the code stays');
+  assert.equal(r.gallery.length, 1);
+  assert.equal(r.progress().value, reached, 'Perfection is not taken back');
+  assert.equal(r.nextCost('Cows'), Math.round(r.shopItem('Cows').cost * r.cfg.plus.shop));
+  assert.equal(r.seasonFactors().hunger, r.cfg.plus.needs);
+  assert.equal(r.goodsFactor(), r.cfg.plus.goods);
+  assert.equal(game.leaderStats().ranchPlus, 1);
+  // the old commands must be bought again
+  assert.equal(r.hasFunction('milk'), false);
+});
+
+test('part 3 is saved with the ranch', () => {
+  const { game, r, pen } = sheepRanch();
+  buy(r, 'Bees', 'Rabbits', 'Gampr', 'Donkey', 'dishes');
+  const loom = pen.objectAt(3, 0);
+  r.carpetBoard = { day: r.today(), list: [{ sample: 'rows', pay: 300, taken: false }] };
+  r.startCarpet(loom, 0);
+  loom.inside = { YarnBlack: 2 };
+  r.knot(pen, loom, 0, 0, 'Black', r.time);
+  r.pens.get('Bees').flowers['1,1'] = 'Rose';
+  pen.bell = { x: 1, y: 1, until: 99 };
+  pen.dogHere();
+  r.gallery.push({ cells: 'c', sample: null, alike: null });
+  r.favorite = 'c';
+  r.perfect.total = 7;
+  r.plus = 2;
+  r.fairs = 1;
+  r.boosts.speed = { item: 'Omelet', multiplier: 1.5, until: 50 };
+  r.donkey = { kind: 'bring', item: 'Carrot', n: 2, pen: 'Hens', start: 0, until: 30 };
+  r.challenge.best = 321;
+  const back = reload(game).ranch;
+  const p = back.pens.get('Sheep');
+  assert.deepEqual([p.objectAt(3, 0).carpet.knots, p.objectAt(3, 0).inside, back.pens.get('Bees').flowers, p.bell, p.dog], [1, { YarnBlack: 1 }, { '1,1': 'Rose' }, { x: 1, y: 1, until: 99 }, { x: 5, y: 1 }]);
+  assert.deepEqual([back.gallery, back.favorite, back.perfect.total, back.plus, back.fairs, back.boosts.speed.until, back.donkey.until, back.challenge.best], [[{ cells: 'c', sample: null, alike: null }], 'c', 7, 2, 1, 50, 30, 321]);
+});
+
+test('every new name works in Latin and Armenian letters, and carpets.samples mistakes are reported', () => {
+  const game = makeGame({ unlockAll: true });
+  const r = game.ranch;
+  r.inventory.add('Dram', 1e6);
+  for (const id of ['Cows', 'Workshop', 'Goats', 'Sheep', 'Bees', 'Buffalo', 'Rabbits', 'Bell', 'Gampr', 'Donkey', 'dishes', 'Fair']) r.buy(id);
+  const pairs = [['xuzel', 'խուզել'], ['zangel', 'զանգել'], ['gamprGnal', 'գամփռգնալ'], ['gorg', 'գորգ'], ['hyusel', 'հյուսել'], ['gorgPatverner', 'գորգպատվերներ'], ['vacharelGorg', 'վաճառելգորգ'], ['tnkel', 'տնկել'], ['caxkiTesak', 'ծաղկիտեսակ'], ['utel', 'ուտել'], ['eshBerel', 'էշբերել'], ['eshTanel', 'էշտանել'], ['tonavachar', 'տոնավաճառ'], ['Caxikner.Vard', 'Ծաղիկներ.Վարդ'], ['Guyner.Kapuyt', 'Գույներ.Կապույտ'], ['Irer.TelKarmir', 'Իրեր.ԹելԿարմիր'], ['Irer.Xorisx', 'Իրեր.Խորիսխ'], ['Irer.Mexr', 'Իրեր.Մեղր'], ['Tesakner.Vochxar', 'Տեսակներ.Ոչխար'], ['Sarqer.Dazgah', 'Սարքեր.Դազգահ'], ['Sarqer.Mexratun', 'Սարքեր.Մեղրատուն']];
+  const out = runRanch(game, { havanoc: pairs.map(([a, b]) => `tpel(${a} == ${b});`).join('\n') });
+  assert.deepEqual([out.errors, out.out], [[], pairs.map(() => 'true')]);
+  const config = loadConfig();
+  assert.deepEqual(validateConfig(config), []);
+  config.ranch.carpets.samples[0].rows = ['WWW'];
+  config.ranch.carpets.samples[1].rows[0] = 'ZZZZZZZZZ';
+  config.events.festivals[0].sample = 'none';
+  const msgs = validateConfig(config).map((e) => e.path);
+  assert.ok(msgs.includes('carpets.samples[0]') && msgs.includes('carpets.samples[1]') && msgs.includes('festivals.Trndez.sample'), msgs.join());
+});
+
+test('the ranch challenge: a fresh test ranch, the same time at any speed; every task can be set up and its code runs', () => {
+  const config = loadConfig();
+  const tasks = config.events.ranchChallenges;
+  assert.ok(tasks.length >= 10);
+  const play = (step, speed) => {
+    const task = tasks.find((x) => x.id === 'eggs15');
+    const code = `${GO}while (true) {
+  for (let y = 0; y < fermayiChap(); y++) {
+    for (let x = 0; x < fermayiChap(); x++) {
+      go(x, y);
+      havaqel();
+    }
+  }
+  go(0, 0);
+  datarkel();
+  vercnel(Irer.Hatik, 3);
+  go(0, 3);
+  lcnel();
+  go(3, 0);
+  vercnel(Irer.Jur, 3);
+  go(3, 3);
+  lcnel();
+}`;
+    const game = testRanch(config, task, { havanoc: code });
+    const r = game.ranch;
+    r.speed = speed;
+    const goal = watchRanchGoal(game, task.goal);
+    r.startAll();
+    for (let i = 0; i < 100000 && goal.done === null && r.time < 900; i++) r.update(step);
+    return { done: goal.done, time: r.time, storage: game.stats.total('Egg') };
+  };
+  const a = play(0.1, 1);
+  assert.ok(a.done > 0, 'the goal was reached');
+  assert.equal(play(0.033, 1).done, a.done);
+  assert.equal(play(0.1, 8).done, a.done);
+  // every task opens its places with its animals and items
+  for (const task of tasks) {
+    const game = testRanch(config, task);
+    const r = game.ranch;
+    for (const [type, n] of Object.entries(task.animals)) assert.ok(r.penOf(type).animals.length >= n, task.id);
+    for (const [item, n] of Object.entries(task.items)) assert.equal(r.inventory.get(item), n, task.id);
+    assert.ok(watchRanchGoal(game, task.goal).done === null, task.id);
+    assert.deepEqual(weekTask(config.events, '20261102', 'ranchChallenges').week, weekTask(config.events, '20261108', 'ranchChallenges').week);
+  }
+  // a real solution of the carpet task, through its goal
+  const task = tasks.find((x) => x.id === 'carpet1');
+  const carpetGame = testRanch(config, task);
+  const cr = carpetGame.ranch;
+  const sample = cr.sample(cr.carpetOrders().list[0].sample);
+  const names = { W: 'Spitak', K: 'Sev', B: 'Darchnaguyn' };
+  const knots = sample.rows.flatMap((row, i) => [...row].map((ch, x) => `hyusel(${x}, ${8 - i}, Guyner.${names[ch]});`)).join('\n');
+  const yarn = `${GO}for (const it of [Irer.TelSpitak, Irer.TelSev, Irer.TelDarchnaguyn]) {\n  for (let i = 0; i < 27; i++) {\n    go(0, 0);\n    vercnel(it, 3);\n    go(3, 0);\n    lcnel();\n  }\n}\ngorg(0);\n${knots}`;
+  cr.setScriptCode('parax', yarn);
+  const carpetGoal = watchRanchGoal(carpetGame, task.goal);
+  cr.start('Sheep');
+  for (let i = 0; i < 100000 && carpetGoal.done === null && cr.time < 900; i++) cr.update(0.1);
+  assert.ok(carpetGoal.done > 80 && carpetGoal.done < 900, `carpet done at ${carpetGoal.done}`);
+  // results and the week: the best stays with its code, last week's goes to `prev`
+  const game = makeGame();
+  const r = game.ranch;
+  rollRanchWeek(r, '202645');
+  assert.deepEqual(recordRanchResult(game, 500, 'a'), { better: true, first: true });
+  assert.deepEqual(recordRanchResult(game, 700, 'b'), { better: false, first: false });
+  assert.deepEqual(recordRanchResult(game, 400, 'c'), { better: true, first: false });
+  rollRanchWeek(r, '202646');
+  assert.deepEqual([r.challenge.best, r.challenge.prev], [0, { week: '202645', best: 400, bestCode: 'c' }]);
+  assert.equal(game.inventory.get('Star'), config.events.ranchChallenge.stars);
+});
+
+test('the leaderboard: perfect carpets for day, month and all time; the ranch challenge list; the favourite carpet and the plus level', () => {
+  const game = makeGame({ clock: noon('20261105') });
+  const r = game.ranch;
+  r.perfectCarpet(3);
+  r.perfectCarpet(1);
+  r.favorite = 'WK';
+  r.plus = 2;
+  rollRanchWeek(r, weekKey('20261105'));
+  recordRanchResult(game, 321, 'code');
+  const row = playerRow('A', game.leaderStats());
+  const today = '20261105';
+  assert.deepEqual([row.carpets, row[boardField('carpets_day', today)], row[boardField('carpets_month', today)], row[boardField('carpets_all', today)]], [4, 4, 4, 4]);
+  assert.deepEqual([row.carpet, row.ranchPlus, row[boardField('ranchChallenge', today)], row[`rcc${weekKey(today)}`]], ['WK', 2, 321, 'code']);
+  assert.equal(ascending(boardField('ranchChallenge', today)), true);
+  assert.equal(ascending(boardField('carpets_all', today)), false);
+  assert.deepEqual([r.counts.perfect, r.perfect.total], [2, 4]);
+});
+
+test('the carpet contest: one entry a player, one like per carpet, not your own; the teacher removes an entry (here and on Firebase)', async () => {
+  const fb = createFakeFirebase({ admins: ['admin'] });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = fb.fetch;
+  const memory = () => {
+    const m = new Map();
+    return { get: (k) => m.get(k) ?? null, set: (k, v) => (m.set(k, v), true), remove: (k) => m.delete(k) };
+  };
+  const code = (p) => p.then(() => 'ok', (e) => e.code || e.message);
+  try {
+    for (const cfg of [{ admins: ['admin'] }, { apiKey: 'test-key', projectId: 'test-project', admins: ['admin'] }]) {
+      const store = memory();
+      const a = new Accounts(cfg.apiKey ? memory() : store, cfg);
+      const b = new Accounts(cfg.apiKey ? memory() : store, cfg);
+      const t = new Accounts(cfg.apiKey ? memory() : store, cfg);
+      await a.register('Ani', 'secret1');
+      await b.register('Bob', 'secret1');
+      await t.register('admin', 'secret1');
+      const carpet = (letter) => letter.repeat(81);
+      await a.enterContest('202645', carpet('A'));
+      await b.enterContest('202645', carpet('B'));
+      await b.enterContest('202645', carpet('C')); // one entry: a new one replaces it
+      await a.enterContest('202644', carpet('O'));
+      await t.enterContest('202645', 'not a carpet'); // (left out)
+      assert.deepEqual((await a.contest('202645')).map((e) => [e.id, e.name, e.cells[0], e.likes]), [['ani', 'Ani', 'A', 0], ['bob', 'Bob', 'C', 0]]);
+      assert.equal(await code(a.likeCarpet('202645', 'ani')), 'unknown', 'not your own');
+      await a.likeCarpet('202645', 'bob');
+      await a.likeCarpet('202645', 'bob'); // only once
+      await t.likeCarpet('202645', 'bob');
+      const list = await a.contest('202645');
+      assert.deepEqual(list.map((e) => [e.id, e.likes, e.liked]), [['bob', 2, true], ['ani', 0, false]]);
+      assert.equal(await code(a.removeEntry('202645', 'bob')), 'unknown');
+      await t.removeEntry('202645', 'bob');
+      assert.deepEqual((await a.contest('202645')).map((e) => e.id), ['ani']);
+    }
+    // on Firebase a student can write only their own entry and likes
+    const s = new Accounts(memory(), { apiKey: 'test-key', projectId: 'test-project' });
+    await s.login('ani', 'secret1');
+    await assert.rejects(s.backend.contestWrite(s.session, 'carpets', '202645~bob', { week: '202645', owner: 'bob', name: 'x', cells: 'x', at: 1 }));
+    await assert.rejects(s.backend.contestWrite(s.session, 'likes', '202645~bob~ani', { week: '202645', owner: 'bob', voter: 'carol' }));
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+  // the prize: a hat and medals by the place
+  const game = makeGame();
+  giveContestPrize(game, 2);
+  assert.deepEqual([game.research.hasHat('Carpet_Hat'), game.inventory.get('Medal')], [true, 2]);
 });

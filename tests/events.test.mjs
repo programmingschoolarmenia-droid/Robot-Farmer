@@ -197,6 +197,8 @@ test('Perfection: research levels, repaired buildings and the ranch by their wei
   ranch.inventory.add('Dram', 1e6);
   const lasting = ranch.shop.filter((it) => ['area', 'size', 'upgrade', 'command'].includes(it.kind) && it.available !== false);
   for (let pass = 0; pass < 3; pass++) for (const it of lasting) while (ranch.shopState(it.id) === 'affordable') ranch.buy(it.id);
+  ranch.fairs = 1; // (and the fair)
+  game.events.emit('ranch', { fair: true });
   assert.deepEqual(ranch.progress(), { value: ranchMax, max: ranchMax });
   assert.deepEqual([perfection(game).percent, game.leaderStats().perfect, game.research.hasHat('Legend_Hat')], [100, 100, true]);
   game.config.research.nodes[0].available = false;

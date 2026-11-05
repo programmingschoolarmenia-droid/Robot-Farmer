@@ -149,10 +149,15 @@ export class Festivals {
     }
     list.splice(i, 1);
     list.push(this.freeSquare());
+    this.collect(f, x, y);
+    return 'found';
+  }
+
+  // One more object of festival f was found (on the farm or on the ranch).
+  collect(f, x, y) {
     const count = (this.found[f.key] = this.count(f.key) + 1);
     const hat = count >= (this.cfg.count ?? 60) && this.game.earnHat(f.hat) ? f.hat : null;
     this.game.events.emit('festivalFound', { x, y, count, total: this.cfg.count ?? 60, object: f.object, hat });
-    return 'found';
   }
 
   // Vardavar: watering sometimes splashes a new hidden drop out nearby.

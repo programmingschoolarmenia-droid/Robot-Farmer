@@ -16,11 +16,12 @@ import { openBook } from './book.js';
 import { openModal } from './modal.js';
 import { VillageView, recipeText } from './village.js';
 import { ChallengeScreen, schoolPanel } from './challenge.js';
+import { RanchChallengeScreen, ranchSchoolPanel } from './ranchChallenge.js';
 import { RanchScreen } from './ranch.js';
 import { formatClock, dayKey, dayNumber, keyOfDay, weekKey } from '../core/util.js';
 import { SEASON_NAMES } from '../engine/calendar.js';
 import { nextFestival, lastFestival } from '../engine/festivals.js';
-import { weekTask, givePrize } from '../engine/challenge.js';
+import { weekTask, givePrize, giveContestPrize } from '../engine/challenge.js';
 
 
 // Warnings Bridgy explains in a dialog the first time they happen.
@@ -374,6 +375,11 @@ export class GameScreen {
       const place = e.place === 1 ? t('ui.ordinalFirst') : t('ui.ordinal', { n: e.place });
       this.bridgy.toast(t('ui.challengePrize', { place, n: (cfg.medals || [])[e.place - 1] || 0 }), 10000);
     });
+    on('contestPrize', (e) => {
+      const cfg = this.game.config.events.contest || {};
+      const place = e.place === 1 ? t('ui.ordinalFirst') : t('ui.ordinal', { n: e.place });
+      this.bridgy.toast(t('ui.contestPrize', { place, n: (cfg.medals || [])[e.place - 1] || 0 }), 10000);
+    });
     on('request', (e) => {
       const board = this.game.village.board;
       const v = this.game.village.cfg.requests.villagers[board.list[e.index].who];
@@ -466,8 +472,39 @@ export class GameScreen {
   schoolPart(b, state) {
     const task = weekTask(this.app.config.events, this.today());
     if (!task || state !== 'repaired' || b.id !== (this.app.config.events.challenge || {}).building) return null;
-    if (!this.school || Date.now() - this.school.at > 60000) this.school = { at: Date.now(), el: schoolPanel(this.app, this.game, task, this.today(), () => this.openChallenge(task)) };
+    if (!this.school || Date.now() - this.school.at > 60000) {
+      const ranchTask = this.game.research.hasPanel('ranch') && weekTask(this.app.config.events, this.today(), 'ranchChallenges');
+      this.school = { at: Date.now(), el: h('div', {}, schoolPanel(this.app, this.game, task, this.today(), () => this.openChallenge(task)), ranchTask ? ranchSchoolPanel(this.app, this.game, ranchTask, this.today(), () => this.openRanchChallenge(ranchTask)) : null) };
+    }
     return this.school.el;
+  }
+
+  // The ranch's challenge page: like the farm's, on a test ranch.
+  openRanchChallenge(task) {
+    if (this.challenge) return;
+    this.villageView.close();
+    cancelAnimationFrame(this.raf);
+    this.el.hidden = true;
+    this.challenge = new RanchChallengeScreen({
+      app: this.app,
+      main: this.game,
+      task,
+      bridgy: this.bridgy,
+      onResult: () => {
+        this.save();
+        return this.syncCloud({ now: true });
+      },
+      onClose: () => {
+        this.challenge = this.school = null;
+        this.el.hidden = false;
+        this.save();
+        this.layoutSizes();
+        this.last = performance.now();
+        this.raf = requestAnimationFrame((t) => this.tick(t));
+        this.openVillage();
+        this.villageView.select(this.app.config.events.challenge.building);
+      },
+    });
   }
 
   // The challenge page: the main farm waits (no frames, no keys) until «back to the village».
@@ -516,9 +553,32 @@ export class GameScreen {
         game.festivals.claimed.push(f.key);
         if (top.some((r) => r.id === me)) game.earnHat(f.goldHat);
       }
+      if (game.research.hasPanel('ranch') && game.ranch.challenge.prizeWeek !== week) {
+        const place = (await this.app.account.top(`rc${week}`)).findIndex((r) => r.id === me) + 1;
+        game.ranch.challenge.prizeWeek = week;
+        if (place) givePrize(game, place);
+      }
       this.save();
     } catch (e) {
       console.warn('Prizes not checked:', e);
+    }
+    await this.claimContestPrize();
+  }
+
+  // Last week's carpet contest: its top 3 with at least one like (it needs its own Firestore rules, so
+  // it is looked for by itself).
+  async claimContestPrize() {
+    const game = this.game;
+    const week = weekKey(keyOfDay(dayNumber(this.today()) - 7));
+    if (!game.research.hasPanel('ranch') || game.ranch.contestPrizeWeek === week) return;
+    try {
+      const me = this.app.account.user.id;
+      const place = (await this.app.account.contest(week)).filter((e) => e.likes >= 1).slice(0, 3).findIndex((e) => e.id === me) + 1;
+      game.ranch.contestPrizeWeek = week;
+      if (place) giveContestPrize(game, place);
+      this.save();
+    } catch (e) {
+      console.warn('The contest prize was not checked:', e);
     }
   }
 
@@ -811,6 +871,7 @@ export class GameScreen {
       sync: this.syncCloud({ now: true }),
       onLogout: () => this.exit(),
       onRename: (name, password) => this.rename(name, password),
+      ranch: this.game.research.hasPanel('ranch') ? this.game.ranch : null,
     });
   }
 

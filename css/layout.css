@@ -916,3 +916,104 @@
 .ranch-market-modal {
   width: min(620px, calc(100vw - 24px));
 }
+
+/* ---- the carpets' window */
+.loom-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  overflow: hidden;
+  background: var(--paper);
+}
+.loom-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+}
+.loom-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.loom-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.loom-pair {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px;
+}
+.loom-col h4 {
+  margin: 0 0 6px;
+  text-align: center;
+}
+.loom-carpet {
+  min-width: 170px;
+  max-width: 340px;
+}
+.carpet-canvas {
+  display: block;
+  width: 100%;
+  max-width: 324px;
+  border: 3px solid var(--navy);
+  border-radius: 4px;
+  image-rendering: pixelated;
+}
+.loom-info {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.loom-yarn {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+.loom-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+.loom-card {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  padding: 8px;
+  border: 2px solid var(--navy);
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+.loom-card.done {
+  opacity: 0.6;
+}
+.loom-card .carpet-canvas {
+  max-width: 120px;
+}
+.card-carpet {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  margin: 8px 0;
+}
+.card-carpet .carpet-canvas {
+  max-width: 110px;
+}
+.ranch-fair {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 2px dashed var(--navy);
+}

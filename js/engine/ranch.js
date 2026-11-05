@@ -3,7 +3,8 @@
 // has its own storage with ֏, a shop (areas, animals, bigger pens, troughs and machines, drone upgrades,
 // the ranch commands themselves and boosts for the farm), prices that change every day for everyone,
 // the villagers' orders and a board the drones share (grel / kardal). Drones that listen for events
-// (erb) get them from their area (Pen.signal) or from the board.
+// (erb) get them from their area (Pen.signal) or from the board. The loom weaves carpets (carpet.js),
+// the donkey carries loads to and from the farm, the fair ends the story and New Game Plus starts over.
 // Only the open world runs: the ranch moves while its screen calls update() and waits otherwise.
 // Its goods count as normal points (they are gathered into the main game's Stats).
 // For Runner, Drone, Inventory, the API and QuestTracker the ranch looks like a game: it has config,
@@ -20,6 +21,7 @@ import { Runner } from './runner.js';
 import { QuestTracker } from './quests.js';
 import { RanchApi } from './ranchApi.js';
 import { Pen } from './animals.js';
+import { EMPTY, emptyCells, cellIndex, alikeShare, carpetPrice } from './carpet.js';
 
 const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 // The farm's research or a village building gates these; on the ranch they come with the ranch.
@@ -47,7 +49,20 @@ export class Ranch {
     this.board = s.board || null; // today's orders: { day, list: [{ who, line, items, pay, done }] }
     this.nextAnimal = s.nextAnimal || 1;
     this.shared = s.shared || {}; // the board the drones share: { name: value } (plain JSON values)
-    this.counts = { born: 0, healed: 0, returned: 0, events: 0, ...(s.counts || {}) }; // for the stickers
+    this.counts = { born: 0, healed: 0, returned: 0, events: 0, carpets: 0, perfect: 0, sheared: 0, honey: 0, yarn: 0, dyed: 0, fairs: 0, plus: 0, ...(s.counts || {}) }; // for the stickers
+    this.boosts = { ...(s.boosts || {}) }; // eaten dishes: { speed: { item, multiplier, until } }
+    this.carpets = s.carpets || []; // finished carpets not sold yet
+    this.gallery = s.gallery || []; // the last carpets woven: [{ cells, sample, alike }]
+    this.favorite = s.favorite || null; // the carpet on the player card (its letters)
+    this.perfect = { total: 0, day: { key: '', n: 0 }, month: { key: '', n: 0 }, ...(s.perfect || {}) }; // perfect carpets by their level
+    this.carpetBoard = s.carpetBoard || null; // today's carpet orders: { day, list: [{ sample, pay, taken }] }
+    this.donkey = s.donkey || null; // the donkey's trip: { kind, item, n, pen, start, until }
+    this.plus = s.plus || 0; // New Game Plus level
+    this.fairDone = !!s.fairDone; // the fair of this round
+    this.fairs = s.fairs || 0; // fairs of all rounds
+    this.keptProgress = s.keptProgress || 0; // Perfection: what was bought before New Game Plus
+    this.challenge = { week: '', scripts: {}, best: 0, bestCode: '', prev: null, ...(s.challenge || {}) }; // the ranch's weekly challenge
+    this.contestPrizeWeek = s.contestPrizeWeek || ''; // the carpet contest week whose prizes were looked for
     this.functionGate = new Map();
     for (const item of this.shop) for (const f of item.grants || []) this.functionGate.set(f, item.id);
     const layout = (this.cfg.map && this.cfg.map.layout) || [];
@@ -201,6 +216,25 @@ export class Ranch {
     return 1;
   }
 
+  // The speed of one drone at its own time: an eaten dish, and the bees' stings near a hive until the
+  // first honey gave the beekeeper's hat (by the drone's time, so at any frame rate).
+  droneRate(d) {
+    let rate = 1;
+    const b = this.boosts.speed;
+    if (b && d.time < b.until) rate *= b.multiplier;
+    const hive = this.cfg.hive || {};
+    if (d.pen && d.pen.cfg.stings && !this.noStings() && d.pen.hiveNear(d.x, d.y, hive.stingRadius ?? 1)) rate *= hive.sting ?? 1;
+    return rate;
+  }
+
+  noStings() {
+    return (this.main.flags.hats || []).includes(this.hats.honey);
+  }
+
+  get hats() {
+    return (this.config.events || {}).ranchHats || {};
+  }
+
   // Drones in each area (the shop's «one more drone» adds one everywhere).
   maxDrones() {
     return 1 + this.level('Drones');
@@ -209,10 +243,13 @@ export class Ranch {
   // How the season and the weather change the animals (ranch.json → seasons; 1 = no change).
   seasonFactors() {
     const st = this.main.calendar.state;
-    const out = { hunger: 1, thirst: 1, dirt: 1, breed: 1 };
+    const out = { hunger: 1, thirst: 1, dirt: 1, breed: 1, heat: 1, wool: 1, honey: 1 };
+    const harder = ((this.cfg.plus || {}).needs ?? 1) ** this.plus; // New Game Plus
+    for (const k of ['hunger', 'thirst', 'dirt', 'heat']) out[k] *= harder;
     if (!st) return out;
     const c = this.cfg.seasons || {};
-    for (const part of [c[st.season], c[st.weather]]) for (const [k, v] of Object.entries(part || {})) out[k] *= v;
+    const fest = (st.festival && st.festival.ranch) || {};
+    for (const part of [c[st.season], c[st.weather], fest]) for (const [k, v] of Object.entries(part || {})) if (typeof v === 'number') out[k] *= v;
     return out;
   }
 
@@ -341,7 +378,9 @@ export class Ranch {
         }
       }
       if (!best) break;
+      this.donkeyArrives(best.time);
       this.wake(runners, best.time);
+      this.stepping = best;
       owner.stepDrone(best);
       if ((++steps & 31) === 0 && nowMs() > deadline) {
         let t = target;
@@ -350,6 +389,7 @@ export class Ranch {
       }
     }
     for (const r of runners) if (r.state === 'running') for (const d of r.drones) if (d.state === 'waiting' && d.time < target) d.time = target;
+    this.donkeyArrives(target);
     this.wake(runners, target);
     return this.wakeTime(runners, target);
   }
@@ -388,7 +428,13 @@ export class Ranch {
 
   nextCost(id) {
     const item = this.shopItem(id);
-    return item.costs ? item.costs[this.level(id)] : item.cost;
+    const cost = item.costs ? item.costs[this.level(id)] : item.cost;
+    return Math.round(cost * ((this.cfg.plus || {}).shop ?? 1) ** this.plus); // (New Game Plus costs more)
+  }
+
+  // The first thing that must be bought before this item, or null.
+  missingNeed(item) {
+    return [].concat(item.needs || []).find((id) => !this.level(id)) || null;
   }
 
   // 'owned' | 'soon' | 'locked' (buy `needs` first) | 'full' (no room for the animal) | 'affordable' | 'expensive'
@@ -397,7 +443,7 @@ export class Ranch {
     if (!item) return 'locked';
     if (item.available === false) return 'soon';
     if (this.level(id) >= this.maxLevel(item)) return 'owned';
-    if (item.needs && !this.level(item.needs)) return 'locked';
+    if (this.missingNeed(item)) return 'locked';
     if (item.kind === 'animal') {
       const pen = this.penOf(item.animal);
       if (!pen || pen.animals.length >= pen.capacity()) return 'full';
@@ -425,7 +471,8 @@ export class Ranch {
     return { ok: true };
   }
 
-  // Perfection: the lasting things bought (levels count one by one) of all that can be bought now.
+  // Perfection: the lasting things bought (levels count one by one) of all that can be bought now, and
+  // the fair. New Game Plus never takes back what was reached.
   progress() {
     let value = 0;
     let max = 0;
@@ -434,7 +481,11 @@ export class Ranch {
       max += this.maxLevel(item);
       value += Math.min(this.level(item.id), this.maxLevel(item));
     }
-    return { value, max };
+    if (this.cfg.fair) {
+      max++;
+      if (this.fairs > 0) value++;
+    }
+    return { value: Math.max(value, this.keptProgress), max };
   }
 
   // ---------------------------------------------------------------- the market
@@ -450,7 +501,17 @@ export class Ranch {
     if (!base) return 0;
     const r = new Rng(dayNumber(day) * 131 + Object.keys(this.cfg.items).indexOf(item) * 7919 + 1).next();
     const spread = (this.cfg.prices && this.cfg.prices.spread) ?? 0;
-    return Math.max(1, Math.round(base * (1 + spread * (2 * r - 1))));
+    const bonus = c.sell ? this.goodsFactor() * ((((this.festivalToday() || {}).ranch || {}).sell || {})[item] ?? 1) : 1;
+    return Math.max(1, Math.round(base * (1 + spread * (2 * r - 1)) * bonus));
+  }
+
+  // Goods pay more in New Game Plus.
+  goodsFactor() {
+    return ((this.cfg.plus || {}).goods ?? 1) ** this.plus;
+  }
+
+  festivalToday() {
+    return (this.main.calendar.state || {}).festival || null;
   }
 
   sell(item, n = Infinity) {
@@ -541,6 +602,271 @@ export class Ranch {
     e.day.dram += dram;
     e.month.dram += dram;
     this.main.events.emit('ranch', { earned: dram });
+  }
+
+  // ---------------------------------------------------------------- carpets
+
+  get carpetCfg() {
+    return this.cfg.carpets || {};
+  }
+
+  sample(id) {
+    return (this.carpetCfg.samples || []).find((x) => x.id === id) || null;
+  }
+
+  // The loom and its area: { pen, loom }, or null while the sheep's place is closed.
+  loom() {
+    for (const pen of this.pens.values()) {
+      const loom = pen.objects.find((o) => o.type === 'Loom');
+      if (loom) return { pen, loom };
+    }
+    return null;
+  }
+
+  // Today's carpet orders, made on the first look of a new day (the festival's sample comes on top).
+  carpetOrders() {
+    const day = this.today();
+    if (!this.carpetBoard || this.carpetBoard.day !== day) this.carpetBoard = this.makeCarpetBoard(day);
+    return this.carpetBoard;
+  }
+
+  makeCarpetBoard(day) {
+    const cfg = this.carpetCfg;
+    const rng = new Rng(Number(day) + 29);
+    const samples = (cfg.samples || []).filter((x) => !x.festival);
+    const picked = [];
+    for (const levels of cfg.buckets || []) {
+      const pool = samples.filter((x) => levels.includes(x.level));
+      if (pool.length) picked.push(pool[rng.int(0, pool.length - 1)]);
+    }
+    const f = this.festivalToday();
+    const special = f && f.sample && this.sample(f.sample);
+    const list = picked.slice(0, cfg.perDay ?? 3).concat(special ? [special] : []);
+    return { day, list: list.map((x) => ({ sample: x.id, pay: Math.round(x.pay * this.goodsFactor()), taken: false })) };
+  }
+
+  // A carpet on the loom: an order (index i of today's) or a free one (no i). Returns { ok, reason }.
+  startCarpet(loom, i) {
+    if (loom.carpet) return { ok: false, reason: 'busy' };
+    let order = {};
+    if (i !== null) {
+      const q = this.carpetOrders().list[i];
+      if (!q) return { ok: false, reason: 'noOrder' };
+      if (q.taken) return { ok: false, reason: 'taken' };
+      q.taken = true;
+      order = q;
+    }
+    const n = this.carpetCfg.size ?? 9;
+    loom.carpet = { cells: emptyCells(n), knots: 0, soft: 0, sample: order.sample || null, pay: order.pay || 0 };
+    return { ok: true };
+  }
+
+  // One knot (a knot can't be changed): { ok, reason, item }. The last knot finishes the carpet.
+  knot(pen, loom, x, y, color, t) {
+    const cfg = this.carpetCfg;
+    const n = cfg.size ?? 9;
+    const c = loom.carpet;
+    const yarn = (cfg.palette || {})[color];
+    if (!yarn) return { ok: false, reason: 'color' };
+    if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= n || y >= n) return { ok: false, reason: 'outside' };
+    const i = cellIndex(n, x, y);
+    if (c.cells[i] !== EMPTY) return { ok: false, reason: 'taken' };
+    const inside = loom.inside || {};
+    if (!inside[yarn.yarn]) return { ok: false, reason: 'yarn', item: yarn.yarn };
+    inside[yarn.yarn]--;
+    if (!inside[yarn.yarn]) delete inside[yarn.yarn];
+    c.cells = c.cells.slice(0, i) + yarn.letter + c.cells.slice(i + 1);
+    c.knots++;
+    if (yarn.like) c.soft++;
+    if (c.knots === n * n) this.finishCarpet(pen, loom, t);
+    return { ok: true };
+  }
+
+  finishCarpet(pen, loom, t) {
+    const cfg = this.carpetCfg;
+    const c = loom.carpet;
+    const sample = c.sample && this.sample(c.sample);
+    loom.carpet = null;
+    const done = { cells: c.cells, sample: c.sample, soft: c.soft, pay: c.pay, alike: sample ? alikeShare(c.cells, sample, cfg.palette) : null };
+    done.price = Math.round(carpetPrice(cfg, done) * (c.pay ? 1 : this.goodsFactor()));
+    this.carpets.push(done);
+    this.inventory.add('Carpet', 1, 'loom');
+    this.gallery.push({ cells: done.cells, sample: done.sample, alike: done.alike });
+    this.gallery.splice(0, Math.max(0, this.gallery.length - (cfg.gallery ?? 12)));
+    this.counts.carpets++;
+    if (done.alike === 1) this.perfectCarpet(sample.level);
+    this.main.earnHat(this.hats.carpet);
+    this.events.emit('carpet', { pen: pen.id, x: loom.x, y: loom.y, alike: done.alike, price: done.price, sample: done.sample });
+    this.main.events.emit('ranch', { carpet: done.alike });
+    pen.signal('gorg', { tokos: done.alike === null ? null : Math.round(done.alike * 100), gin: done.price }, t);
+  }
+
+  // The leaderboard's list: perfect carpets, a hard sample counts more.
+  perfectCarpet(level) {
+    const day = this.today();
+    const p = this.perfect;
+    if (p.day.key !== day) p.day = { key: day, n: 0 };
+    if (p.month.key !== day.slice(0, 6)) p.month = { key: day.slice(0, 6), n: 0 };
+    p.total += level;
+    p.day.n += level;
+    p.month.n += level;
+    this.counts.perfect++;
+  }
+
+  // Sells every finished carpet: { n, dram }.
+  sellCarpets() {
+    const list = this.carpets.splice(0);
+    const dram = list.reduce((a, c) => a + c.price, 0);
+    if (list.length) {
+      this.inventory.add('Carpet', -list.length, 'sell');
+      this.earn(dram, 'carpet');
+      this.events.emit('sold', { item: 'Carpet', n: list.length, dram });
+    }
+    return { n: list.length, dram };
+  }
+
+  // Goods from a machine: the first honey gives the beekeeper's hat (and the stings stop).
+  made(item, machine) {
+    if (machine === 'Wheel') this.counts.yarn++;
+    if (machine === 'DyePot') this.counts.dyed++;
+    if (item === 'Honey') {
+      this.counts.honey++;
+      this.main.earnHat(this.hats.honey);
+    }
+    this.main.events.emit('ranch', { made: item });
+  }
+
+  // ---------------------------------------------------------------- dishes, the donkey, the festival's hunt
+
+  // A dish from the storage: the ranch's drones are faster for its seconds (eating again adds more).
+  eat(item, t) {
+    const cfg = (this.cfg.dishes || {})[item];
+    if (!cfg) return { ok: false, reason: 'notDish' };
+    if (this.inventory.get(item) < 1) return { ok: false, reason: 'none' };
+    this.inventory.add(item, -1, 'eat');
+    const b = this.boosts.speed;
+    this.boosts.speed = { item, multiplier: cfg.multiplier, until: Math.max(b ? b.until : 0, t) + cfg.seconds };
+    this.events.emit('boost', { kind: 'speed', item, until: this.boosts.speed.until });
+    return { ok: true };
+  }
+
+  // Sends the donkey: 'bring' from the farm (at the cart's rates) or 'ship' to the farm. The goods leave at
+  // once and arrive at the end of the trip. Returns { ok, reason, n, need }.
+  sendDonkey(pen, kind, item, n, t) {
+    if (this.donkey) return { ok: false, reason: 'busy' };
+    const cfg = this.cfg.donkey || {};
+    const want = Math.min(n, cfg.load ?? 100);
+    let k = 0;
+    if (kind === 'bring') {
+      const cost = (this.cfg.cart || {})[item];
+      if (!cost) return { ok: false, reason: 'cantBring' };
+      const farm = this.main.inventory;
+      k = Math.min(want, ...Object.entries(cost).map(([it, m]) => Math.floor(farm.get(it) / m)));
+      if (k <= 0) return { ok: false, reason: 'short', need: cost };
+      for (const [it, m] of Object.entries(cost)) farm.add(it, -k * m, 'ranch');
+    } else {
+      if (!(this.cfg.ship || {})[item]) return { ok: false, reason: 'cantShip' };
+      k = Math.min(want, Math.floor(this.inventory.get(item)));
+      if (k <= 0) return { ok: false, reason: 'none' };
+      this.inventory.add(item, -k, 'ship');
+    }
+    this.donkey = { kind, item, n: k, pen: pen.id, start: t, until: t + (cfg.seconds ?? 20) };
+    this.events.emit('donkey', { kind, item, n: k });
+    return { ok: true, n: k };
+  }
+
+  // The trip ended by time t: the goods arrive and the donkey's area hears it (by time, not by frames).
+  donkeyArrives(t) {
+    const d = this.donkey;
+    if (!d || t < d.until) return;
+    this.donkey = null;
+    if (d.kind === 'bring') this.inventory.add(d.item, d.n, 'cart');
+    else for (const [it, m] of Object.entries(this.cfg.ship[d.item])) this.main.inventory.add(it, d.n * m, 'transfer');
+    this.events.emit('donkey', { arrived: true, item: d.item, n: d.n });
+    this.signal(d.pen, 'esh', { ir: this.api.enums.Items.get(d.item), qanak: d.n }, d.until);
+  }
+
+  // The hidden objects of the running festival in this area (null without one).
+  huntSpots(pen) {
+    const f = this.main.festivals.active;
+    if (!f) return null;
+    if (!pen.spots || pen.spots.key !== f.key) pen.spots = { key: f.key, list: [] };
+    const want = Math.min(this.main.festivals.cfg.hidden ?? 3, pen.size * pen.size);
+    const list = (pen.spots.list = pen.spots.list.filter(([x, y]) => pen.inside(x, y)));
+    while (list.length < want) list.push([pen.rng.int(0, pen.size - 1), pen.rng.int(0, pen.size - 1)]);
+    return list;
+  }
+
+  // hototel() here: steps to the nearest hidden object, or null.
+  huntDistance(pen, d) {
+    const list = this.huntSpots(pen);
+    return list ? Math.min(...list.map(([x, y]) => Math.abs(x - d.x) + Math.abs(y - d.y))) : null;
+  }
+
+  // porel() here: 'found', 'miss' (the nearest one runs away) or null without a festival.
+  huntDig(pen, x, y) {
+    const list = this.huntSpots(pen);
+    if (!list) return null;
+    const near = (p) => Math.abs(p[0] - x) + Math.abs(p[1] - y);
+    const i = list.reduce((best, p, j) => (near(p) < near(list[best]) ? j : best), 0);
+    const hit = near(list[i]) === 0;
+    list.splice(i, 1);
+    if (hit) this.main.festivals.collect(this.main.festivals.active, x, y);
+    else this.main.events.emit('festivalMiss', { x, y });
+    return hit ? 'found' : 'miss';
+  }
+
+  // ---------------------------------------------------------------- the fair and New Game Plus
+
+  // The market drone gives the fair its goods and one carpet alike enough.
+  deliverFair() {
+    const f = this.cfg.fair || {};
+    if (this.fairDone) return { ok: false, reason: 'done' };
+    if (!this.inventory.canAfford(f.goods)) {
+      const missing = Object.fromEntries(this.inventory.missing(f.goods).map((m) => [m.item, m.need - Math.floor(m.have)]));
+      return { ok: false, reason: 'missing', missing };
+    }
+    const i = this.carpets.findIndex((c) => c.alike !== null && c.alike >= f.carpet);
+    if (i < 0) return { ok: false, reason: 'carpet' };
+    this.carpets.splice(i, 1);
+    this.inventory.add('Carpet', -1, 'fair');
+    this.inventory.pay(f.goods, 'fair');
+    this.fairDone = true;
+    this.fairs++;
+    this.counts.fairs++;
+    this.earn(Math.round(f.pay * this.goodsFactor()), 'fair');
+    this.main.earnHat(this.hats.fair);
+    this.events.emit('fair', {});
+    this.main.events.emit('ranch', { fair: true });
+    return { ok: true };
+  }
+
+  // After the fair: animals, places, ֏, goods and purchases start over, harder and paying more. The
+  // code, the gallery and all lifetime numbers stay.
+  restart() {
+    if (!this.fairDone) return { ok: false };
+    this.stopAll('restart', true);
+    this.keptProgress = this.progress().value;
+    this.plus++;
+    this.counts.plus++;
+    this.fairDone = false;
+    this.owned = {};
+    this.tokens = {};
+    this.board = null;
+    this.carpetBoard = null;
+    this.shared = {};
+    this.boosts = {};
+    this.donkey = null;
+    this.carpets = [];
+    this.inventory = new Inventory(this, this.opening.items ?? {});
+    this.pens = new Map();
+    for (const id of this.areaIds()) if (this.isOpen(id)) this.openArea(id);
+    for (const [type, n] of Object.entries(this.opening.animals || {})) for (let i = 0; i < n; i++) this.addAnimal(type);
+    this.activeScript = (this.pens.values().next().value || { cfg: {} }).cfg.script || this.activeScript;
+    this.api.compiled.clear();
+    this.events.emit('restart', {});
+    this.main.events.emit('ranch', { plus: this.plus });
+    return { ok: true };
   }
 
   // Goods were put in a basket (stickers count them).
@@ -635,6 +961,19 @@ export class Ranch {
       nextAnimal: this.nextAnimal,
       shared: this.shared,
       counts: this.counts,
+      boosts: this.boosts,
+      carpets: this.carpets,
+      gallery: this.gallery,
+      favorite: this.favorite,
+      perfect: this.perfect,
+      carpetBoard: this.carpetBoard,
+      donkey: this.donkey,
+      plus: this.plus,
+      fairDone: this.fairDone,
+      fairs: this.fairs,
+      keptProgress: this.keptProgress,
+      challenge: this.challenge,
+      contestPrizeWeek: this.contestPrizeWeek,
       scripts: this.scripts.map((x) => ({ name: x.name, code: x.code })),
       activeScript: this.activeScript,
       pens,

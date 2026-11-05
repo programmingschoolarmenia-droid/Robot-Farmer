@@ -2,6 +2,7 @@
 // (file, field, problem) instead of a broken game.
 import { GameApi, ENTITY_NAMES, ITEM_NAMES, GROUND_NAMES, FISH_NAMES, MACHINE_NAMES } from '../engine/api.js';
 import { RanchApi, RANCH_THINGS } from '../engine/ranchApi.js';
+import { carpetProblems } from '../engine/carpet.js';
 import { SYNTAX_FEATURES } from '../lang/gate.js';
 import { SEASON_NAMES, WEATHER_NAMES } from '../engine/calendar.js';
 
@@ -620,7 +621,7 @@ export function validateConfig(config) {
     if (!ranchItems.includes(c.product)) err(RA, `${p}.product`, `Անհայտ ապրանք «${c.product}»`);
     for (const key of ['every', 'space', 'step']) if (!(isNum(c[key]) && c[key] > 0)) err(RA, `${p}.${key}`, 'Պետք է լինի դրական թիվ');
     for (const key of ['hunger', 'thirst', 'dirt']) if (!(isObj(c.needs) && isNum(c.needs[key]) && c.needs[key] >= 0)) err(RA, `${p}.needs.${key}`, 'Պետք է լինի 0 կամ դրական թիվ');
-    for (const key of ['hatch', 'breed', 'grow', 'price', 'butt']) if (c[key] !== undefined && !(isNum(c[key]) && c[key] >= 0)) err(RA, `${p}.${key}`, 'Պետք է լինի 0 կամ դրական թիվ');
+    for (const key of ['hatch', 'breed', 'grow', 'price', 'butt', 'flees', 'flock', 'crowd']) if (c[key] !== undefined && !(isNum(c[key]) && c[key] >= 0)) err(RA, `${p}.${key}`, 'Պետք է լինի 0 կամ դրական թիվ');
     if (c.colors !== undefined && !(Array.isArray(c.colors) && c.colors.length && [...c.colors, c.rare ?? 'A'].every((x) => /^[A-Z][A-Za-z]*$/.test(x)))) err(RA, `${p}.colors`, 'Պետք է լինի գույների անունների ցուցակ, օրինակ՝ ["White", "Brown"] (և "rare"՝ հազվագյուտը)');
   }
   // the workshop's machines: { "Dairy": { "Cheese": { "in": { "Milk": 3 }, "seconds": 60 } } }
@@ -634,11 +635,34 @@ export function validateConfig(config) {
       }
   }
   for (const [when, f] of Object.entries(ranch.seasons || {})) {
-    if (!isObj(f) || !Object.entries(f).every(([k, v]) => ['hunger', 'thirst', 'dirt', 'breed'].includes(k) && isNum(v) && v > 0)) err(RA, `seasons.${when}`, 'Պետք է լինի { "thirst": 1.5 } (hunger, thirst, dirt կամ breed)');
+    if (!isObj(f) || !Object.entries(f).every(([k, v]) => ['hunger', 'thirst', 'dirt', 'breed', 'heat', 'wool', 'honey'].includes(k) && isNum(v) && v > 0)) err(RA, `seasons.${when}`, 'Պետք է լինի { "thirst": 1.5 } (hunger, thirst, dirt, breed, heat, wool կամ honey)');
   }
   for (const [item, to] of Object.entries(ranch.ship || {})) {
     if (!ranchItems.includes(item)) err(RA, `ship.${item}`, `Անհայտ ապրանք «${item}»`);
     items(`ship.${item}`, to, { min: 1, file: RA, names: ITEM_NAMES });
+  }
+  // carpets: the loom's palette and the samples
+  const carpets = isObj(ranch.carpets) ? ranch.carpets : {};
+  for (const [color, c] of Object.entries(carpets.palette || {})) {
+    if (!isObj(c) || typeof c.letter !== 'string' || c.letter.length !== 1 || !ranchItems.includes(c.yarn) || !/^#[0-9a-f]{6}$/i.test(c.hex)) err(RA, `carpets.palette.${color}`, 'Պետք է լինի { "letter": "W", "yarn": "YarnWhite", "hex": "#f4efe3" }');
+    else if (c.like !== undefined && !(carpets.palette || {})[c.like]) err(RA, `carpets.palette.${color}.like`, `Անհայտ գույն «${c.like}»`);
+  }
+  for (const [path, message] of carpetProblems(carpets)) err(RA, path, message);
+  for (const f of (events && events.festivals) || []) {
+    if (f.sample !== undefined && !(carpets.samples || []).some((x) => x.id === f.sample)) err(E, `festivals.${f.id}.sample`, `Անհայտ գորգի նմուշ «${f.sample}» (տես ranch.json → carpets.samples)`);
+    if (f.ranch !== undefined) {
+      const { sell, ...factors } = isObj(f.ranch) ? f.ranch : {};
+      if (!isObj(f.ranch) || !Object.values(factors).every((v) => isNum(v) && v > 0)) err(E, `festivals.${f.id}.ranch`, 'Պետք է լինի { "sell": { "Egg": 2 }, "wool": 1.5 }');
+      else for (const [item, v] of Object.entries(sell || {})) if (!ranchItems.includes(item) || !(isNum(v) && v > 0)) err(E, `festivals.${f.id}.ranch.sell.${item}`, 'Պետք է լինի ռանչոյի ապրանք և դրական թիվ');
+    }
+  }
+  const fair = ranch.fair;
+  if (fair !== undefined) {
+    if (!isObj(fair) || !(isNum(fair.carpet) && fair.carpet >= 0 && fair.carpet <= 1) || !(isNum(fair.pay) && fair.pay >= 0)) err(RA, 'fair', 'Պետք է լինի { "goods": { "Cheese": 20 }, "carpet": 0.95, "pay": 5000 }');
+    else items('fair.goods', fair.goods, { min: 1, file: RA, names: ranchItems });
+  }
+  for (const [item, d] of Object.entries(ranch.dishes || {})) {
+    if (!ranchItems.includes(item) || !isObj(d) || !isNum(d.multiplier) || !isNum(d.seconds)) err(RA, `dishes.${item}`, 'Պետք է լինի ապրանք և { "multiplier": 2, "seconds": 60 }');
   }
   for (const key of ['seek', 'fill', 'unhappy', 'dirty', 'sad', 'petBoost', 'petSeconds', 'moodSpeed']) {
     if (!(isObj(ranch.needs) && isNum(ranch.needs[key]) && ranch.needs[key] >= 0)) err(RA, `needs.${key}`, 'Պետք է լինի 0 կամ դրական թիվ');
@@ -675,9 +699,10 @@ export function validateConfig(config) {
       if (it.available === false) return;
       const costs = it.costs || [it.cost];
       if (!Array.isArray(costs) || !costs.length || !costs.every((c) => isNum(c) && c >= 0)) err(RA, `${p}.cost`, 'Պետք է լինի "cost" (֏) կամ "costs" (ամեն մակարդակի գինը)');
-      if (it.needs !== undefined && !shopIds.has(it.needs)) err(RA, `${p}.needs`, `Անհայտ «${it.needs}»`);
+      for (const need of [].concat(it.needs ?? [])) if (!shopIds.has(need)) err(RA, `${p}.needs`, `Անհայտ «${need}»`);
       if (it.kind === 'area' && !(areas[it.id] && Array.isArray(areas[it.id].sizes))) err(RA, `${p}.id`, 'Պետք է լինի վայր areas-ից');
-      if (it.kind === 'machine' && !(ranch.machines || {})[it.id]) err(RA, `${p}.id`, 'Պետք է լինի մեքենա machines-ից');
+      if (it.kind === 'machine' && !(ranch.machines || {})[it.id] && it.id !== 'Hive') err(RA, `${p}.id`, 'Պետք է լինի մեքենա machines-ից');
+      if (it.kind === 'machine' && !areas[it.area]) err(RA, `${p}.area`, 'Պետք է լինի վայրը, որտեղ մեքենան դրվում է');
       if (it.kind === 'boost' && !(isObj(it.boost) && ['speed', 'growth', 'goldenFish'].includes(it.boost.kind) && isNum(it.boost.multiplier) && isNum(it.boost.seconds))) err(RA, `${p}.boost`, 'Պետք է լինի { "kind": "speed", "multiplier": 1.5, "seconds": 600 }');
       if (it.kind === 'animal' && !animals[it.animal]) err(RA, `${p}.animal`, `Անհայտ կենդանի «${it.animal}»`);
       if (it.kind === 'size' && !(areas[it.area] && Array.isArray(it.costs) && it.costs.length === (areas[it.area].sizes || []).length - 1)) err(RA, `${p}.costs`, 'Պետք է ունենա "area" և այնքան գին, որքան մեծացում կա (sizes-ից մեկով պակաս)');
@@ -687,7 +712,7 @@ export function validateConfig(config) {
       for (const f of it.grants || []) if (ranchFns.size && !ranchFns.has(f)) err(RA, `${p}.grants`, `Անհայտ հրաման «${f}»`);
     });
   const story = isObj(ranch.story) ? ranch.story : {};
-  checkPages(RA, 'story.intro', story.intro || []);
+  for (const key of ['intro', 'firstCarpet', 'fairOpen', 'fair']) checkPages(RA, `story.${key}`, story[key] || []);
   for (const [id, pages] of Object.entries(story.areas || {})) {
     if (!areas[id]) err(RA, `story.areas.${id}`, `Անհայտ վայր «${id}»`);
     checkPages(RA, `story.areas.${id}`, pages);
@@ -705,13 +730,14 @@ export function validateConfig(config) {
     ranchQuestIds.add(q.id);
     q.goals.forEach((g, j) => {
       const gp = `${p}.goals[${j}]`;
-      const types = ['gain', 'have', 'research', 'code', 'earn', 'order'];
+      const types = ['gain', 'have', 'research', 'code', 'earn', 'order', 'count'];
       if (!isObj(g) || !types.includes(g.type)) return err(RA, gp, `type-ը պետք է լինի՝ ${types.join(', ')}`);
       if ((g.type === 'gain' || g.type === 'have') && !ranchItems.includes(g.item)) err(RA, `${gp}.item`, `Անհայտ ապրանք «${g.item}»`);
       if (g.type === 'research' && !shopIds.has(g.id)) err(RA, `${gp}.id`, `Անհայտ «${g.id}» (տես shop)`);
       if (g.type === 'code' && g.feature && !SYNTAX_FEATURES.includes(g.feature)) err(RA, `${gp}.feature`, `Անհայտ հնարավորություն «${g.feature}»`);
       if (g.type === 'code' && g.fn && ranchFns.size && !ranchFns.has(g.fn)) err(RA, `${gp}.fn`, `Անհայտ հրաման «${g.fn}»`);
-      if (['gain', 'have', 'earn', 'order'].includes(g.type) && !(isNum(g.amount) && g.amount >= 1)) err(RA, `${gp}.amount`, 'Պետք է լինի 1 կամ ավելի թիվ');
+      if (g.type === 'count' && typeof g.key !== 'string') err(RA, `${gp}.key`, 'Պետք է լինի հաշվիչի անուն, օրինակ՝ "carpets"');
+      if (['gain', 'have', 'earn', 'order', 'count'].includes(g.type) && !(isNum(g.amount) && g.amount >= 1)) err(RA, `${gp}.amount`, 'Պետք է լինի 1 կամ ավելի թիվ');
     });
     if (q.hints !== undefined && (!Array.isArray(q.hints) || !q.hints.every((x) => typeof x === 'string'))) err(RA, `${p}.hints`, 'Պետք է լինի տեքստերի ցուցակ');
   });

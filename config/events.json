@@ -7,6 +7,8 @@
   "festivals": [
     {
       "id": "Trndez",
+      "sample": "fest_Trndez",
+      "ranch": { "wool": 1.5, "sell": { "WoolWhite": 1.5, "WoolBrown": 1.5, "WoolBlack": 1.5 } },
       "name": "Տրնդեզ",
       "icon": "flame",
       "from": "02-13",
@@ -21,6 +23,8 @@
     },
     {
       "id": "Easter",
+      "sample": "fest_Easter",
+      "ranch": { "sell": { "Egg": 2, "Omelet": 1.5 } },
       "name": "Զատիկ",
       "icon": "paintedEgg",
       "easter": [-1, 1],
@@ -34,6 +38,8 @@
     },
     {
       "id": "Vardavar",
+      "sample": "fest_Vardavar",
+      "ranch": { "heat": 0.5, "sell": { "Milk": 1.5 } },
       "name": "Վարդավառ",
       "icon": "drop",
       "easter": [97, 99],
@@ -48,6 +54,8 @@
     },
     {
       "id": "Navasard",
+      "sample": "fest_Navasard",
+      "ranch": { "sell": { "Honey": 1.5 } },
       "name": "Նավասարդ",
       "icon": "farm",
       "from": "08-10",
@@ -62,6 +70,8 @@
     },
     {
       "id": "KnowledgeDay",
+      "sample": "fest_KnowledgeDay",
+      "ranch": { "sell": { "Candle": 1.5 } },
       "name": "Գիտելիքի օր",
       "icon": "book",
       "from": "08-31",
@@ -76,6 +86,8 @@
     },
     {
       "id": "TeachersDay",
+      "sample": "fest_TeachersDay",
+      "ranch": { "sell": { "HoneyCake": 1.5 } },
       "name": "Ուսուցչի օր",
       "icon": "tulip",
       "from": "10-04",
@@ -90,6 +102,8 @@
     },
     {
       "id": "NewYear",
+      "sample": "fest_NewYear",
+      "ranch": { "sell": { "Candle": 2, "HoneyCake": 1.5 } },
       "name": "Ամանոր",
       "icon": "fir",
       "from": "12-30",
@@ -408,6 +422,25 @@
 
   "challenge": {"_readme": "Շաբաթական մրցույթ (դպրոցը վերանորոգելուց հետո)։ Ամեն երկուշաբթի challenges ցուցակից հերթով նոր առաջադրանք է, բոլորի համար նույնը։ Խաղում են փորձնական ֆերմայում՝ առանց սեզոնների, բախտի և ուտելիքների։ levels՝ բոլոր առաջադրանքների ընդհանուր հետազոտությունները (առաջադրանքի levels-ը ավելացնում է), limit՝ ժամանակը խաղի վայրկյաններով, speeds՝ արագությունները, stars՝ առաջին լուծման համար, hats և medals՝ նախորդ շաբաթվա 1-ին, 2-րդ և 3-րդ տեղերի գլխարկները և մեդալները։", "building": "School", "limit": 600, "speeds": [1, 2, 4, 8], "stars": 5, "hats": ["Challenge_Gold_Hat", "Challenge_Silver_Hat", "Challenge_Bronze_Hat"], "medals": [3, 2, 1], "levels": {"Loops": 1, "Plant": 1, "Debug": 1, "Operators": 1, "Variables": 1, "Lists": 1, "Objects": 1, "Functions": 1, "Senses": 1, "Utilities": 1, "Speed": 2}},
 
+  "ranchChallenge": {"_readme": "Ռանչոյի շաբաթական մրցույթ (նույն դպրոցում)։ Ամեն երկուշաբթի ranchChallenges ցուցակից հերթով նոր առաջադրանք է, բոլորի համար նույն փորձնական ռանչոն՝ առանց սեզոնների և բախտի։ owned՝ գնված վայրերն ու հրամանները, animals՝ ավելացվող կենդանիները, items՝ պահեստը, goal՝ նպատակը (items, count կամ earn), levels՝ ֆերմայի հետազոտությունները challenge-ի levels-ի վրա, limit՝ ժամանակը խաղի վայրկյաններով, stars՝ առաջին լուծման համար։ Գլխարկներն ու մեդալները challenge-ից են։", "levels": {"Expand": 1}, "limit": 900, "stars": 5},
+
+  "ranchChallenges": [
+    {"id": "eggs15", "name": "Ձվերի օր", "about": "Պահեստում հավաքիր 15 ձու։ Հավերին նախ կերակրիր։", "owned": {}, "animals": {"Hen": 2}, "items": {"Grain": 40}, "goal": {"items": {"Egg": 15}}, "seed": 201},
+    {"id": "milk8", "name": "Առավոտյան կթում", "about": "Պահեստում հավաքիր 8 կաթ։", "owned": {"Cows": 1, "animals": 1}, "animals": {"Cow": 3}, "items": {"Bale": 20}, "goal": {"items": {"Milk": 8}}, "seed": 202},
+    {"id": "cheese4", "name": "Պանրագործ", "about": "Պատրաստիր և պահեստ դիր 4 պանիր։ Կաթ արդեն կա։", "owned": {"Cows": 1, "Workshop": 1, "animals": 1}, "animals": {"Cow": 3}, "items": {"Bale": 20, "Milk": 6}, "goal": {"items": {"Cheese": 4}}, "seed": 203},
+    {"id": "wool8", "name": "Խուզման օր", "about": "Խուզիր ոչխարներին 8 անգամ։", "owned": {"Sheep": 1, "animals": 1}, "animals": {"Sheep": 4}, "items": {"Bale": 20}, "goal": {"count": {"sheared": 8}}, "seed": 204},
+    {"id": "carpet1", "name": "Կատարյալ գորգ", "about": "Հյուսիր 0 համարի պատվերը այնպես, որ նմուշին նման լինի 100%-ով։ Թել արդեն կա։", "owned": {"Sheep": 1}, "animals": {}, "items": {"YarnWhite": 81, "YarnBlack": 81, "YarnBrown": 81}, "goal": {"count": {"perfect": 1}}, "seed": 205},
+    {"id": "honey2", "name": "Մեղրի համտես", "about": "Պատրաստիր և պահեստ դիր 2 մեղր։ Սերմեր արդեն կան։", "owned": {"Workshop": 1, "Bees": 1}, "animals": {}, "items": {"Seed": 10}, "goal": {"items": {"Honey": 2}}, "seed": 206},
+    {"id": "buffalo4", "name": "Գոմեշի կաթ", "about": "Պահեստում հավաքիր 4 գոմեշի կաթ։ Լճակը դատարկ է։", "owned": {"Buffalo": 1, "animals": 1}, "animals": {"Buffalo": 2}, "items": {"Bale": 20}, "goal": {"items": {"BuffaloMilk": 4}}, "seed": 207},
+    {"id": "down10", "name": "Փափուկ աղվամազ", "about": "Պահեստում հավաքիր 10 աղվամազ։", "owned": {"Rabbits": 1, "animals": 1}, "animals": {"Rabbit": 4}, "items": {"Carrot": 20}, "goal": {"items": {"Down": 10}}, "seed": 208},
+    {"id": "goats", "name": "Համառ այծեր", "about": "Վերադարձրու 1 փախած այծի։ Տախտակներ արդեն կան։", "owned": {"Goats": 1, "animals": 1}, "animals": {"Goat": 4}, "items": {"Bale": 20, "Plank": 5}, "goal": {"count": {"returned": 1}}, "seed": 209},
+    {"id": "earn300", "name": "Շուկայի օր", "about": "Վաստակիր 300 ֏՝ կթիր կովերին և վաճառիր կաթը։", "owned": {"Cows": 1, "animals": 1}, "animals": {"Cow": 3}, "items": {"Bale": 20}, "goal": {"earn": 300}, "seed": 210}
+  ],
+
+  "ranchHats": {"carpet": "Papakh_Hat", "honey": "Beekeeper_Hat", "fair": "Rancher_Hat"},
+
+  "contest": {"_readme": "Գորգերի շաբաթական մրցույթ։ hat՝ առաջին երեքի գլխարկը, medals՝ 1-ին, 2-րդ և 3-րդ տեղերի մեդալները։", "hat": "Carpet_Hat", "medals": [3, 2, 1]},
+
   "challenges": [
     {"id": "hay500", "name": "Խոտհավաք", "about": "Հավաքիր 500 չոր խոտ։", "goal": {"items": {"Hay": 500}}, "levels": {"Expand": 3, "Grass": 2}, "seed": 101},
     {"id": "giant3", "name": "Հսկա դդում 3×3", "about": "Աճեցրու և հավաքիր 3×3 հսկա դդում։ Մեռած դդումի տեղը նորը տնկիր։", "goal": {"giant": 3}, "levels": {"Expand": 2, "Carrots": 1, "Pumpkins": 1}, "items": {"Carrot": 200}, "seed": 102},
@@ -464,6 +497,13 @@
     {"id": "dram1000", "group": "ranch", "icon": "gold", "name": "Հազար դրամ", "about": "Վաստակիր 1000 ֏ ռանչոյում։", "when": {"ranchEarned": 1000}},
     {"id": "orders10", "group": "ranch", "icon": "scroll", "name": "Գյուղի մատակարար", "about": "Կատարիր գյուղացիների 10 պատվեր։", "when": {"ranchOrders": 10}},
     {"id": "firstCheese", "group": "ranch", "icon": "cheese", "name": "Պանրագործ", "about": "Արհեստանոցում պատրաստիր առաջին պանիրը։", "when": {"total": {"Cheese": 1}}},
+    {"id": "firstWool", "group": "ranch", "icon": "sheep", "name": "Առաջին բուրդը", "about": "Խուզիր ոչխարին՝ xuzel()։", "when": {"ranchCount": {"sheared": 1}}},
+    {"id": "firstCarpet", "group": "ranch", "icon": "carpet", "name": "Գորգագործ", "about": "Հյուսիր առաջին գորգը։", "when": {"ranchCount": {"carpets": 1}}},
+    {"id": "perfectCarpet", "group": "ranch", "icon": "carpet", "name": "Կատարյալ գորգ", "about": "Հյուսիր գորգ, որ նմուշին նման է 100%-ով։", "when": {"ranchCount": {"perfect": 1}}},
+    {"id": "carpets10", "group": "ranch", "icon": "carpet", "name": "Գորգերի վարպետ", "about": "Հյուսիր 10 գորգ։", "when": {"ranchCount": {"carpets": 10}}},
+    {"id": "firstHoney", "group": "ranch", "icon": "hive", "name": "Մեղրի համը", "about": "Պատրաստիր առաջին մեղրը։", "when": {"ranchCount": {"honey": 1}}},
+    {"id": "fair", "group": "ranch", "icon": "party", "name": "Տոնավաճառի հաղթող", "about": "Ռանչոն մրցանակ շահեց գյուղի տոնավաճառում։", "when": {"ranchCount": {"fairs": 1}}},
+    {"id": "ranchPlus", "group": "ranch", "icon": "ranch", "name": "Նորից սկսած", "about": "Տոնավաճառից հետո սկսիր ռանչոն նորից։", "when": {"ranchCount": {"plus": 1}}},
     {"id": "firstBaby", "group": "ranch", "icon": "hen", "name": "Նոր կյանք", "about": "Ռանչոյում ծնվեց առաջին ձագը։", "when": {"ranchCount": {"born": 1}}},
     {"id": "healer", "group": "ranch", "icon": "medicine", "name": "Անասնաբույժ", "about": "Բուժիր հիվանդ կենդանուն։", "when": {"ranchCount": {"healed": 1}}},
     {"id": "events10", "group": "ranch", "icon": "bell", "name": "Լավ լսող", "about": "Դրոնը պատասխանեց 10 իրադարձության erb()-ով։", "when": {"ranchCount": {"events": 10}}},
@@ -474,5 +514,5 @@
     {"id": "iceFish", "group": "secret", "icon": "iceFish", "name": "Սառցե ձկնորս", "about": "Բռնիր սիգ՝ ձմեռային ձուկը։", "when": {"fish": "Whitefish"}, "secret": true}
   ],
 
-  "perfection": { "_readme": "Կատարելություն՝ քանի տոկոսն է արված։ research՝ հետազոտությունների կշիռը, village՝ գյուղի շենքերինը, ranch՝ ռանչոյի խանութից գնված մնայուն բաներինը (վայրեր, ավելի մեծ հավանոց ու գոմ, արագություն, ձեռքեր, հրամաններ), hat՝ գլխարկը 100%-ի համար։", "research": 50, "village": 20, "ranch": 30, "hat": "Legend_Hat" }
+  "perfection": { "_readme": "Կատարելություն՝ քանի տոկոսն է արված։ research՝ հետազոտությունների կշիռը, village՝ գյուղի շենքերինը, ranch՝ ռանչոյի խանութից գնված մնայուն բաներինը (վայրեր, ավելի մեծ վայրեր, արագություն, ձեռքեր, հրամաններ) և տոնավաճառինը, hat՝ գլխարկը 100%-ի համար։", "research": 50, "village": 20, "ranch": 30, "hat": "Legend_Hat" }
 }

@@ -155,7 +155,10 @@
       "Milk",
       "Cheese",
       "Butter",
-      "Nazook"
+      "Nazook",
+      "Honey",
+      "Candle",
+      "Honey_Gata"
     ]
   },
 
@@ -278,7 +281,11 @@
     "Challenge_Silver_Hat": { "color": "#cfd8dc", "band": "#1e3a8a" },
     "Challenge_Bronze_Hat": { "color": "#cd7f32", "band": "#1e3a8a" },
     "Treasure_Hat": { "color": "#6d4c41", "band": "#ffd541" },
-    "Legend_Hat": { "color": "#7c3aed", "band": "#ffd541" }
+    "Legend_Hat": { "color": "#7c3aed", "band": "#ffd541" },
+    "Papakh_Hat": { "color": "#3a3038", "band": "#8a6a4a" },
+    "Beekeeper_Hat": { "color": "#f4efe3", "band": "#ffd541" },
+    "Rancher_Hat": { "color": "#a8683f", "band": "#b4202a" },
+    "Carpet_Hat": { "color": "#b4202a", "band": "#27508f" }
   },
 
   "online": {
@@ -294,7 +301,7 @@
   "leaderboard": {
     "_readme": "Լավագույնների ցուցակ։ points՝ քանի միավոր է տալիս յուրաքանչյուր հավաքած իրը (հազվագյուտ իրերն արժեն ավելի շատ, ջուրն ու պարարտանյութը 0 են, քանի որ գալիս են ինքնիրեն, իսկ ռանչոյի ձուն ու կաթը արժեն շատ, քանի որ ռանչոյի մեկ ապրանքը ֆերմայի մոտ 10 000 իրի չափ է)։ tiers՝ աստիճաններն ըստ բոլոր ժամանակների միավորների (աճման կարգով)։ timeZone՝ օրը սկսվում է այս գոտու կեսգիշերին։",
     "timeZone": "Asia/Yerevan",
-    "points": { "Hay": 1, "Wood": 1, "Carrot": 2, "Pumpkin": 4, "Power": 3, "Water": 0, "Fertilizer": 0, "Weird_Substance": 3, "Cactus": 5, "Bone": 20, "Gold": 20, "Fish": 3, "Flour": 25, "Jam": 25, "Lavash": 60, "Gata": 150, "Ghapama": 200, "Grilled_Fish": 120, "Star": 100, "Medal": 1000, "Egg": 10000, "Milk": 40000, "Dram": 0, "Grain": 0, "Bale": 0, "GoatMilk": 50000, "Matsun": 60000, "Cheese": 150000, "Butter": 200000, "Omelet": 300000, "Manure": 0, "Medicine": 0, "Plank": 0, "Nazook": 400000 },
+    "points": { "Hay": 1, "Wood": 1, "Carrot": 2, "Pumpkin": 4, "Power": 3, "Water": 0, "Fertilizer": 0, "Weird_Substance": 3, "Cactus": 5, "Bone": 20, "Gold": 20, "Fish": 3, "Flour": 25, "Jam": 25, "Lavash": 60, "Gata": 150, "Ghapama": 200, "Grilled_Fish": 120, "Star": 100, "Medal": 1000, "Egg": 10000, "Milk": 40000, "Dram": 0, "Grain": 0, "Bale": 0, "GoatMilk": 50000, "Matsun": 60000, "Cheese": 150000, "Butter": 200000, "Omelet": 300000, "Manure": 0, "Medicine": 0, "Plank": 0, "Nazook": 400000, "Honey": 200000, "Candle": 300000, "Honey_Gata": 500000, "WoolWhite": 40000, "WoolBrown": 45000, "WoolBlack": 45000, "WoolGold": 200000, "Down": 60000, "Comb": 60000, "Wax": 100000, "BuffaloMilk": 90000, "LoriCheese": 450000, "HoneyCake": 1000000, "Carpet": 2000000 },
     "tiers": [
       { "name": "Սերմ", "icon": "sprout", "points": 0 },
       { "name": "Ծիլ", "icon": "herb", "points": 200 },

@@ -170,7 +170,10 @@
       "Milk": 3,
       "Cheese": 1,
       "Butter": 1,
-      "Nazook": 1
+      "Nazook": 1,
+      "Honey": 2,
+      "Candle": 1,
+      "Honey_Gata": 1
     },
     "villagers": [
       {
@@ -226,7 +229,8 @@
         "Gata": { "in": { "Flour": 3, "Jam": 1 }, "seconds": 12 },
         "Ghapama": { "in": { "Pumpkin": 5, "Jam": 1 }, "seconds": 15 },
         "Grilled_Fish": { "in": { "Fish": 10, "Wood": 2 }, "seconds": 8 },
-        "Nazook": { "in": { "Flour": 2, "Egg": 2, "Butter": 1 }, "seconds": 15 }
+        "Nazook": { "in": { "Flour": 2, "Egg": 2, "Butter": 1 }, "seconds": 15 },
+        "Honey_Gata": { "in": { "Flour": 3, "Honey": 1 }, "seconds": 12 }
       }
     }
   },
@@ -235,7 +239,8 @@
     "Gata": { "kind": "speed", "multiplier": 2, "seconds": 30 },
     "Ghapama": { "kind": "growth", "multiplier": 2, "seconds": 30 },
     "Grilled_Fish": { "kind": "goldenFish", "multiplier": 3, "seconds": 30 },
-    "Nazook": { "kind": "speed", "multiplier": 3, "seconds": 30 }
+    "Nazook": { "kind": "speed", "multiplier": 3, "seconds": 30 },
+    "Honey_Gata": { "kind": "growth", "multiplier": 3, "seconds": 30 }
   },
 
   "greenhouse": {

@@ -4,8 +4,9 @@
 // drinks there, dirties the square it stands on, and gives its goods while it is happy enough (a hen
 // lays an egg on its square, a cow's milk gets ready). An egg left on the ground hatches, two happy
 // adults get a baby (it has a parent's colour), an animal standing long in dirt gets sick, goats butt
-// the fence until it has a hole and animals run away through it, and the workshop's machines make
-// their recipes. An area is brought up to date in whole steps of STEP game seconds with its own random
+// the fence until it has a hole and animals run away through it, and the machines make their recipes.
+// Sheep keep away from drones and the gampr and stay together, buffalo need their pool, rabbits breed
+// past the pen's room, and hives fill according to the flowers around them. An area is brought up to date in whole steps of STEP game seconds with its own random
 // numbers, so the same program gives the same ranch at any speed or frame rate.
 import { Rng } from '../core/rng.js';
 import { clamp } from '../core/util.js';
@@ -37,6 +38,10 @@ export class Pen {
     this.fence = s.fence || {}; // damaged fence pieces on the edge: { 'x,y,N': strength } (0 = a hole)
     this.runaways = s.runaways || []; // animals that left through a hole
     this.breedT = s.breedT || 0;
+    this.flowers = s.flowers || {}; // planted flowers: { 'x,y': 'Rose' }
+    this.bell = s.bell || null; // the bell that rang: { x, y, until }
+    this.dog = s.dog || null; // the gampr's square: { x, y }
+    this.spots = s.spots || null; // the festival's hidden objects here: { key, list: [[x, y], …] }
     this.drone = null; // made by the ranch
     this.runner = null;
   }
@@ -80,6 +85,7 @@ export class Pen {
     const c = this.ranch.cfg.animals[type];
     const colors = c.colors || [];
     const a = { id, type, x, y, hunger: 20, thirst: 20, mood: 80, prod: 0, petUntil: 0, timer: this.rng.int(1, 8) };
+    if (c.needs.heat) a.heat = 20;
     if (colors.length) a.color = born ? born.color : colors[id % colors.length];
     if (born) a.grownAt = born.at + (c.grow ?? 0);
     this.animals.push(a);
@@ -134,6 +140,8 @@ export class Pen {
       const hungry = a.hunger >= n.seek;
       a.hunger = Math.min(100, a.hunger + c.needs.hunger * f.hunger * STEP);
       a.thirst = Math.min(100, a.thirst + c.needs.thirst * f.thirst * STEP);
+      if (c.needs.heat) a.heat = Math.min(100, (a.heat || 0) + c.needs.heat * f.heat * STEP);
+      const hot = c.needs.heat && a.heat >= n.unhappy;
       if (!hungry && a.hunger >= n.seek) this.signal('sovac', { id: a.id, x: a.x, y: a.y }, now);
       const k = key(a.x, a.y);
       this.dirt[k] = Math.min(100, (this.dirt[k] || 0) + c.needs.dirt * f.dirt * STEP);
@@ -149,12 +157,13 @@ export class Pen {
       if (a.thirst >= n.unhappy) target -= 35;
       if (this.dirt[k] >= n.dirty) target -= 20;
       if (crowded) target -= 20;
+      if (hot) target -= 25;
       if (a.sick) target -= 40;
       if (a.petUntil > now) target = Math.min(100, target + n.petBoost);
       a.mood += clamp(target - a.mood, -n.moodSpeed * STEP, n.moodSpeed * STEP);
-      // a sad, sick, young, starving or very thirsty animal gives nothing
-      if (a.mood >= n.sad && !a.sick && !this.young(a, now) && a.hunger < 100 && a.thirst < 100 && a.prod < 1) {
-        a.prod = Math.min(1, a.prod + (STEP / c.every) * (a.mood / 100));
+      // a sad, sick, young, starving or very thirsty animal gives nothing (a hot buffalo and a rabbit in a crowd neither)
+      if (a.mood >= n.sad && !a.sick && !hot && !(crowded && c.crowd) && !this.young(a, now) && a.hunger < 100 && a.thirst < 100 && a.prod < 1) {
+        a.prod = Math.min(1, a.prod + (STEP / c.every) * (a.mood / 100) * (c.shear ? f.wool : 1));
         if (a.prod >= 1 && !c.lays) this.signal('kat', { id: a.id, x: a.x, y: a.y }, now);
       }
       if (a.prod >= 1 && c.lays && !this.ground[k] && !this.objectAt(a.x, a.y)) {
@@ -186,7 +195,7 @@ export class Pen {
 
   // Eggs left on the ground hatch; two happy adults get a baby now and then (faster in spring).
   babies(c, n, f, now) {
-    const room = () => this.animals.length < this.capacity();
+    const room = () => this.animals.length < this.capacity() * (c.crowd || 1); // (rabbits breed into a crowd)
     for (const [k, egg] of Object.entries(this.laid)) {
       if (this.ground[k] !== c.product) {
         delete this.laid[k];
@@ -201,7 +210,7 @@ export class Pen {
     if (!c.breed) return;
     const happy = this.animals.filter((a) => a.mood >= (n.happy ?? 70) && !a.sick && !this.young(a, now));
     if (happy.length < 2 || !room()) return;
-    this.breedT += STEP * f.breed;
+    this.breedT += STEP * f.breed * (c.pairs ? Math.floor(happy.length / 2) : 1); // (with `pairs` every pair breeds)
     if (this.breedT < c.breed) return;
     this.breedT = 0;
     const mother = happy[this.rng.int(0, happy.length - 1)];
@@ -215,15 +224,98 @@ export class Pen {
     this.ranch.main.events.emit('ranch', { born: type });
   }
 
-  // The workshop's machines finish what they make.
+  // The machines finish what they make; hives fill by the flowers around them.
   machines(now) {
     for (const o of this.objects) {
-      if (!o.making || now < o.until) continue;
-      o.ready = o.making;
-      o.making = null;
+      if (o.type === 'Hive') {
+        if (o.ready || !this.fillHive(o)) continue;
+      } else {
+        if (!o.making || now < o.until) continue;
+        const recipe = ((this.ranch.cfg.machines || {})[o.type] || {})[o.making] || {};
+        o.ready = o.making;
+        o.count = recipe.count || 1;
+        o.making = null;
+      }
+      this.ranch.made(o.ready, o.type);
       this.ranch.events.emit('made', { pen: this.id, x: o.x, y: o.y, item: o.ready });
       this.signal('patrast', { x: o.x, y: o.y, ir: o.ready }, now);
     }
+  }
+
+  // True when the hive just became full (a comb is ready).
+  fillHive(o) {
+    const hive = this.ranch.cfg.hive || {};
+    const kinds = this.flowerKinds(o.x, o.y);
+    if (!kinds) return false;
+    o.comb = (o.comb || 0) + (STEP / (hive.every ?? 240)) * kinds * this.ranch.seasonFactors().honey;
+    if (o.comb < 1) return false;
+    o.comb = 0;
+    o.ready = 'Comb';
+    o.count = 1;
+    return true;
+  }
+
+  // How many different flowers grow around (x, y).
+  flowerKinds(x, y) {
+    const r = (this.ranch.cfg.hive || {}).radius ?? 2;
+    const kinds = new Set();
+    for (const [k, kind] of Object.entries(this.flowers)) {
+      const [fx, fy] = k.split(',').map(Number);
+      if (Math.abs(fx - x) <= r && Math.abs(fy - y) <= r) kinds.add(kind);
+    }
+    return kinds.size;
+  }
+
+  hiveNear(x, y, r) {
+    return this.objects.some((o) => o.type === 'Hive' && Math.abs(o.x - x) <= r && Math.abs(o.y - y) <= r);
+  }
+
+  // Inside the corner where sheep are sheared (the top right of the pen).
+  inCorner(x, y) {
+    const c = this.cfg.corner || 0;
+    return x >= this.size - c && y >= this.size - c;
+  }
+
+  // The gampr, when bought (it starts in the bottom right of the pen).
+  dogHere() {
+    if (!this.dog && this.animalCfg && this.animalCfg.flees && this.ranch.level('Gampr') > 0) this.dog = { x: this.size - 1, y: 1 };
+    return this.dog;
+  }
+
+  // Who sheep keep away from: the drones of the area and the gampr.
+  threats() {
+    const list = [this.drone, ...this.runner.drones.filter((d) => d !== this.drone)];
+    const dog = this.dogHere();
+    return dog ? [...list, dog] : list;
+  }
+
+  // A sheep: goes to the bell that rang; else keeps `c.flees` squares from who frightens it. True if it did.
+  herd(a, c, now) {
+    if (this.bell && now < this.bell.until) {
+      if (a.x !== this.bell.x || a.y !== this.bell.y) this.walk(a, Math.sign(this.bell.x - a.x), Math.sign(this.bell.y - a.y));
+      return true;
+    }
+    const dist = (x, y, t) => Math.abs(t.x - x) + Math.abs(t.y - y);
+    const near = this.threats().filter((t) => dist(a.x, a.y, t) <= c.flees);
+    if (!near.length) return false;
+    const away = (x, y) => Math.min(...near.map((t) => dist(x, y, t)));
+    const from = away(a.x, a.y);
+    const best = DIRS.filter(([dx, dy]) => this.inside(a.x + dx, a.y + dy) && away(a.x + dx, a.y + dy) > from);
+    if (best.length) {
+      const [dx, dy] = best[this.rng.int(0, best.length - 1)];
+      this.walk(a, dx, dy);
+    }
+    return true;
+  }
+
+  // One step toward the middle of the flock.
+  flock(a) {
+    const n = this.animals.length;
+    const mx = this.animals.reduce((v, b) => v + b.x, 0) / n;
+    const my = this.animals.reduce((v, b) => v + b.y, 0) / n;
+    const dx = Math.abs(mx - a.x) >= 1 ? Math.sign(mx - a.x) : 0;
+    const dy = Math.abs(my - a.y) >= 1 ? Math.sign(my - a.y) : 0;
+    if (dx || dy) this.walk(a, dx, dy);
   }
 
   // Eats or drinks where it stands, or walks to what it needs most, or steps around. A goat on the edge
@@ -232,11 +324,13 @@ export class Pen {
     const c = this.animalCfg;
     const hole = this.holeAt(a.x, a.y);
     if (hole && (c.butt || a.mood < (n.runaway ?? 0))) return true;
+    if (c.flees && this.herd(a, c, now)) return false;
     const here = this.objectAt(a.x, a.y);
-    if (here && here.amount > 0 && ((here.type === 'FeedTrough' && a.hunger >= n.seek) || (here.type === 'WaterTrough' && a.thirst >= n.seek))) {
+    if (here && here.amount > 0 && ((here.type === 'FeedTrough' && a.hunger >= n.seek) || (here.type === 'WaterTrough' && a.thirst >= n.seek) || (here.type === 'Pool' && a.heat >= n.seek))) {
       here.amount--;
       if (here.type === 'FeedTrough') a.hunger = Math.max(0, a.hunger - n.fill);
-      else a.thirst = Math.max(0, a.thirst - n.fill);
+      else if (here.type === 'WaterTrough') a.thirst = Math.max(0, a.thirst - n.fill);
+      else a.heat = 0;
       if (!here.amount) this.signal('datark', { x: here.x, y: here.y }, now);
       return false;
     }
@@ -255,6 +349,7 @@ export class Pen {
     const wants = [
       ['FeedTrough', a.hunger],
       ['WaterTrough', a.thirst],
+      ['Pool', a.heat || 0],
     ]
       .filter(([, v]) => v >= n.seek)
       .sort((p, q) => q[1] - p[1]);
@@ -265,7 +360,8 @@ export class Pen {
         return false;
       }
     }
-    if (this.rng.next() < 0.5) {
+    if (c.flock && this.rng.next() < c.flock) this.flock(a);
+    else if (this.rng.next() < 0.5) {
       const [dx, dy] = DIRS[this.rng.int(0, 3)];
       if (this.inside(a.x + dx, a.y + dy)) this.walk(a, dx, dy);
     }
@@ -312,10 +408,21 @@ export class Pen {
 
   // Milk from a ready animal on (x, y), or null.
   milk(x, y) {
-    const a = this.animalsAt(x, y).find((b) => b.prod >= 1 && !b.sick && !this.ranch.cfg.animals[b.type].lays);
+    const a = this.animalsAt(x, y).find((b) => b.prod >= 1 && !b.sick && !this.ranch.cfg.animals[b.type].lays && !this.ranch.cfg.animals[b.type].shear);
     if (!a) return null;
     a.prod = 0;
     return this.ranch.cfg.animals[a.type].product;
+  }
+
+  // Wool of the sheep's colour or a rabbit's down from an animal on (x, y): the item, null when none is
+  // ready, 'corner' for a sheep outside the shearing corner.
+  shear(x, y) {
+    const a = this.animalsAt(x, y).find((b) => b.prod >= 1 && !b.sick && this.ranch.cfg.animals[b.type].shear);
+    if (!a) return null;
+    const c = this.ranch.cfg.animals[a.type];
+    if (c.flees && !this.inCorner(x, y)) return 'corner';
+    a.prod = 0;
+    return (c.products && c.products[a.color]) || c.product;
   }
 
   pet(x, y, until) {
@@ -331,6 +438,7 @@ export class Pen {
   clean(x, y) {
     const was = this.dirtAt(x, y);
     delete this.dirt[key(x, y)];
+    delete this.flowers[key(x, y)];
     return was;
   }
 
@@ -362,6 +470,6 @@ export class Pen {
     const d = this.drone;
     const animals = this.animals.map(({ fromX, fromY, movedAt, ...a }) => a);
     const out = { rng: this.rng.state, steps: this.steps, objects: this.objects, animals, dirt: this.dirt, ground: this.ground, drone: { x: d.x, y: d.y, hands: d.hands } };
-    return { ...out, laid: this.laid, fence: this.fence, runaways: this.runaways, breedT: this.breedT };
+    return { ...out, laid: this.laid, fence: this.fence, runaways: this.runaways, breedT: this.breedT, flowers: this.flowers, bell: this.bell, dog: this.dog, spots: this.spots };
   }
 }

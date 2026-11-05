@@ -105,6 +105,11 @@ export class QuestTracker {
         const v = Math.max(0, now - ((this.baseline && this.baseline[goal.type === 'earn' ? 'earned' : 'orders']) || 0));
         return { done: v >= goal.amount, value: Math.min(v, goal.amount), target: goal.amount };
       }
+      // the ranch's counters: carpets woven, animals sheared, … (Ranch.counts)
+      case 'count': {
+        const v = g.counts[goal.key] || 0;
+        return { done: v >= goal.amount, value: Math.min(v, goal.amount), target: goal.amount };
+      }
       default:
         return { done: false, value: 0, target: 1 };
     }

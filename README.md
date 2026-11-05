@@ -53,8 +53,16 @@ step is needed.
   JavaScript) and share a board (`grel()` / `kardal()`); eggs hatch and happy cows get calves that
   keep a parent's colour; dirt makes animals sick (medicine and `buzhel()`); goats butt the fence and
   run away through holes (`norogel()` with a plank, `kapel()` brings them back); manure and goods go
-  to the farm with `tanel()`. Everything is in [`config/ranch.json`](config/README.md) (sheep and
-  carpets, bees, buffalo and rabbits are «soon»).
+  to the farm with `tanel()`. Sheep keep away from the drone and the gampr and are sheared in their
+  corner (`xuzel()`, the bell `zangel()`); wool becomes yarn on the wheel, plants dye it, and the 9×9
+  loom weaves carpets with nested loops (`gorg()`, `hyusel(x, y, guyn)`, no knot can be changed): orders
+  pay by how alike a carpet is to its sample, free carpets go to the gallery, the player card and a weekly
+  contest with likes. Hives fill by the kinds of flowers around them (`tnkel()`, `caxkiTesak()`) and sting
+  until the first honey; buffalo need a pool; rabbits breed into a crowd unless the code sells them; the
+  donkey carries loads from any area (`eshBerel()`, `eshTanel()`). The village fair (`tonavachar()`) ends the
+  story, and New Game Plus starts the ranch over, harder, with the code kept. Festivals change ranch prices,
+  hide objects in the pens and bring a special sample; the School has a weekly ranch challenge too.
+  Everything is in [`config/ranch.json`](config/README.md).
 * **Seasons, weather and the luck of the day** follow the real clock, the same for every
   student: with the default 15-minute seasons, each hour is spring (:00), summer (:15), autumn
   (:30) and winter (:45). Plants grow faster in their favourite season, rain waters the whole
@@ -63,8 +71,8 @@ step is needed.
 * **Accounts and the leaderboard:** students register with a username and a password.
   Their farm is saved in their account. The leaderboard's two dropdowns choose what (points for
   everything gathered, where rare items count more; working code words, where repeats count
-  once; the weekly challenge; Perfection; ֏ earned on the ranch; the running festival) and, for
-  points and the ranch, when (today / this month / all time).
+  once; the weekly challenge and the ranch's; Perfection; ֏ earned on the ranch; perfect carpets; the
+  running festival) and, for points, the ranch and carpets, when (today / this month / all time).
   To make this work online (school ↔ home ↔ phone), create a free Firebase project once —
   step by step in [`config/README.md`](config/README.md#accounts-and-the-leaderboard-firebase-free).
   Without it, accounts work only inside one browser.
