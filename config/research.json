@@ -396,6 +396,16 @@
       "grants": { "panels": ["ranch"] }
     },
     {
+      "id": "Market",
+      "icon": "market",
+      "name": "Առևտուր",
+      "description": "Փոխանակիր ապրանք իսկական խաղացողների հետ։ Դիր պատվեր, մյուսները կտեսնեն և կվերցնեն։ Գինը պետք է արդար լինի, իսկ նվերներ չեն լինում։",
+      "parents": ["Objects"],
+      "minLevels": 20,
+      "tiers": [{ "Hay": 2500, "Wood": 2500, "Carrot": 1000 }],
+      "grants": { "panels": ["market"] }
+    },
+    {
       "id": "Functions",
       "label": "function f()",
       "name": "Ֆունկցիաներ",

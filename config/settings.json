@@ -288,6 +288,16 @@
     "Carpet_Hat": { "color": "#b4202a", "band": "#27508f" }
   },
 
+  "market": {
+    "_readme": "Խաղացողների առևտուրը (հետազոտություն «Առևտուր»)։ goods՝ ինչ կարելի է փոխանակել։ Արժեքները leaderboard.points-ից են։ band՝ քանի անգամ կարող է մի կողմը արժենալ մյուսից ավելի։ openOrders՝ միաժամանակ բաց պատվերներ, takenPerDay՝ օրական վերցրած պատվերներ, days՝ քանի օր է պատվերն ապրում, maxAmount՝ ամենամեծ քանակը։",
+    "goods": ["Hay", "Wood", "Carrot", "Pumpkin", "Cactus", "Weird_Substance", "Bone", "Gold", "Fish", "Flour", "Jam", "Lavash", "Gata", "Ghapama", "Grilled_Fish"],
+    "band": 3,
+    "openOrders": 3,
+    "takenPerDay": 5,
+    "days": 3,
+    "maxAmount": 1000000
+  },
+
   "online": {
     "_readme": "Հաշիվներ և լավագույնների ցուցակ Firebase-ով (տես config/README.md)։ Եթե apiKey-ն ու projectId-ն դատարկ են, հաշիվները պահվում են միայն այս զննարկչում։",
     "apiKey": "AIzaSyBIVCjLQseN31SnTFrR4YNhCvJkt3B9fJo",

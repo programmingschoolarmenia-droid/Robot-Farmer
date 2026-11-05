@@ -228,6 +228,19 @@ export function validateConfig(config) {
       if (o.admins !== undefined && !(Array.isArray(o.admins) && o.admins.every((a) => typeof a === 'string' && /^[A-Za-z0-9_]{3,16}$/.test(a)))) err(S, 'online.admins', 'Պետք է լինի մուտքանունների ցուցակ, օրինակ՝ ["admin"]');
     }
   }
+  if (settings.market !== undefined) {
+    const m = settings.market;
+    if (!isObj(m)) err(S, 'market', 'Պետք է լինի օբյեկտ');
+    else {
+      needNum('market.band', m.band, { min: 1 });
+      for (const key of ['openOrders', 'takenPerDay', 'days', 'maxAmount']) needNum(`market.${key}`, m[key], { min: 1, int: true });
+      const points = (settings.leaderboard || {}).points || {};
+      if (!Array.isArray(m.goods)) err(S, 'market.goods', 'Պետք է լինի իրերի ցուցակ');
+      else m.goods.forEach((item, i) => {
+        if (!(points[item] > 0)) err(S, `market.goods[${i}]`, `«${item}»-ը leaderboard.points-ում արժեք չունի`);
+      });
+    }
+  }
   if (settings.fishing !== undefined) {
     const f = settings.fishing;
     if (!isObj(f)) err(S, 'fishing', 'Պետք է լինի օբյեկտ');

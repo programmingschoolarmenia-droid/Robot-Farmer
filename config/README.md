@@ -297,7 +297,19 @@ Until you add Firebase keys, accounts and the leaderboard work **only inside one
          allow write: if isOwner(name) || isAdmin();
        }
        match /saves/{name} {
-         allow read, write: if isOwner(name) || isAdmin();
+         allow read, delete: if isOwner(name) || isAdmin();
+         allow create, update: if isAdmin() || (isOwner(name) && (resource == null
+           || !('rev' in resource.data) || request.resource.data.get('rev', 0) >= resource.data.rev));
+       }
+       match /orders/{id} {
+         allow read: if true;
+         allow create: if isOwner(request.resource.data.owner) && request.resource.data.status == 'open';
+         allow update: if isAdmin() || (resource.data.status == 'open'
+           && request.resource.data.status == 'taken'
+           && isOwner(request.resource.data.taker)
+           && request.resource.data.taker != resource.data.owner
+           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'taker']));
+         allow delete: if isOwner(resource.data.owner) || isAdmin();
        }
        match /deleted/{name} {
          allow read: if true;

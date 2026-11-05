@@ -63,6 +63,9 @@ step is needed.
   story, and New Game Plus starts the ranch over, harder, with the code kept. Festivals change ranch prices,
   hide objects in the pens and bring a special sample; the School has a weekly ranch challenge too.
   Everything is in [`config/ranch.json`](config/README.md).
+* **The player market** («Առևտուր», a research card after Objects): students trade farm goods with
+  each other. An order is taken whole, one side may be worth at most 3× the other (no gifts), and only
+  goods your own farm has made can be traded. Traded goods give no points. See `settings.json` → `market`.
 * **Seasons, weather and the luck of the day** follow the real clock, the same for every
   student: with the default 15-minute seasons, each hour is spring (:00), summer (:15), autumn
   (:30) and winter (:45). Plants grow faster in their favourite season, rain waters the whole

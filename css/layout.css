@@ -917,6 +917,46 @@
   width: min(620px, calc(100vw - 24px));
 }
 
+/* ---- the player market's window (uses the loom-screen frame) */
+.market-list {
+  display: grid;
+  gap: 8px;
+}
+.market-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 2px solid var(--navy);
+  border-radius: 8px;
+}
+.market-name {
+  min-width: 90px;
+}
+.market-form {
+  display: grid;
+  gap: 12px;
+  max-width: 460px;
+  margin: 0 auto;
+}
+.market-form label {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 8px;
+}
+.market-form label > b {
+  grid-column: 1 / -1;
+}
+.market-field {
+  min-width: 0;
+  padding: 6px 8px;
+  border: 2px solid var(--navy);
+  border-radius: 6px;
+  font: inherit;
+}
+
 /* ---- the carpets' window */
 .loom-screen {
   position: absolute;

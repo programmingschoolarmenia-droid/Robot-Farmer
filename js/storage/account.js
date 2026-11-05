@@ -10,6 +10,7 @@ const SESSION_KEY = 'session.v1';
 const saveKey = (id) => `save.v2.${id}`;
 
 // code: nameInvalid | passwordShort | nameTaken | badLogin | offline | tooMany | config | relogin | unknown
+//   | stale (an older tab after a trade) | gone (the order was just taken or removed) | hasOrders
 export class AccountError extends Error {
   constructor(code, detail = '') {
     super(detail || code);
@@ -159,6 +160,12 @@ export class Accounts {
     if (!NAME_RE.test(n)) throw new AccountError('nameInvalid');
     const id = n.toLowerCase();
     if (id === this.session.id) throw new AccountError('nameTaken');
+    // Orders belong to the name: they would be left without an owner.
+    const orders = await this.myOrders().catch((e) => {
+      if (e.code === 'config') return []; // the rules have no market part yet, so no orders either
+      throw e;
+    });
+    if (orders.length) throw new AccountError('hasOrders');
     const old = await this.backend.signIn(this.session.id, password, this.session.name);
     const fresh = await this.backend.signUp(id, password, n);
     try {
@@ -195,7 +202,9 @@ export class Accounts {
       if (!local || e.code === 'relogin' || e.code === 'deleted') throw e;
       console.warn('Online save not loaded, using this browser copy:', e);
     }
-    const best = remote && (!local || (remote.updated || 0) > (local.updated || 0)) ? remote : local;
+    // A trade raises `rev`: a copy from before it would bring sold goods back, however new it is.
+    const ahead = remote && local ? (remote.rev || 0) - (local.rev || 0) : 0;
+    const best = remote && (!local || ahead > 0 || (ahead === 0 && (remote.updated || 0) > (local.updated || 0))) ? remote : local;
     return best ? migrateSave(best) : null;
   }
 
@@ -212,10 +221,45 @@ export class Accounts {
       await this.backend.putSave(session, data, playerRow(session.name, stats), keepalive);
     } catch (e) {
       if (e.code === 'deleted') this.forget(session.id);
+      // Refused: is this an older tab, from before a trade made somewhere else?
+      if (e.code === 'config') {
+        const now = await this.backend.getSave(session).catch(() => null);
+        if (now && (now.rev || 0) > (data.rev || 0)) throw new AccountError('stale');
+      }
       throw e;
     }
     this.cache.clear(); // my row changed
     if (this.session === session) this.persist();
+  }
+
+  // ---- the player market: orders/{owner}~{at}. Each step writes my farm and the order together.
+
+  // op: { id, fields } a new order, { order, fields } changes it, { order } closes it.
+  async tradeSave(data, stats, op) {
+    const session = this.session;
+    try {
+      await this.backend.tradeSave(session, data, playerRow(session.name, stats), op);
+    } catch (e) {
+      if (e.code === 'deleted') this.forget(session.id);
+      throw e;
+    }
+    this.cache.clear();
+    this.persist();
+  }
+
+  // Orders placed after `since`, the newest first.
+  orders(since) {
+    return this.backend.orders(since);
+  }
+
+  myOrders() {
+    return this.backend.ordersOf(this.session.id);
+  }
+
+  // Teachers take an order off the list; its owner's game returns the goods.
+  removeOrder(order) {
+    if (!this.isAdmin) return Promise.reject(new AccountError('unknown', 'not allowed'));
+    return this.backend.orderWrite(this.session, { order, fields: { status: 'removed' } });
   }
 
   // { rows, place, rival } for the list ranked by `field` (only players with more than 0).
@@ -313,6 +357,9 @@ const FIREBASE_ERRORS = {
   INVALID_REFRESH_TOKEN: 'relogin',
   UNAUTHENTICATED: 'relogin',
   PERMISSION_DENIED: 'config',
+  FAILED_PRECONDITION: 'gone',
+  ALREADY_EXISTS: 'gone',
+  NOT_FOUND: 'gone',
   RESOURCE_EXHAUSTED: 'tooMany',
 };
 
@@ -404,18 +451,46 @@ class FirebaseBackend {
   }
 
   // The farm and the leaderboard row are written together (the row replaces the old one).
-  async putSave(s, data, row, keepalive) {
+  saveWrites(s, data, row) {
     const update = (collection, fields) => ({ update: { name: `${this.docs}/${collection}/${s.id}`, fields } });
-    await call(`${this.url}:commit`, {
-      token: await this.check(s),
-      keepalive,
-      body: {
-        writes: [
-          update('saves', { data: { stringValue: JSON.stringify(data) } }),
-          update('players', Object.fromEntries(Object.entries(row).map(([k, v]) => [k, encode(v)]))),
-        ],
-      },
-    });
+    return [
+      update('saves', { data: { stringValue: JSON.stringify(data) }, rev: int(data.rev || 0) }),
+      update('players', Object.fromEntries(Object.entries(row).map(([k, v]) => [k, encode(v)]))),
+    ];
+  }
+
+  async putSave(s, data, row, keepalive) {
+    await call(`${this.url}:commit`, { token: await this.check(s), keepalive, body: { writes: this.saveWrites(s, data, row) } });
+  }
+
+  // ---- the player market
+  orderOp({ id, order, fields }) {
+    const name = `${this.docs}/orders/${id || order.id}`;
+    const data = fields && Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, encode(v)]));
+    if (id) return { update: { name, fields: data }, currentDocument: { exists: false } };
+    const currentDocument = { updateTime: order.updateTime }; // it changed since I saw it: refused
+    return fields ? { update: { name, fields: data }, updateMask: { fieldPaths: Object.keys(fields) }, currentDocument } : { delete: name, currentDocument };
+  }
+
+  async tradeSave(s, data, row, op) {
+    await call(`${this.url}:commit`, { token: await this.check(s), body: { writes: [...this.saveWrites(s, data, row), this.orderOp(op)] } });
+  }
+
+  async orderWrite(s, op) {
+    await call(`${this.url}:commit`, { token: await this.check(s), body: { writes: [this.orderOp(op)] } });
+  }
+
+  async orderQuery(query) {
+    const res = await call(`${this.url}:runQuery?key=${this.key}`, { body: { structuredQuery: { from: [{ collectionId: 'orders' }], ...query } } });
+    return res.filter((r) => r.document).map(({ document: d }) => ({ id: d.name.split('/').pop(), updateTime: d.updateTime, ...Object.fromEntries(Object.entries(d.fields).map(([k, v]) => [k, decode(v)])) }));
+  }
+
+  orders(since) {
+    return this.orderQuery({ where: above('at', since), orderBy: [{ field: { fieldPath: 'at' }, direction: 'DESCENDING' }], limit: 200 });
+  }
+
+  ordersOf(id) {
+    return this.orderQuery({ where: { fieldFilter: { field: { fieldPath: 'owner' }, op: 'EQUAL', value: { stringValue: id } } }, limit: 50 });
   }
 
   // ---- the carpet contest: carpets/{week}~{player} and likes/{week}~{player}~{voter}
@@ -462,9 +537,13 @@ class FirebaseBackend {
   // the teachers do this; Auth accounts can be deleted only in the Firebase console).
   async removePlayer(s, id) {
     const doc = (collection) => `${this.docs}/${collection}/${id}`;
+    const orders = await this.ordersOf(id).catch((e) => {
+      if (e.code === 'config') return []; // the rules have no market part yet
+      throw e;
+    });
     await call(`${this.url}:commit`, {
       token: await this.check(s),
-      body: { writes: [{ update: { name: doc('deleted'), fields: { by: { stringValue: s.id } } } }, { delete: doc('saves') }, { delete: doc('players') }] },
+      body: { writes: [{ update: { name: doc('deleted'), fields: { by: { stringValue: s.id } } } }, { delete: doc('saves') }, { delete: doc('players') }, ...orders.map((o) => ({ delete: `${this.docs}/orders/${o.id}` }))] },
     });
   }
 
@@ -555,7 +634,35 @@ class LocalBackend {
   }
 
   async removePlayer(s, id) {
+    const table = this.table('orders.v1');
+    for (const key of Object.keys(table)) if (table[key].owner === id) delete table[key];
+    this.adapter.set('orders.v1', JSON.stringify(table));
     return this.remove({ id });
+  }
+
+  // the player market, in this browser
+  async orderWrite(s, { id, order, fields }) {
+    const table = this.table('orders.v1');
+    const key = id || order.id;
+    if (order && (!table[key] || table[key].updateTime !== order.updateTime)) throw new AccountError('gone');
+    if (order && !fields) delete table[key];
+    else table[key] = { ...table[key], ...fields, id: key, updateTime: Date.now() + Math.random() };
+    this.adapter.set('orders.v1', JSON.stringify(table));
+  }
+
+  async tradeSave(s, data, row, op) {
+    await this.orderWrite(s, op);
+    await this.putSave(s, data, row);
+  }
+
+  async orders(since) {
+    return Object.values(this.table('orders.v1'))
+      .filter((o) => o.at > since)
+      .sort((a, b) => b.at - a.at);
+  }
+
+  async ordersOf(id) {
+    return Object.values(this.table('orders.v1')).filter((o) => o.owner === id);
   }
 
   // the carpet contest, in this browser

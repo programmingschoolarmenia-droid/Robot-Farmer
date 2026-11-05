@@ -18,7 +18,10 @@ import { VillageView, recipeText } from './village.js';
 import { ChallengeScreen, schoolPanel } from './challenge.js';
 import { RanchChallengeScreen, ranchSchoolPanel } from './ranchChallenge.js';
 import { RanchScreen } from './ranch.js';
-import { formatClock, dayKey, dayNumber, keyOfDay, weekKey } from '../core/util.js';
+import { MarketScreen } from './market.js';
+import { AccountError } from '../storage/account.js';
+import { orderExpired } from '../engine/market.js';
+import { formatClock, formatCount, dayKey, dayNumber, keyOfDay, weekKey } from '../core/util.js';
 import { SEASON_NAMES } from '../engine/calendar.js';
 import { nextFestival, lastFestival } from '../engine/festivals.js';
 import { weekTask, givePrize, giveContestPrize } from '../engine/challenge.js';
@@ -35,6 +38,7 @@ export class GameScreen {
     const saved = save || {};
     const display = app.config.settings.display || {};
     this.ui = { introDone: false, lessonsSeen: [], taught: [], firsts: [], ...(saved.ui || {}) };
+    this.rev = saved.rev || 0; // goes up with every trade (see trade())
     this.prefs = {
       animations: display.animations !== false,
       lowGraphics: !!display.lowGraphics,
@@ -79,7 +83,11 @@ export class GameScreen {
     this.layoutSizes();
     setTimeout(() => this.startStory(), 400);
     this.save();
-    this.syncCloud({ now: true }).then(() => this.claimPrizes()); // new players appear on the leaderboard right away
+    this.syncCloud({ now: true }).then(() => {
+      this.claimPrizes();
+      this.collectOrders();
+    }); // new players appear on the leaderboard right away
+    this.marketTimer = setInterval(() => this.collectOrders(), 300000);
   }
 
   // ------------------------------------------------------------------ DOM
@@ -114,6 +122,7 @@ export class GameScreen {
     this.perfectLabel = h('span', { class: 'perfect-label' });
     this.villageBtn = h('button', { class: 'btn village-button', hidden: true, onclick: () => this.openVillage() }, icon(app.sprites, 'village'), ' ', t('ui.villageButton'), this.villageBadge);
     this.ranchBtn = h('button', { class: 'btn ranch-button', hidden: true, onclick: () => this.openRanch() }, icon(app.sprites, 'ranch'), ' ', t('ui.ranchButton'));
+    this.marketBtn = h('button', { class: 'btn ranch-button', hidden: true, onclick: () => this.openMarket() }, icon(app.sprites, 'market'), ' ', t('ui.marketButton'));
     this.farmStage = h('div', { class: 'farm-stage' });
     this.codePanel = h('section', { class: 'panel code-panel' });
     this.inventoryList = h('ul', { class: 'inventory-list' });
@@ -147,6 +156,7 @@ export class GameScreen {
           h('section', { class: 'panel grow' }, h('div', { class: 'panel-head' }, icon(app.sprites, 'storage'), ' ', t('ui.inventory')), this.inventoryList),
           this.villageBtn,
           this.ranchBtn,
+          this.marketBtn,
           this.researchBtn,
         )),
       ),
@@ -431,6 +441,9 @@ export class GameScreen {
     const shown = this.game.research.hasPanel('ranch');
     if (shown && this.ranchBtn.hidden && this.first('ranchNew')) this.bridgy.toast(this.app.i18n.t('ui.ranchNew'), 7000);
     this.ranchBtn.hidden = !shown;
+    const market = this.game.research.hasPanel('market');
+    if (market && this.marketBtn.hidden && this.first('marketNew')) this.bridgy.toast(this.app.i18n.t('ui.marketNew'), 7000);
+    this.marketBtn.hidden = !market;
   }
 
   // The ranch's screen: only the open world runs, so the farm waits (no frames, no keys) until «Ֆերմա».
@@ -454,6 +467,81 @@ export class GameScreen {
         this.raf = requestAnimationFrame((t) => this.tick(t));
       },
     });
+  }
+
+  // ------------------------------------------------------------------ player market
+
+  get me() {
+    return this.app.account.user.id;
+  }
+
+  openMarket() {
+    if (this.market) return;
+    this.collectOrders();
+    this.market = new MarketScreen({ screen: this, onClose: () => (this.market = null) });
+  }
+
+  takenToday() {
+    const m = this.ui.market;
+    return m && m.day === this.today() ? m.taken : 0;
+  }
+
+  // One market step: my farm and the order go online in a single write, so a closed tab can't
+  // lose or copy goods, and they count as moved goods (no points). `rev` goes up, so a save from
+  // an older tab is refused. pay leaves at once and comes back if the write fails; get arrives after it.
+  async trade({ pay, get, op }) {
+    while (this.pushing) await this.pushing;
+    if (this.destroyed || !this.app.account.user) throw new AccountError('relogin');
+    const inv = this.game.inventory;
+    if (pay) {
+      if (inv.get(pay[0]) < pay[1]) throw new AccountError('unknown', 'not enough goods');
+      inv.add(pay[0], -pay[1], 'transfer');
+    }
+    this.save();
+    const game = { ...this.lastData.game };
+    if (get) game.inventory = { ...game.inventory, [get[0]]: (game.inventory[get[0]] || 0) + get[1] };
+    const saving = this.app.account.tradeSave({ ...this.lastData, game, rev: this.rev + 1, updated: Date.now() }, this.game.leaderStats(), op);
+    this.pushing = saving.then(
+      () => true,
+      () => false,
+    );
+    this.pushing.finally(() => (this.pushing = null));
+    try {
+      await saving;
+    } catch (e) {
+      if (pay) inv.add(pay[0], pay[1], 'transfer');
+      this.save();
+      throw e;
+    }
+    this.rev++;
+    if (get) inv.add(get[0], get[1], 'transfer');
+    this.save();
+  }
+
+  async takeOrder(o) {
+    await this.trade({ pay: [o.want, o.wantN], get: [o.give, o.giveN], op: { order: o, fields: { status: 'taken', taker: this.me } } });
+    this.ui.market = { day: this.today(), taken: this.takenToday() + 1 };
+    this.save();
+  }
+
+  // Sold, expired or removed orders of mine: the goods arrive and the order goes.
+  async collectOrders() {
+    if (this.collecting || this.destroyed || !this.game.research.hasPanel('market')) return;
+    this.collecting = true;
+    const t = this.app.i18n.t;
+    try {
+      for (const o of await this.app.account.myOrders()) {
+        const sold = o.status === 'taken';
+        const back = sold ? [o.want, o.wantN] : o.status === 'removed' || orderExpired(this.app.config.settings, o, Date.now()) ? [o.give, o.giveN] : null;
+        if (!back) continue;
+        await this.trade({ get: back, op: { order: o } });
+        const words = `${formatCount(back[1])} ${this.app.i18n.item(back[0])}`;
+        this.app.toast(sold ? t('ui.marketSold', { name: o.taker, get: words }) : t('ui.marketBack', { get: words }));
+      }
+    } catch (e) {
+      console.warn('Market orders not collected:', e); // the next look tries again
+    }
+    this.collecting = false;
   }
 
   openVillage() {
@@ -1006,6 +1094,7 @@ export class GameScreen {
     if (this.destroyed) return;
     this.lastData = {
       v: SAVE_VERSION,
+      rev: this.rev,
       game: this.game.toSave(),
       quests: this.quests.toSave(),
       ui: { ...this.ui, prefs: this.prefs },
@@ -1037,7 +1126,7 @@ export class GameScreen {
         (e) => {
           this.cloudDirty = true;
           console.warn('Online save failed:', e);
-          if (e.code === 'deleted') return this.removed(e), false;
+          if (e.code === 'deleted' || e.code === 'stale') return this.removed(e), false;
           if (keepalive) return false; // best effort while the page is hidden or closing
           if (!this.syncFailed && !this.destroyed) this.app.toast(`${t('ui.syncFailed')} ${accountErrorText(this.app.i18n, e)}`, 'warn');
           this.syncFailed = true;
@@ -1056,7 +1145,7 @@ export class GameScreen {
     this.syncCloud({ now: true, keepalive: true });
   }
 
-  // The teacher deleted this account: back to the login screen without saving anything.
+  // The teacher deleted this account, or an older tab after a trade: back to the login screen without saving anything.
   removed(e) {
     if (this.destroyed) return;
     this.leaving = true;
@@ -1080,10 +1169,12 @@ export class GameScreen {
     if (this.destroyed) return;
     if (this.challenge) this.challenge.destroy();
     if (this.ranchScreen) this.ranchScreen.destroy();
+    if (this.market) this.market.close();
     this.game.runner.stop('exit', true);
     this.destroyed = true;
     cancelAnimationFrame(this.raf);
     clearInterval(this.saveTimer);
+    clearInterval(this.marketTimer);
     document.removeEventListener('visibilitychange', this.onVisibility);
     window.removeEventListener('beforeunload', this.onUnload);
     window.removeEventListener('resize', this.onResize);
