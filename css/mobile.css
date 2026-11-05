@@ -212,6 +212,41 @@
   .modal-body {
     padding: 12px;
   }
+  .modal.market-modal {
+    width: 100vw;
+    height: var(--app-h, 100dvh);
+    max-height: none;
+    border-radius: 0;
+    border-width: 0;
+  }
+  .market-tabs .login-tab {
+    flex: 1;
+    padding: 8px 4px;
+    font-size: 0.85rem;
+  }
+  .market-form {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+  }
+  .market-form > .market-arrow {
+    justify-self: center;
+    transform: rotate(90deg);
+  }
+  .market-send .btn {
+    flex: 1 1 100%;
+  }
+  .market-range div {
+    white-space: normal;
+    font-size: 0.7rem;
+  }
+  .market-tile {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    text-align: center;
+  }
+  .market-tile > img {
+    grid-row: auto;
+  }
   .book-modal {
     width: 100vw;
     height: var(--app-h, 100dvh);

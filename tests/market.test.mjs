@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Accounts } from '../js/storage/account.js';
 import { Game } from '../js/engine/game.js';
 import { validateConfig } from '../js/core/config.js';
-import { allowedRange, orderExpired, orderProblem, placeProblem, takeProblem } from '../js/engine/market.js';
+import { allowedRange, equalAmount, orderExpired, orderProblem, placeProblem, takeProblem } from '../js/engine/market.js';
 import { createFakeFirebase } from './fakeFirebase.mjs';
 import { loadConfig } from './helpers.mjs';
 
@@ -42,6 +42,7 @@ const place = (a, o = { give: 'Gold', giveN: 500, want: 'Pumpkin', wantN: 5000 }
 
 test('fair price: 500 Gold for 5000 Pumpkins passes, 100000 Gold for 1 Carrot never does', () => {
   assert.deepEqual(allowedRange(settings, 'Gold', 500, 'Pumpkin'), { min: 834, max: 7500 });
+  assert.equal(equalAmount(settings, 'Gold', 500, 'Pumpkin'), 2500);
   assert.equal(orderProblem(settings, order('Gold', 500, 'Pumpkin', 5000)), null);
   assert.equal(orderProblem(settings, order('Gold', 500, 'Pumpkin', 7500)), null);
   assert.equal(orderProblem(settings, order('Gold', 500, 'Pumpkin', 834)), null);

@@ -19,7 +19,7 @@ export function accountErrorText(i18n, e) {
 const researchTotal = (config) => config.research.nodes.reduce((sum, n) => sum + n.tiers.length, 0);
 
 // A round badge in the player's own colour with their drone hat (or the first letter).
-function avatar(app, name, hat, cls = '') {
+export function avatar(app, name, hat, cls = '') {
   let n = 0;
   for (const ch of name) n = (n * 31 + ch.codePointAt(0)) >>> 0;
   const sprite = `hatSide:${hat}`;

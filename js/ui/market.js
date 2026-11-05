@@ -1,10 +1,10 @@
 // The player market's window: everybody's orders, my orders and a new order. The farm keeps
 // running under it; every change of goods goes through GameScreen.trade().
-import { h, icon, pixelImg } from './dom.js';
-import { confirmModal } from './modal.js';
-import { accountErrorText } from './account.js';
+import { h, icon, pixelImg, clear } from './dom.js';
+import { openModal, confirmModal } from './modal.js';
+import { accountErrorText, avatar } from './account.js';
 import { AccountError } from '../storage/account.js';
-import { allowedRange, orderExpired, orderProblem, placeProblem, takeProblem, tradable } from '../engine/market.js';
+import { allowedRange, equalAmount, orderExpired, orderProblem, placeProblem, takeProblem, tradable } from '../engine/market.js';
 import { formatCount } from '../core/util.js';
 
 const TABS = ['All', 'Mine', 'New'];
@@ -15,17 +15,19 @@ export class MarketScreen {
     this.screen = screen;
     this.app = screen.app;
     this.game = screen.game;
-    this.onClose = onClose;
-    const t = this.app.i18n.t;
-    this.body = h('div', { class: 'loom-body' });
+    const { t } = this.app.i18n;
+    this.content = h('div', { class: 'market-content' });
+    this.foot = h('div', { class: 'market-send', hidden: true });
     this.tabs = TABS.map((id) => h('button', { class: 'login-tab', dataset: { tab: id }, onclick: () => this.setTab(id) }, t(`ui.marketTab${id}`)));
-    this.el = h(
-      'section',
-      { class: 'loom-screen' },
-      h('header', { class: 'loom-head' }, h('b', {}, icon(this.app.sprites, 'market'), ` ${t('ui.marketTitle')}`), h('div', { class: 'loom-tabs' }, this.tabs), h('button', { class: 'btn', onclick: () => this.close() }, t('ui.marketClose'))),
-      this.body,
-    );
-    screen.el.append(this.el);
+    this.closeModal = openModal({
+      title: [icon(this.app.sprites, 'market'), ` ${t('ui.marketTitle')}`],
+      className: 'market-modal',
+      body: [h('div', { class: 'login-tabs market-tabs' }, this.tabs), this.content, this.foot],
+      onClose: () => {
+        this.closed = true;
+        onClose();
+      },
+    }).close;
     this.setTab('All');
   }
 
@@ -38,24 +40,22 @@ export class MarketScreen {
   }
 
   setTab(id) {
+    if (this.closed) return;
     this.tab = id;
+    this.seq = (this.seq || 0) + 1;
     for (const b of this.tabs) b.classList.toggle('active', b.dataset.tab === id);
+    this.foot.hidden = true;
+    clear(this.foot);
     if (id === 'New') this.buildNew();
     else this.buildList(id);
-  }
-
-  goods(item, n) {
-    return h('span', { class: 'chip', title: this.app.i18n.item(item) }, pixelImg(this.app.sprites.url(`item:${item}`, 2)), ` ${formatCount(n)} ${this.app.i18n.item(item)}`);
   }
 
   words(item, n) {
     return `${formatCount(n)} ${this.app.i18n.item(item)}`;
   }
 
-  problemText(code, order) {
-    const t = this.app.i18n.t;
-    const item = code === 'have' ? (order.owner === this.screen.me ? order.give : order.want) : '';
-    return t(`ui.marketProblem.${code}`, { item: item && this.app.i18n.item(item), n: this.cfg.openOrders });
+  problemText(code, item) {
+    return this.app.i18n.t(`ui.marketProblem.${code}`, { item: item && this.app.i18n.item(item), n: this.cfg.openOrders });
   }
 
   // Runs a market step and shows what went wrong. A refused order was usually just taken by
@@ -72,32 +72,51 @@ export class MarketScreen {
       if (error.code !== 'gone') console.warn('Market:', e);
       this.app.toast(accountErrorText(this.app.i18n, error), 'warn');
     }
-    if (this.el.isConnected) this.setTab(this.tab);
+    this.setTab(this.tab);
+  }
+
+  // ---------------------------------------------------------------- parts
+
+  empty(text, button) {
+    return h('div', { class: 'market-empty' }, h('img', { src: this.app.config.bridgy.avatar || 'assets/bridgy/bridgy-head.png', alt: '' }), text, button);
+  }
+
+  toNew(label, cls = 'btn btn-gold') {
+    return h('button', { class: cls, onclick: () => this.setTab('New') }, label);
+  }
+
+  tile(label, item, n, cls = '', note = null) {
+    return h('div', { class: `market-tile ${cls}`.trim() }, pixelImg(this.app.sprites.url(`item:${item}`, 3)), h('small', {}, label), h('b', {}, formatCount(n)), h('span', {}, this.app.i18n.item(item)), note);
+  }
+
+  swap(left, right) {
+    return h('div', { class: 'market-swap' }, left, h('span', { class: 'market-arrow' }, '→'), right);
+  }
+
+  timeLeft(o) {
+    const { t } = this.app.i18n;
+    const hours = Math.max(1, Math.ceil(((this.cfg.days ?? 3) * 86400000 - (Date.now() - o.at)) / 3600000));
+    return hours > 24 ? t('ui.marketLeftDays', { n: Math.ceil(hours / 24) }) : t('ui.marketLeftHours', { n: hours });
   }
 
   // ---------------------------------------------------------------- the lists
 
   async buildList(id) {
     const { account, i18n } = this.app;
-    const t = i18n.t;
-    const seq = (this.seq = (this.seq || 0) + 1);
-    const box = h('div', { class: 'board-note' }, t('ui.loading'));
-    this.body.replaceChildren(id === 'All' ? h('p', { class: 'form-hint' }, t('ui.marketHelp', { n: this.screen.takenToday(), max: this.cfg.takenPerDay })) : null, box);
+    const { t } = i18n;
+    const seq = this.seq;
+    this.content.replaceChildren(h('div', { class: 'market-empty' }, t('ui.loading')));
     let rows;
     try {
       if (id === 'Mine') await this.screen.collectOrders();
       rows = id === 'All' ? await this.openOrders() : await account.myOrders();
     } catch (e) {
       console.warn('Market not loaded:', e);
-      if (seq === this.seq) box.textContent = accountErrorText(i18n, e);
+      if (seq === this.seq) this.content.replaceChildren(this.empty(accountErrorText(i18n, e)));
       return;
     }
-    if (seq !== this.seq || this.tab !== id) return;
-    if (!rows.length) {
-      box.textContent = t(id === 'All' ? 'ui.marketEmpty' : 'ui.marketMineEmpty');
-      return;
-    }
-    box.replaceWith(h('div', { class: 'market-list' }, rows.map((o) => (id === 'All' ? this.orderRow(o) : this.myRow(o)))));
+    if (seq !== this.seq || this.closed) return;
+    this.content.replaceChildren(...(id === 'All' ? this.allOrders(rows) : this.myOrders(rows)));
   }
 
   // Open, not too old and fair (a forged order never reaches the list).
@@ -107,10 +126,26 @@ export class MarketScreen {
     return rows.filter((o) => o.status === 'open' && !orderExpired(this.settings, o, now) && !orderProblem(this.settings, o));
   }
 
-  orderRow(o) {
+  allOrders(rows) {
+    const { t } = this.app.i18n;
+    const info = h(
+      'div',
+      { class: 'market-info' },
+      h('span', { class: 'grow' }, t('ui.marketHelp')),
+      h('span', { class: 'chip' }, t('ui.marketToday', { n: this.screen.takenToday(), max: this.cfg.takenPerDay })),
+      h('button', { class: 'btn btn-sm', onclick: () => this.setTab('All') }, t('ui.marketRefresh')),
+    );
+    if (!rows.length) return [info, this.empty(t('ui.marketEmpty'), this.toNew(t('ui.marketFirst')))];
+    const taken = this.screen.takenToday();
+    const cards = rows.map((o) => ({ o, problem: takeProblem(this.game, o, this.screen.me, taken) })).sort((a, b) => !!a.problem - !!b.problem);
+    return [info, h('div', { class: 'market-cards' }, cards.map(({ o, problem }) => this.orderCard(o, problem)))];
+  }
+
+  orderCard(o, problem) {
     const { account, i18n } = this.app;
-    const t = i18n.t;
-    const problem = takeProblem(this.game, o, this.screen.me, this.screen.takenToday());
+    const { t } = i18n;
+    const mine = o.owner === this.screen.me;
+    const have = this.game.inventory.get(o.want);
     const remove = async () => {
       if (await confirmModal(i18n, { title: t('ui.marketRemove'), text: t('ui.marketRemoveAsk', { name: o.name }), okLabel: t('ui.marketRemove') })) await this.act(() => account.removeOrder(o), o);
     };
@@ -122,120 +157,170 @@ export class MarketScreen {
       }, o);
     };
     return h(
-      'div',
-      { class: 'market-row' },
-      h('b', { class: 'market-name' }, o.name),
-      h('span', { class: 'muted' }, t('ui.marketGives')),
-      this.goods(o.give, o.giveN),
-      h('span', { class: 'muted' }, t('ui.marketWants')),
-      this.goods(o.want, o.wantN),
-      h('span', { class: 'spacer' }),
-      problem ? h('span', { class: 'muted' }, this.problemText(problem, o)) : h('button', { class: 'btn btn-sm btn-gold', onclick: take }, t('ui.marketTake')),
-      account.isAdmin ? h('button', { class: 'btn btn-sm btn-danger', onclick: remove }, t('ui.marketRemove')) : null,
+      'article',
+      { class: `market-card ${problem ? 'locked' : ''}`.trim() },
+      h('div', { class: 'market-card-head' }, avatar(this.app, o.name, null, 'small'), h('b', {}, o.name), h('span', { class: 'spacer' }), h('span', { class: 'muted' }, this.timeLeft(o))),
+      mine
+        ? this.swap(this.tile(t('ui.marketIGive'), o.give, o.giveN), this.tile(t('ui.marketIWant'), o.want, o.wantN, 'get'))
+        : this.swap(this.tile(t('ui.marketYouPay'), o.want, o.wantN, '', h('span', { class: have < o.wantN ? 'short' : '' }, t('ui.marketHave', { n: formatCount(Math.floor(have)) }))), this.tile(t('ui.marketYouGet'), o.give, o.giveN, 'get')),
+      h(
+        'div',
+        { class: 'market-card-foot' },
+        problem ? h('span', { class: 'market-reason' }, this.problemText(problem, o.want)) : h('button', { class: 'btn btn-gold main', onclick: take }, t('ui.marketTake')),
+        account.isAdmin ? h('button', { class: 'btn btn-sm btn-danger', onclick: remove }, t('ui.marketRemove')) : null,
+      ),
     );
   }
 
-  myRow(o) {
-    const t = this.app.i18n.t;
+  myOrders(rows) {
+    const { t } = this.app.i18n;
+    const max = this.cfg.openOrders ?? 3;
+    const open = rows.filter((o) => o.status === 'open').length;
+    const info = h('div', { class: 'market-info' }, h('span', { class: 'chip' }, t('ui.marketSlots', { n: open, max })));
+    if (!rows.length) return [info, this.empty(t('ui.marketMineEmpty'), this.toNew(t('ui.marketFirst')))];
+    const free = Array.from({ length: Math.max(0, max - open) }, () => this.toNew(t('ui.marketFreeSlot'), 'market-slot'));
+    return [info, h('div', { class: 'market-cards' }, rows.map((o) => this.myCard(o)), free)];
+  }
+
+  myCard(o) {
+    const { t } = this.app.i18n;
+    const open = o.status === 'open';
+    const cancel = () =>
+      this.act(async () => {
+        await this.screen.trade({ get: [o.give, o.giveN], op: { order: o } });
+        this.app.toast(t('ui.marketCancelled'));
+      }, o);
     return h(
-      'div',
-      { class: 'market-row' },
-      h('span', { class: 'muted' }, t('ui.marketIGive')),
-      this.goods(o.give, o.giveN),
-      h('span', { class: 'muted' }, t('ui.marketIWant')),
-      this.goods(o.want, o.wantN),
-      h('span', { class: 'spacer' }),
-      o.status === 'open'
-        ? h(
-            'button',
-            {
-              class: 'btn btn-sm',
-              onclick: () =>
-                this.act(async () => {
-                  await this.screen.trade({ get: [o.give, o.giveN], op: { order: o } });
-                  this.app.toast(t('ui.marketCancelled'));
-                }, o),
-            },
-            t('ui.marketCancel'),
-          )
-        : h('span', { class: 'muted' }, t('ui.marketClosing')),
+      'article',
+      { class: 'market-card' },
+      h('div', { class: 'market-card-head' }, h('b', {}, t(open ? 'ui.marketWaiting' : 'ui.marketClosing')), h('span', { class: 'spacer' }), open ? h('span', { class: 'muted' }, this.timeLeft(o)) : null),
+      this.swap(this.tile(t('ui.marketIGive'), o.give, o.giveN), this.tile(t('ui.marketIWant'), o.want, o.wantN, 'get')),
+      open ? h('div', { class: 'market-card-foot' }, h('button', { class: 'btn main', onclick: cancel }, t('ui.marketCancel'))) : null,
     );
   }
 
   // ---------------------------------------------------------------- a new order
 
+  // The two sides are always a fair deal: the slider only offers fair amounts.
   buildNew() {
-    const { i18n } = this.app;
-    const t = i18n.t;
-    this.seq = (this.seq || 0) + 1;
+    const { i18n, sprites, account } = this.app;
+    const { t } = i18n;
     const { settings, game } = this;
-    const items = (this.cfg.goods || []).filter((item) => tradable(this.settings, item) && this.game.stats.total(item) > 0);
-    if (items.length < 2) {
-      this.body.replaceChildren(h('div', { class: 'board-note' }, t('ui.marketNoGoods')));
+    const seq = this.seq;
+    const have = (item) => Math.floor(game.inventory.get(item));
+    const made = (this.cfg.goods || []).filter((item) => tradable(settings, item) && game.stats.total(item) > 0);
+    const giving = made.filter((item) => have(item) >= 1);
+    if (!giving.length || made.length < 2) {
+      this.content.replaceChildren(this.empty(t('ui.marketNoGoods')));
       return;
     }
-    const hint = h('p', { class: 'form-hint' });
-    const send = h('button', { class: 'btn btn-gold', disabled: true, onclick: () => place() }, t('ui.marketPlace'));
-    const order = () => ({ give: give.value, giveN: Number(giveN.value), want: want.value, wantN: Number(wantN.value) });
-    let open = 0;
-    let loaded = false;
-    const refresh = () => {
-      const o = order();
-      const fits = Number.isInteger(o.giveN) && o.giveN >= 1 && o.give !== o.want;
-      const range = fits ? allowedRange(settings, o.give, o.giveN, o.want) : null;
-      const lines = [];
-      if (range && range.max >= range.min) lines.push(t('ui.marketRange', { min: formatCount(range.min), max: formatCount(range.max), item: i18n.item(o.want) }));
-      else if (range) lines.push(t('ui.marketRangeNone'));
-      const problem = loaded ? placeProblem(game, o, open) : 'amount';
-      if (loaded && problem && (o.giveN || o.wantN || problem !== 'amount')) lines.push(this.problemText(problem, { ...o, owner: self.screen.me }));
-      hint.textContent = lines.join(' ');
-      send.disabled = !!problem;
+    const s = { give: giving[0], want: made.find((item) => item !== giving[0]), giveN: Math.max(1, Math.floor(have(giving[0]) / 4)), wantN: 0 };
+    let open = null; // my open orders, once known
+    let chosen = false; // the student moved the slider: keep their price while it is fair
+
+    const pick = (item, side) =>
+      h('button', { class: 'market-pick', title: i18n.item(item), dataset: { item }, onclick: () => choose(side, item) }, pixelImg(sprites.url(`item:${item}`, 2)), i18n.item(item), side === 'give' ? h('b', {}, formatCount(have(item))) : null);
+    const givePicks = giving.map((item) => pick(item, 'give'));
+    const wantPicks = made.map((item) => pick(item, 'want'));
+    const giveN = h('input', { type: 'number', min: 1, step: 1, 'aria-label': t('ui.marketAmount'), oninput: () => setGive(Number(giveN.value), true) });
+    const wantN = h('input', { type: 'number', min: 1, step: 1, 'aria-label': t('ui.marketAmount'), oninput: () => setWant(Number(wantN.value), true) });
+    const slider = h('input', { type: 'range', step: 1, 'aria-label': t('ui.marketAmount'), oninput: () => setWant(Number(slider.value)) });
+    const low = h('span');
+    const equal = h('span');
+    const high = h('span');
+    const range = h('div', { class: 'market-range' }, slider, h('div', {}, low, equal, high));
+    const none = h('div', { class: 'market-reason' }, t('ui.marketRangeNone'));
+    const line = h('p');
+    const send = h('button', { class: 'btn btn-gold', onclick: () => place() }, t('ui.marketPlace'));
+    const share = (label, f) => h('button', { class: 'btn btn-sm', onclick: () => setGive(Math.max(1, Math.floor(have(s.give) * f))) }, label);
+
+    const paint = (typing) => {
+      const fits = Number.isInteger(s.giveN) && s.giveN >= 1;
+      const r = fits && allowedRange(settings, s.give, s.giveN, s.want);
+      const fair = r && r.max >= r.min;
+      range.hidden = !fair;
+      none.hidden = !fits || fair;
+      if (fair) {
+        slider.min = r.min;
+        slider.max = r.max;
+        if (!chosen || (typing !== 'want' && (s.wantN < r.min || s.wantN > r.max))) s.wantN = equalAmount(settings, s.give, s.giveN, s.want);
+        slider.value = s.wantN;
+        low.textContent = `${t('ui.marketFewer')} ${formatCount(r.min)}`;
+        equal.textContent = t('ui.marketEqual', { n: formatCount(equalAmount(settings, s.give, s.giveN, s.want)) });
+        high.textContent = `${t('ui.marketMore')} ${formatCount(r.max)}`;
+      }
+      if (typing !== 'give') giveN.value = s.giveN || '';
+      if (typing !== 'want') wantN.value = s.wantN || '';
+      for (const b of givePicks) b.classList.toggle('active', b.dataset.item === s.give);
+      for (const b of wantPicks) {
+        b.classList.toggle('active', b.dataset.item === s.want);
+        b.disabled = b.dataset.item === s.give;
+      }
+      const problem = placeProblem(game, s, open ?? 0);
+      line.classList.toggle('warn', !!problem);
+      line.textContent = problem ? this.problemText(problem, s.give) : t('ui.marketSummary', { give: this.words(s.give, s.giveN), want: this.words(s.want, s.wantN) });
+      send.disabled = !!problem || open === null;
     };
-    const select = (first) => h('select', { class: 'market-field', onchange: refresh }, items.map((item) => h('option', { value: item, selected: item === first }, i18n.item(item))));
-    const number = () => h('input', { class: 'market-field', type: 'number', min: 1, step: 1, oninput: refresh });
-    const give = select(items[0]);
-    const want = select(items[1]);
-    const giveN = number();
-    const wantN = number();
+    const choose = (side, item) => {
+      s[side] = item;
+      if (side === 'give') {
+        if (s.want === item) s.want = made.find((other) => other !== item);
+        s.giveN = Math.min(s.giveN || 1, have(item));
+      }
+      chosen = false;
+      paint();
+    };
+    const setGive = (n, typing = false) => {
+      s.giveN = n;
+      paint(typing ? 'give' : null);
+    };
+    const setWant = (n, typing = false) => {
+      s.wantN = n;
+      chosen = true;
+      paint(typing ? 'want' : null);
+    };
     const place = () =>
       this.act(async () => {
-        const o = order();
-        const mine = await this.app.account.myOrders();
+        const { give, want, giveN: gn, wantN: wn } = s;
+        const o = { give, giveN: gn, want, wantN: wn };
+        const mine = await account.myOrders();
         const problem = placeProblem(game, o, mine.filter((m) => m.status === 'open').length);
-        if (problem) return this.app.toast(this.problemText(problem, { ...o, owner: this.screen.me }), 'warn');
+        if (problem) return this.app.toast(this.problemText(problem, give), 'warn');
         const at = Date.now();
-        const user = this.app.account.user;
-        await this.screen.trade({ pay: [o.give, o.giveN], op: { id: `${user.id}~${at}`, fields: { owner: user.id, name: user.name, ...o, at, status: 'open' } } });
+        const { id, name } = account.user;
+        await this.screen.trade({ pay: [give, gn], op: { id: `${id}~${at}`, fields: { owner: id, name, ...o, at, status: 'open' } } });
         this.app.toast(t('ui.marketPlaced'));
         this.tab = 'Mine';
       });
-    this.body.replaceChildren(
+
+    this.content.replaceChildren(
       h(
         'div',
         { class: 'market-form' },
-        h('label', {}, h('b', {}, t('ui.marketIGive')), give, giveN),
-        h('label', {}, h('b', {}, t('ui.marketIWant')), want, wantN),
-        hint,
-        send,
+        h('section', { class: 'market-side' }, h('h4', {}, t('ui.marketIGive')), h('div', { class: 'market-picks' }, givePicks), h('div', { class: 'market-amount' }, giveN, share('¼', 0.25), share('½', 0.5), share(t('ui.marketAll'), 1))),
+        h('span', { class: 'market-arrow' }, '→'),
+        h('section', { class: 'market-side' }, h('h4', {}, t('ui.marketIWant')), h('div', { class: 'market-picks' }, wantPicks), h('div', { class: 'market-amount' }, wantN), range, none),
       ),
     );
-    this.app.account.myOrders().then(
+    this.foot.replaceChildren(line, send);
+    this.foot.hidden = false;
+    paint();
+    account.myOrders().then(
       (mine) => {
+        if (seq !== this.seq || this.closed) return;
         open = mine.filter((m) => m.status === 'open').length;
-        loaded = true;
-        refresh();
+        paint();
       },
       (e) => {
         console.warn('Market not loaded:', e);
-        hint.textContent = accountErrorText(i18n, e);
+        if (seq !== this.seq || this.closed) return;
+        line.classList.add('warn');
+        line.textContent = accountErrorText(i18n, e);
       },
     );
-    refresh();
   }
 
   close() {
-    this.seq = (this.seq || 0) + 1;
-    this.el.remove();
-    this.onClose();
+    this.closeModal();
   }
 }

@@ -13,6 +13,12 @@ export function allowedRange(settings, give, giveN, want) {
   return { min: Math.max(1, Math.ceil(value / (w * band))), max: Math.floor((value * band) / w) };
 }
 
+// The amount of `want` worth the same as `giveN` of `give` (inside the allowed range).
+export function equalAmount(settings, give, giveN, want) {
+  const { min, max } = allowedRange(settings, give, giveN, want);
+  return Math.min(max, Math.max(min, Math.round((giveN * worth(settings, give)) / worth(settings, want))));
+}
+
 // Is this order allowed at all? Other students' games ask it too, so a forged order is refused.
 export function orderProblem(settings, { give, giveN, want, wantN }) {
   const { band = 3, maxAmount = Infinity } = cfgOf(settings);
