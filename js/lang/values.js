@@ -97,7 +97,7 @@ export function isUserObject(v) {
 }
 
 export function isCallable(v) {
-  return v instanceof Closure || v instanceof BuiltinFunction || v instanceof BoundMethod;
+  return v instanceof Closure || v instanceof BuiltinFunction || v instanceof BoundMethod || (v instanceof Namespace && !!v.callable);
 }
 
 export function makeObject() {

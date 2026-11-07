@@ -1,7 +1,7 @@
 // The village screen: a map of the village across the river (each building is a picture in
 // assets/village, <icon>.png and its ruin <icon>-ruin.png), each building's needs, unlocks, recipes
 // and story, and the villagers' requests.
-import { h, icon, pixelImg } from './dom.js';
+import { h, icon, pixelImg, itemChips } from './dom.js';
 import { formatCount } from '../core/util.js';
 
 const W = 480; // the background canvas (16:10, like the map)
@@ -37,6 +37,7 @@ export class VillageView {
   open() {
     if (this.el) return;
     const t = this.app.i18n.t;
+    this.viewKey = null;
     this.items = h('div', { class: 'research-items' });
     this.map = h('div', { class: 'village-map' }, this.background(), h('span', { class: 'village-farm' }, t('ui.villageFarm')));
     this.panel = h('div', { class: 'village-panel' });
@@ -80,12 +81,21 @@ export class VillageView {
     const { village } = this;
     const sprites = this.app.sprites;
     const inv = this.game.inventory;
-    const order = (this.game.settings.items && this.game.settings.items.order) || [];
-    this.items.replaceChildren(
-      ...order
-        .filter((item) => inv.get(item) > 0)
-        .map((item) => h('span', { class: 'chip', title: this.app.i18n.item(item) }, pixelImg(sprites.url(`item:${item}`, 2)), formatCount(Math.floor(inv.get(item))))),
-    );
+    itemChips(this.items, this.app, this.game);
+    // The map and the panel are rebuilt only when what they show changes (a rebuilt button would lose a
+    // click on its way); the numbers of what the student has are just written over.
+    const board = village.requests();
+    const key = JSON.stringify([
+      this.selected,
+      village.buildings.map((b) => [village.state(b.id), this.percent(b), this.canGive(b)]),
+      village.given[this.selected],
+      board && [board.bonus, board.list.map((q) => [q.done, inv.get(q.item) >= q.amount]), Math.floor(inv.get('Star'))],
+    ]);
+    if (key === this.viewKey) {
+      for (const el of this.panel.querySelectorAll('[data-have]')) el.textContent = this.haveText(el);
+      return;
+    }
+    this.viewKey = key;
     const spots = village.buildings.map((b) => {
       const state = village.state(b.id);
       const ico = (name) => icon(sprites, name);
@@ -99,6 +109,12 @@ export class VillageView {
     }
     this.map.replaceChildren(...[...this.map.children].slice(0, 2), ...spots);
     this.panel.replaceChildren(...(this.selected === 'board' ? this.board() : this.buildingPanel(village.building(this.selected))));
+  }
+
+  // A number of what the student has: «ունես՝ 500» next to a building's need, plain on the board.
+  haveText(el) {
+    const n = formatCount(Math.floor(this.game.inventory.get(el.dataset.have)));
+    return el.classList.contains('village-have') ? this.app.i18n.t('ui.villageHave', { n }) : n;
   }
 
   // A building on the map: its picture centred at x, y (% of the map), w % of the map wide.
@@ -143,7 +159,7 @@ export class VillageView {
           { class: 'village-need' },
           pixelImg(sprites.url(`item:${item}`, 2), '', ''),
           h('div', {}, h('div', {}, `${i18n.item(item)} · ${formatCount(got)} / ${formatCount(need)}`), h('div', { class: 'bar' }, h('span', { style: { width: `${Math.floor((100 * got) / need)}%` } }))),
-          h('span', { class: 'village-have' }, t('ui.villageHave', { n: formatCount(Math.floor(this.game.inventory.get(item))) })),
+          h('span', { class: 'village-have', dataset: { have: item } }, t('ui.villageHave', { n: formatCount(Math.floor(this.game.inventory.get(item))) })),
         );
       });
       parts.push(h('div', { class: 'rd-section' }, h('h4', {}, t('ui.villageNeeds')), ...rows));
@@ -201,7 +217,7 @@ export class VillageView {
             {},
             h('b', {}, v.name),
             h('div', {}, text),
-            h('div', { class: 'village-reward' }, pixelImg(sprites.url(`item:${q.item}`, 2), '', ''), `${formatCount(Math.floor(this.game.inventory.get(q.item)))} / ${formatCount(q.amount)} · `, icon(sprites, 'star'), ` ${r.stars ?? 1}`),
+            h('div', { class: 'village-reward' }, pixelImg(sprites.url(`item:${q.item}`, 2), '', ''), h('span', { dataset: { have: q.item } }, formatCount(Math.floor(this.game.inventory.get(q.item)))), ` / ${formatCount(q.amount)} · `, icon(sprites, 'star'), ` ${r.stars ?? 1}`),
           ),
           q.done ? h('span', { class: 'village-done' }, t('ui.requestsDone')) : h('button', { class: 'btn btn-run btn-sm', disabled: !enough, onclick: () => this.deliver(i) }, t('ui.villageGive')),
         ),
@@ -210,7 +226,30 @@ export class VillageView {
     if (board.bonus) parts.push(h('div', { class: 'rd-note' }, t('ui.requestsBonusDone')));
     else if (board.list.length > 1) parts.push(h('div', { class: 'rd-note' }, t('ui.requestsBonus', { n: board.list.length, bonus: r.bonus ?? 0 })));
     parts.push(h('div', { class: 'rd-note' }, t('ui.requestsNew')));
+    const shop = this.village.allRepaired() ? r.starShop || [] : [];
+    if (shop.length) {
+      parts.push(
+        h(
+          'div',
+          { class: 'rd-section village-stars' },
+          h('h4', {}, t('ui.starShopTitle')),
+          shop.map((b, i) =>
+            h(
+              'button',
+              { class: 'btn btn-sm', disabled: this.game.inventory.get('Star') < b.stars, onclick: () => this.buyBoost(i) },
+              icon(sprites, 'star'),
+              ` ${b.stars} · ${t('ui.starShopOption', { effect: t(`ui.boostEffects.${b.kind}`, { n: b.multiplier }), seconds: b.seconds })}`,
+            ),
+          ),
+        ),
+      );
+    }
     return parts;
+  }
+
+  buyBoost(i) {
+    if (this.village.buyBoost(i)) this.app.audio.play('unlock');
+    this.refresh();
   }
 
   give(id) {
@@ -251,10 +290,10 @@ export class VillageView {
       }
     }
     // Bridgy's field: furrows with sprouts, and a fence
-    for (let y = 205; y < 262; y++) {
-      for (let x = 16; x < 120; x++) {
-        const u = x - 2 * (y - 205); // along the rows (up-right)
-        const v = x / 2 + (y - 205); // across them
+    for (let y = 203; y < 262; y++) {
+      for (let x = 16; x < 133; x++) {
+        const u = x - 40 - 2 * (y - 205); // along the rows (up-right)
+        const v = (x - 40) / 2 + (y - 205); // across them
         if (u < -70 || u > 30 || v < 12 || v > 76) continue;
         const row = Math.floor(v / 8);
         const inRow = v - row * 8;
@@ -280,7 +319,7 @@ export class VillageView {
     if (bridge) {
       const [bx, by] = at(bridge);
       const reach = ((bridge.w ?? 22) * W) / 100 / 2.6; // the bridge's ends, along its deck (up-right)
-      road([70, 222], [bx - reach, by + reach / 2]);
+      road([100, 220], [bx - reach, by + reach / 2]);
       road([bx + reach, by - reach / 2], at(square));
       for (const b of v.buildings) if (b !== bridge && b !== square) road(at(square), [at(b)[0], at(b)[1] + ((b.w ?? 17) * W) / 100 / 5]);
     }

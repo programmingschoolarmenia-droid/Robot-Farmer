@@ -20,7 +20,6 @@
     "swap": ["poxatexel", "փոխատեղել", "texapoxel", "տեղափոխել"],
     "useItem": ["ogtagorcel", "օգտագործել"],
     "getWater": ["jriQanak", "ջրիքանակ"],
-    "random": ["patahakan", "պատահական"],
     "getTime": ["zhamanak", "ժամանակ"],
     "getTickCount": ["qayleriQanak", "քայլերիքանակ"],
     "unlock": ["bacel", "բացել"],
@@ -36,7 +35,7 @@
     "numDrones": ["dronneriQanak", "դրոններիքանակ"],
     "maxDrones": ["maxDronner", "մաքսդրոններ"],
     "digPond": ["porel", "փորել"],
-    "catchFish": ["dzknorsel", "ձկնորսել"],
+    "catchFish": ["dzukBrnel", "ձուկբռնել", "dzknorsel", "ձկնորսել"],
     "getSeason": ["sezon", "սեզոն"],
     "getWeather": ["exanak", "եղանակ"],
     "getNextWeather": ["hajordExanak", "հաջորդեղանակ"],
@@ -80,7 +79,9 @@
       "Hedge": ["Cankapat", "Ցանկապատ"],
       "Treasure": ["Gandz", "Գանձ", "Ganc"],
       "Apple": ["Xndzor", "Խնձոր"],
-      "Dinosaur": ["Dinozavr", "Դինոզավր"]
+      "Dinosaur": ["Dinozavr", "Դինոզավր"],
+      "Mushroom": ["Sunk", "Սունկ"],
+      "Maze": ["Labirint", "Լաբիրինթոս", "Labirintos"]
     },
     "Items": {
       "Hay": ["ChorXot", "ՉորԽոտ"],
@@ -95,12 +96,12 @@
       "Bone": ["Voskor", "Ոսկոր"],
       "Gold": ["Voski", "Ոսկի"],
       "Fish": ["Dzuk", "Ձուկ"],
-      "Flour": ["Aljur", "Ալյուր"],
+      "Flour": ["Alyur", "Ալյուր", "Aljur"],
       "Jam": ["Muraba", "Մուրաբա"],
       "Lavash": ["Lavash", "Լավաշ"],
       "Gata": ["Gata", "Գաթա"],
       "Ghapama": ["Xapama", "Ղափամա"],
-      "Grilled_Fish": ["Xorovac", "Խորոված"],
+      "Grilled_Fish": ["XorovacDzuk", "ԽորովածՁուկ", "Xorovac", "Խորոված"],
       "Star": ["Astx", "Աստղ"],
       "Medal": ["Medal", "Մեդալ"],
       "Egg": ["Dzu", "Ձու"],
@@ -214,8 +215,10 @@
       "AutoUnlock": ["AvtomatBacum", "ԱվտոմատԲացում"],
       "Functions": ["Funkcianer", "Ֆունկցիաներ"],
       "Import": ["Nermucum", "Ներմուծում"],
-      "Utilities": ["Ognakanner", "Օգնականներ"],
-      "Ranch": ["Rancho", "Ռանչո"]
+      "Utilities": ["Math", "Ognakanner", "Օգնականներ"],
+      "Ranch": ["Rancho", "Ռանչո"],
+      "Market": ["Arevtur", "Առևտուր"],
+      "Mushrooms": ["Sunker", "Սունկեր"]
     }
   },
 
@@ -251,9 +254,9 @@
       "weave": ["hyusel", "հյուսել"],
       "carpetOrders": ["gorgPatverner", "գորգպատվերներ"],
       "sellCarpet": ["vacharelGorg", "վաճառելգորգ"],
-      "flowerKinds": ["caxkiTesak", "ծաղկիտեսակ"],
-      "donkeyBring": ["eshBerel", "էշբերել"],
-      "donkeyShip": ["eshTanel", "էշտանել"],
+      "flowerKinds": ["caxkiTesakner", "ծաղկիտեսակներ", "caxkiTesak", "ծաղկիտեսակ"],
+      "donkeyBring": ["eshovBerel", "էշովբերել", "eshBerel", "էշբերել"],
+      "donkeyShip": ["eshovTanel", "էշովտանել", "eshTanel", "էշտանել"],
       "fair": ["tonavachar", "տոնավաճառ"]
     },
     "namespaces": {
@@ -309,7 +312,7 @@
         "Brown": ["Darchnaguyn", "Դարչնագույն", "Daraguyn"],
         "Black": ["Sev", "Սև"],
         "Gold": ["Voskeguyn", "Ոսկեգույն"],
-        "Spotted": ["Xayt", "Խայտ"],
+        "Spotted": ["Xaytabxet", "Խայտաբղետ", "Xayt", "Խայտ"],
         "Red": ["Karmir", "Կարմիր"],
         "Orange": ["Narnjaguyn", "Նարնջագույն"],
         "Yellow": ["Dexin", "Դեղին"],

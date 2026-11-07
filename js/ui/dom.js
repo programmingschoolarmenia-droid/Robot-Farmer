@@ -1,4 +1,12 @@
 // Small DOM helpers.
+import { formatCount } from '../core/util.js';
+
+// True while the mouse or a finger is pressing: a button rebuilt between press and release loses its
+// click, so what redraws on a timer waits for the release.
+let pressing = false;
+window.addEventListener('pointerdown', () => (pressing = true), true);
+for (const type of ['pointerup', 'pointercancel', 'blur']) window.addEventListener(type, () => (pressing = false), true);
+export const isPressing = () => pressing;
 
 // Phone / portrait-tablet layout (tabs instead of side-by-side panels). Keep in sync with css/mobile.css.
 export const mobileQuery = window.matchMedia('(max-width: 1023px), (max-height: 599px)');
@@ -47,6 +55,21 @@ export function pixelImg(src, cls = '', alt = '') {
 
 // The pictures of the seasons and the weathers (calendar.js names).
 export const CALENDAR_ICONS = { Spring: 'blossom', Summer: 'sunflower', Autumn: 'leaf', Winter: 'snowflake', Sunny: 'sun', Rain: 'rain', Storm: 'storm', Heat: 'flame', Snow: 'snow' };
+
+// The storage chips in a full-screen window's head: only the numbers change while items come in.
+export function itemChips(box, { sprites, i18n }, game) {
+  const inv = game.inventory;
+  const shown = ((game.settings.items && game.settings.items.order) || []).filter((item) => inv.get(item) > 0);
+  const key = shown.join();
+  if (box.dataset.key !== key) {
+    box.dataset.key = key;
+    box.replaceChildren(...shown.map((item) => h('span', { class: 'chip', title: i18n.item(item), dataset: { item } }, pixelImg(sprites.url(`item:${item}`, 2)), h('span', {}))));
+  }
+  for (const chip of box.children) {
+    const text = formatCount(Math.floor(inv.get(chip.dataset.item)));
+    if (chip.lastChild.textContent !== text) chip.lastChild.textContent = text;
+  }
+}
 
 // A small picture from the sprite book next to a label (icon:<name>, or any sprite name with a «:»).
 export function icon(sprites, name, cls = '') {

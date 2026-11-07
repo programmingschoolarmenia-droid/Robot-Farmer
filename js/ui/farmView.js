@@ -4,7 +4,7 @@ import { formatCount } from '../core/util.js';
 
 const MAX_TILE_CSS = 80;
 const MEADOW_TILE_CSS = 48;
-const SWAY = new Set(['Grass', 'Bush', 'Tree', 'Carrot', 'Sunflower']);
+const SWAY = new Set(['Grass', 'Bush', 'Tree', 'Carrot', 'Sunflower', 'Mushroom']);
 // Colour laid over the meadow and the ground in each season (spring keeps the plain colours).
 export const SEASON_TINT = { Summer: 'rgba(255, 210, 90, 0.10)', Autumn: 'rgba(205, 110, 35, 0.20)', Winter: 'rgba(236, 244, 255, 0.62)' };
 const PARTICLE_COLORS = {
@@ -15,6 +15,7 @@ const PARTICLE_COLORS = {
   Pumpkin: ['#fa6a0a', '#f9a31b', '#ffd541'],
   Sunflower: ['#ffd541', '#fffc40', '#59c135'],
   Cactus: ['#14a02e', '#59c135', '#d6f264'],
+  Mushroom: ['#bc4a9b', '#f4d29c', '#793a80'],
   Dead_Pumpkin: ['#8e5252', '#5b3138'],
 };
 
@@ -264,6 +265,8 @@ export class FarmView {
         return `sunflower${stage}`;
       case 'Cactus':
         return p >= 1 ? `cactus${e.data.size ?? 0}` : 'cactusSprout';
+      case 'Mushroom':
+        return `mushroom${stage}`;
       case 'Hedge':
         return 'hedge';
       case 'Treasure':
@@ -453,8 +456,8 @@ export class FarmView {
       ctx.fillStyle = 'rgba(225, 245, 255, 0.55)'; // ice (fish still bite under it)
       ctx.fillRect(r.x + (r.s - s) / 2, r.y + (r.s - s) / 2, s, s);
     }
-    if (this.fx && this.game.world.isFullPond(tl)) {
-      // a glint gliding over the full pond
+    if (this.fx && this.game.world.isFullPond(tl) && !(tl.fishAt > this.game.time)) {
+      // a glint gliding over a full pond with fish (not while it rests)
       const k = (t * 0.4 + hash(tl.x, tl.y) / 97) % 1;
       const px = Math.max(2, r.s / 16);
       ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
@@ -828,6 +831,7 @@ export class FarmView {
       if (e.type !== 'Dead_Pumpkin') lines.push(h('div', { class: 'bar' }, h('span', { style: { width: `${Math.floor(e.progress * 100)}%` } })));
     }
     if (tile.water > 0.01) lines.push(h('div', {}, icon(this.sprites, 'water'), ` ${Math.round(tile.water * 100)}%`));
+    if (tile.ground === 'Pond' && tile.fishAt > this.game.time) lines.push(h('div', {}, i18n.t('ui.pondResting', { n: Math.ceil(tile.fishAt - this.game.time) })));
     if (tile.glass) lines.push(h('div', {}, i18n.t('ui.glassTip')));
     const world = this.game.world;
     if (e && world.polycultureLevel() > 0) {

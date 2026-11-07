@@ -57,11 +57,11 @@ test('village: daily requests ask for gathered items, scale with the farm, pay s
   v.give('Bridge');
   game.stats.totals.clear();
   game.inventory.add('Carrot', 100000);
-  game.inventory.add('Fish', 30);
-  game.inventory.add('Hay', 49);
+  game.inventory.add('Fish', 50);
+  game.inventory.add('Hay', 249);
   const board = v.requests();
   const byItem = Object.fromEntries(board.list.map((q) => [q.item, q.amount]));
-  assert.deepEqual(byItem, { Carrot: 2000, Fish: 10, Hay: 50 }, 'only gathered items: 2% or the base, rounded to two digits');
+  assert.deepEqual(byItem, { Carrot: 6000, Fish: 50, Hay: 250 }, 'only gathered items: 6% or the base, rounded to two digits');
   assert.equal(new Set(board.list.map((q) => q.who)).size, 3, 'three different villagers');
   assert.equal(v.requests(), board, 'the same board all day');
   const stars = board.list.map((q, i) => {
@@ -70,13 +70,31 @@ test('village: daily requests ask for gathered items, scale with the farm, pay s
   });
   assert.deepEqual(stars, [1, 1, 3], 'the last one also pays the bonus');
   assert.equal(v.deliver(0), 0, 'a request is done once');
-  assert.deepEqual([game.inventory.get('Star'), game.inventory.get('Carrot'), v.done], [5, 98000, 3]);
+  assert.deepEqual([game.inventory.get('Star'), game.inventory.get('Carrot'), v.done], [5, 94000, 3]);
   const copy = reload(game);
   assert.deepEqual([copy.village.board, copy.village.done], [board, 3]);
   game.stats.clock = () => START + 24 * 60 * MIN;
   game.calendar.checkAt = 0;
   game.calendar.update(game.time);
   assert.notEqual(v.requests().day, board.day, 'new requests every day');
+});
+
+test('village: stars buy boosts, but only when the whole village stands', () => {
+  const game = seasonGame(START, { items: { Star: 10 } });
+  const v = game.village;
+  assert.equal(v.buyBoost(0), false, 'not before the last building');
+  assert.equal(game.inventory.get('Star'), 10);
+  for (const b of v.buildings) v.repaired.add(b.id);
+  assert.equal(v.allRepaired(), true);
+  assert.equal(v.buyBoost(99), false, 'no such boost');
+  assert.equal(v.buyBoost(0), true);
+  assert.deepEqual([game.inventory.get('Star'), game.boost('speed'), game.boosts.speed.item], [7, 2, 'Star']);
+  assert.equal(v.buyBoost(1), true);
+  assert.equal(game.boost('growth'), 2);
+  assert.equal(v.buyBoost(2), false, 'not enough stars left for this one');
+  assert.equal(game.inventory.get('Star'), 4);
+  assert.equal(game.boost('goldenFish'), 1);
+  assert.ok(game.boosts.speed.until - game.time <= 60);
 });
 
 test('machines: build, cook for a fixed time, collect; an unfinished machine is never destroyed', () => {

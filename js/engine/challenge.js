@@ -88,6 +88,7 @@ export function testRanch(config, task, scripts = {}) {
   );
   game.stats.clock = () => TEST_DAY;
   const ranch = game.ranch;
+  ranch.noRescue = true; // (a try is on its own)
   for (const [type, n] of Object.entries(task.animals || {})) for (let i = 0; i < n; i++) ranch.addAnimal(type);
   for (const [name, code] of Object.entries(scripts)) ranch.setScriptCode(name, code);
   return game;

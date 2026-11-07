@@ -31,7 +31,7 @@ export class RanchScreen {
     this.inventoryList = h('ul', { class: 'inventory-list' });
     this.handsEl = h('div', { class: 'ranch-hands' });
     this.controlbar = h('footer', { class: 'controlbar' });
-    this.questSlot = h('div', { class: 'ranch-quest-slot', style: { flex: '1', minWidth: '0', display: 'flex' } });
+    this.questSlot = h('div', { class: 'quest-slot', style: { flex: '1', minWidth: '0', display: 'flex' } });
     this.dramChip = h('span', { class: 'chip ranch-dram', title: app.i18n.item('Dram') });
     this.zoomBtn = h('button', { class: 'btn btn-sm ranch-zoom', onclick: () => this.toggleZoom() });
     this.tabButtons = [
@@ -45,6 +45,17 @@ export class RanchScreen {
     this.timeChip = h('span', { class: 'chip challenge-chip', title: t('ui.challengeTime') });
     this.bestChip = h('span', { class: 'chip challenge-chip', title: t('ui.challengeBestTitle') });
     const avatar = app.config.bridgy.avatar || 'assets/bridgy/bridgy-head.png';
+    // The way to the shop, the market, the loom and back to the farm: at the bottom right, like on the farm.
+    const nav = challenge
+      ? null
+      : h(
+          'nav',
+          { class: 'side-nav' },
+          h('button', { class: 'btn btn-gold ranch-shop-button', title: t('ui.ranchShop'), onclick: () => this.openShop() }, icon(app.sprites, 'cart'), h('span', { class: 'btn-label' }, t('ui.ranchShop'))),
+          h('button', { class: 'btn ranch-market-button', title: t('ui.ranchMarket'), onclick: () => this.openMarket() }, icon(app.sprites, 'board'), h('span', { class: 'btn-label' }, t('ui.ranchMarket'))),
+          this.loomBtn,
+          h('button', { class: 'btn ranch-back-button', title: t('ui.ranchBack'), onclick: () => this.close() }, icon(app.sprites, 'farm'), h('span', { class: 'btn-label' }, t('ui.ranchBack'))),
+        );
     const topbar = challenge
       ? [h('div', { class: 'challenge-task' }, h('b', {}, icon(app.sprites, 'cap'), ` ${challenge.task.name}`), h('span', {}, challenge.task.about)), this.loomBtn, this.bestChip, this.timeChip, h('button', { class: 'btn', title: t('ui.challengeBack'), onclick: () => this.close() }, '⬅', h('span', { class: 'btn-label' }, t('ui.challengeBack')))]
       : [
@@ -54,10 +65,6 @@ export class RanchScreen {
           this.calendarChip,
           this.boostChip,
           this.dramChip,
-          this.loomBtn,
-          h('button', { class: 'btn btn-gold ranch-shop-button', title: t('ui.ranchShop'), onclick: () => this.openShop() }, icon(app.sprites, 'cart'), h('span', { class: 'btn-label' }, t('ui.ranchShop'))),
-          h('button', { class: 'btn ranch-market-button', title: t('ui.ranchMarket'), onclick: () => this.openMarket() }, icon(app.sprites, 'board'), h('span', { class: 'btn-label' }, t('ui.ranchMarket'))),
-          h('button', { class: 'btn ranch-back-button', title: t('ui.ranchBack'), onclick: () => this.close() }, icon(app.sprites, 'farm'), h('span', { class: 'btn-label' }, t('ui.ranchBack'))),
         ];
     this.el = h(
       'section',
@@ -73,6 +80,7 @@ export class RanchScreen {
           { class: 'side-panel' },
           h('section', { class: 'panel grow' }, h('div', { class: 'panel-head' }, icon(app.sprites, 'storage'), ' ', t('ui.ranchStorage')), this.inventoryList),
           h('section', { class: 'panel' }, h('div', { class: 'panel-head' }, t('ui.ranchHands')), this.handsEl),
+          nav,
         )),
       ),
       this.controlbar,
@@ -277,6 +285,10 @@ export class RanchScreen {
       ev.on('carpet', (e) => this.onCarpet(e)),
       ev.on('fair', () => this.onFair()),
       ev.on('restart', () => this.onRestart()),
+      ev.on('rescue', (e) => {
+        app.audio.play('quest');
+        this.bridgy.toast(t('ui.ranchRescue', { name: e.who.name, n: e.amount, item: app.i18n.item(e.item).toLowerCase() }), 9000);
+      }),
     ];
   }
 

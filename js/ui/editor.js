@@ -18,8 +18,8 @@ const KEYWORDS_BY_FEATURE = {
   import: ['import', 'export', 'from'],
 };
 const ALWAYS_KEYWORDS = ['true', 'false', 'null'];
-// Phone symbol bar (most used first): brackets and quotes are inserted in pairs; ◀ ▶ move the cursor.
-const SYMBOLS = ['◀', '▶', '(', ')', '{', '}', ';', '=', '"', '<', '>', '+', '-', '*', '/', '%', '!', '&', '|', ',', '.', '[', ']', '⇥'];
+// Phone symbol bar (most used first): brackets and quotes are inserted in pairs; ← → move the cursor.
+const SYMBOLS = ['←', '→', '(', ')', '{', '}', ';', '=', '"', '<', '>', '+', '-', '*', '/', '%', '!', '&', '|', ',', '.', '[', ']', '⇥'];
 const PAIRS = { '(': ')', '{': '}', '[': ']', '"': '"' };
 
 export class ConsolePanel {
@@ -88,7 +88,8 @@ export class EditorPanel {
     this.banner = h('div', { class: 'editor-banner', hidden: true }, this.i18n.t('ui.readOnlyWhileRunning'));
     this.wrap.append(this.banner);
     this.console = new ConsolePanel(this.i18n, (module, line) => this.jumpTo(module, line));
-    container.append(this.tabsBar, this.wrap, this.symbolBar(), this.console.el);
+    this.suggestBar = h('div', { class: 'suggest-bar' });
+    container.append(this.tabsBar, this.wrap, h('div', { class: 'phone-keys' }, this.suggestBar, this.symbolBar()), this.console.el);
 
     this.cm = CM(this.wrap, {
       value: '',
@@ -120,9 +121,25 @@ export class EditorPanel {
     this.cm.on('changes', () => this.handleChange());
     this.cm.on('inputRead', (cm, change) => this.maybeHint(cm, change));
     // Phones: while typing, the control and tab bars hide to leave room above the keyboard.
-    this.cm.on('focus', () => document.documentElement.classList.toggle('typing', mobileQuery.matches));
-    this.cm.on('blur', () => document.documentElement.classList.remove('typing'));
-    this.resizeObserver = new ResizeObserver(() => this.cm.refresh());
+    this.cm.on('focus', () => {
+      document.documentElement.classList.toggle('typing', mobileQuery.matches);
+      this.suggest();
+    });
+    this.cm.on('blur', () => {
+      document.documentElement.classList.remove('typing');
+      this.suggest();
+    });
+    // Phones: the keyboard composes a word and CodeMirror only sees it when the word ends, so its popup
+    // never opens there. A strip above the symbols follows the word being typed instead.
+    this.composed = '';
+    const field = this.cm.getInputField();
+    field.addEventListener('compositionupdate', (e) => {
+      this.composed = e.data || '';
+      this.suggest();
+    });
+    field.addEventListener('compositionend', () => (this.composed = ''));
+    this.cm.on('cursorActivity', () => this.suggest());
+    this.resizeObserver = new ResizeObserver(() => this.refresh());
     this.resizeObserver.observe(this.wrap);
 
     for (const s of game.scripts) this.docs.set(s.name, CM.Doc(s.code, 'javascript'));
@@ -135,7 +152,8 @@ export class EditorPanel {
     const press = (sym) => {
       const cm = this.cm;
       if (cm.getOption('readOnly')) return;
-      if (sym === '◀' || sym === '▶') cm.execCommand(sym === '◀' ? 'goCharLeft' : 'goCharRight');
+      this.endComposition();
+      if (sym === '←' || sym === '→') cm.execCommand(sym === '←' ? 'goCharLeft' : 'goCharRight');
       else if (sym === '⇥') cm.replaceSelection('  ');
       else if (PAIRS[sym] && !cm.somethingSelected()) {
         cm.replaceSelection(sym + PAIRS[sym]);
@@ -146,8 +164,23 @@ export class EditorPanel {
     return h(
       'div',
       { class: 'symbol-bar' },
+      // ▶ runs the code without closing the keyboard first
+      h('button', { class: 'sym sym-run', type: 'button', title: this.i18n.t('ui.run'), onmousedown: (e) => e.preventDefault(), onclick: () => this.runFromKeys() }, '▶'),
       SYMBOLS.map((sym) => h('button', { class: 'sym', type: 'button', onmousedown: (e) => e.preventDefault(), onclick: () => press(sym) }, sym)),
     );
+  }
+
+  runFromKeys() {
+    this.endComposition();
+    this.cm.display.input.blur();
+    if (this.onRun) this.onRun();
+  }
+
+  // The word being composed goes into the text now (before a symbol or a name is added to it).
+  endComposition() {
+    const input = this.cm.display.input;
+    if (input.forceCompositionEnd) input.forceCompositionEnd();
+    this.composed = '';
   }
 
   // Colours game functions (blue) and enums (amber) in the code.
@@ -167,6 +200,7 @@ export class EditorPanel {
 
   destroy() {
     this.resizeObserver.disconnect();
+    clearTimeout(this.refreshTimer);
     this.hideHintDoc();
     document.documentElement.classList.remove('typing');
   }
@@ -316,8 +350,9 @@ export class EditorPanel {
     this.checkTimer = setTimeout(() => this.liveCheck(), ms);
   }
 
-  // Marks syntax errors / locked features while typing.
+  // Marks syntax errors / locked features while typing (after the word being composed: marks redraw its line).
   liveCheck() {
+    if (this.wordOpen()) return this.scheduleCheck();
     const name = this.active;
     const code = this.cm.getValue();
     const errors = this.game.api.check(name, code).filter((e) => !e.module || e.module === name);
@@ -424,18 +459,29 @@ export class EditorPanel {
     this.running = running;
     this.cm.setOption('readOnly', running ? true : false);
     this.banner.hidden = !running;
+    this.wrap.classList.toggle('running', running); // (the banner stands above the code, not over it)
+    this.refresh();
     if (!running) this.setExecLine(null, null);
     this.renderTabs();
   }
 
+  // The phone keyboard's word is only on the screen until CodeMirror reads it (a little after it ends).
+  wordOpen() {
+    const input = this.cm.display.input;
+    return !!input.composing || input.readDOMTimeout != null;
+  }
+
+  // A redraw would lose that word, so it waits.
   refresh() {
-    this.cm.refresh();
+    clearTimeout(this.refreshTimer);
+    if (this.wordOpen()) this.refreshTimer = setTimeout(() => this.refresh(), 200);
+    else this.cm.refresh();
   }
 
   // ------------------------------------------------------------------ autocomplete
 
   maybeHint(cm, change) {
-    if (this.running) return;
+    if (this.running || this.usesStrip()) return;
     const text = change.text.join('');
     if (text === '.') {
       this.showHint(cm, false);
@@ -456,11 +502,78 @@ export class EditorPanel {
     });
   }
 
+  // Touch phones: CodeMirror's contenteditable input (see the constructor).
+  usesStrip() {
+    return mobileQuery.matches && this.cm.getOption('inputStyle') === 'contenteditable';
+  }
+
+  // The strip of names for the word being typed (at the start of a word: all of them, shortest first).
+  suggest() {
+    if (!this.usesStrip()) return;
+    const cm = this.cm;
+    let items = [];
+    if (cm.hasFocus() && !this.running) {
+      const cur = cm.getCursor();
+      const found = this.completions(cm.getLine(cur.line).slice(0, cur.ch) + this.composed, true);
+      if (found) items = found.items.slice(0, 24);
+    }
+    this.suggestBar.replaceChildren(
+      ...items.map((it) => h('button', { class: 'sym suggest', type: 'button', onmousedown: (e) => e.preventDefault(), onclick: () => this.pickSuggestion(it) }, it.kind === 'fn' ? `${it.text}()` : it.text)),
+    );
+    this.suggestBar.scrollLeft = 0;
+  }
+
+  // A group's name also gets its dot, so the strip goes on with what is in the group.
+  pickSuggestion(it) {
+    const cm = this.cm;
+    this.endComposition();
+    const cur = cm.getCursor();
+    const word = cm.getLine(cur.line).slice(0, cur.ch).match(WORD_RE);
+    const from = { line: cur.line, ch: cur.ch - (word ? word[0].length : 0) };
+    this.insertName(cm, it, from, cur, it.kind === 'enum' || it.kind === 'lib' ? '.' : '');
+    cm.focus();
+    this.suggest();
+  }
+
+  insertName(cm, it, from, to, after = '') {
+    if (it.kind === 'fn') {
+      cm.replaceRange(`${it.text}()`, from, to);
+      if (it.takesArgs) cm.setCursor({ line: from.line, ch: from.ch + it.text.length + 1 });
+    } else cm.replaceRange(it.text + after, from, to);
+  }
+
   hintList(cm, explicit) {
+    const cur = cm.getCursor();
+    const found = this.completions(cm.getLine(cur.line).slice(0, cur.ch), explicit);
+    if (!found) return null;
+    const { items, prefix } = found;
+    const from = { line: cur.line, ch: cur.ch - prefix.length };
+    const list = items.slice(0, 40).map((it) => ({
+      text: it.text,
+      displayText: it.text,
+      data: it,
+      render: (el) => {
+        el.append(
+          h(
+            'span',
+            { class: 'hint-row' },
+            h('span', { class: 'hint-name' }, it.kind === 'fn' ? `${it.text}()` : it.text),
+            h('span', { class: 'hint-kind' }, kindLabel(this.i18n, it.kind)),
+          ),
+        );
+      },
+      hint: (c, self) => this.insertName(c, it, self.from, self.to),
+    }));
+    const result = { list, from, to: cur };
+    CM.on(result, 'select', (completion, el) => this.showHintDoc(completion.data, el));
+    CM.on(result, 'close', () => this.hideHintDoc());
+    return result;
+  }
+
+  // The names that fit the text before the cursor: { items, prefix }, or null.
+  completions(before, explicit) {
     const api = this.game.api;
     const research = this.game.research;
-    const cur = cm.getCursor();
-    const before = cm.getLine(cur.line).slice(0, cur.ch);
     const memberMatch = before.match(/([\p{L}_$][\p{L}\p{N}_$]*)\.([\p{L}\p{N}_$]*)$/u);
     let items = [];
     let prefix;
@@ -468,7 +581,7 @@ export class EditorPanel {
       prefix = memberMatch[2];
       const ns = api.globals.get(api.canonicalName(memberMatch[1]));
       if (!ns || !ns.value || !ns.value.members) return null;
-      for (const name of ns.value.displayNames()) items.push({ text: name, kind: memberMatch[1] });
+      for (const name of ns.value.displayNames()) items.push({ text: name, kind: memberMatch[1] === 'Math' && typeof Math[name] === 'function' ? 'fn' : memberMatch[1], takesArgs: name !== 'random' });
     } else {
       const m = before.match(WORD_RE);
       prefix = m ? m[0] : '';
@@ -488,7 +601,7 @@ export class EditorPanel {
       const own = new Set();
       const re = /\b(?:let|const|var|function)\s+([\p{L}_$][\p{L}\p{N}_$]*)/gu;
       let mm;
-      const code = cm.getValue();
+      const code = this.cm.getValue();
       while ((mm = re.exec(code))) own.add(mm[1]);
       for (const w of own) items.push({ text: w, kind: 'var' });
     }
@@ -501,32 +614,7 @@ export class EditorPanel {
     });
     items.sort((a, b) => Number(!a.text.startsWith(prefix)) - Number(!b.text.startsWith(prefix)) || a.text.length - b.text.length || a.text.localeCompare(b.text));
     if (!items.length) return null;
-    const from = { line: cur.line, ch: cur.ch - prefix.length };
-    const list = items.slice(0, 40).map((it) => ({
-      text: it.text,
-      displayText: it.text,
-      data: it,
-      render: (el) => {
-        el.append(
-          h(
-            'span',
-            { class: 'hint-row' },
-            h('span', { class: 'hint-name' }, it.kind === 'fn' ? `${it.text}()` : it.text),
-            h('span', { class: 'hint-kind' }, kindLabel(this.i18n, it.kind)),
-          ),
-        );
-      },
-      hint: (c, self, data) => {
-        if (it.kind === 'fn') {
-          c.replaceRange(`${it.text}()`, self.from, self.to);
-          if (it.takesArgs) c.setCursor({ line: self.from.line, ch: self.from.ch + it.text.length + 1 });
-        } else c.replaceRange(data.text, self.from, self.to);
-      },
-    }));
-    const result = { list, from, to: cur };
-    CM.on(result, 'select', (completion, el) => this.showHintDoc(completion.data, el));
-    CM.on(result, 'close', () => this.hideHintDoc());
-    return result;
+    return { items, prefix };
   }
 
   showHintDoc(item, el) {

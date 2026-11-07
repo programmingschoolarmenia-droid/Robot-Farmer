@@ -1,5 +1,5 @@
 // Full-screen research tree (layout from config/research.json, shape like the user's photo).
-import { h, icon, pixelImg, mobileQuery } from './dom.js';
+import { h, icon, pixelImg, itemChips, mobileQuery } from './dom.js';
 import { formatCount } from '../core/util.js';
 
 const CARD_W = 100;
@@ -7,6 +7,7 @@ const CARD_H = 80;
 const GAP_X = 16;
 const GAP_Y = 38;
 const PAD = 30;
+const BIG_W = 190; // research.json → big: a card as large as the world it opens (css/tree.css)
 
 export class ResearchTree {
   constructor({ app, game, onBuy, onClose }) {
@@ -26,7 +27,8 @@ export class ResearchTree {
   }
 
   computeLayout() {
-    const nodes = this.game.research.nodes;
+    // research.json → top: not on a branch, but in the top row to the right of the first card.
+    const nodes = this.game.research.nodes.filter((n) => !n.top);
     const kids = new Map(nodes.map((n) => [n.id, []]));
     const roots = [];
     for (const n of nodes) {
@@ -60,11 +62,18 @@ export class ResearchTree {
       x += width.get(r);
     }
     this.layout = { pos, units: x, depth: maxDepth };
-    this.treeW = x * (CARD_W + GAP_X) + PAD * 2;
+    this.topCards = new Map();
+    let tx = PAD + pos.get(roots[0]).x * (CARD_W + GAP_X) + CARD_W / 2 + 36;
+    for (const n of this.game.research.nodes.filter((c) => c.top)) {
+      this.topCards.set(n.id, { x: tx, y: n.big ? PAD - 20 : PAD });
+      tx += (n.big ? BIG_W : CARD_W) + 30;
+    }
+    this.treeW = Math.max(x * (CARD_W + GAP_X) + PAD * 2, tx);
     this.treeH = (maxDepth + 1) * (CARD_H + GAP_Y) + PAD * 2;
   }
 
   cardXY(id) {
+    if (this.topCards.has(id)) return this.topCards.get(id);
     const p = this.layout.pos.get(id);
     return { x: PAD + p.x * (CARD_W + GAP_X) - CARD_W / 2, y: PAD + p.depth * (CARD_H + GAP_Y) };
   }
@@ -72,6 +81,7 @@ export class ResearchTree {
   open(selectId = null) {
     if (this.el) return;
     const t = this.app.i18n.t;
+    this.detailsKey = this.linesKey = null;
     this.items = h('div', { class: 'research-items' });
     this.canvas = h('div', { class: 'tree-canvas', style: { width: `${this.treeW}px`, height: `${this.treeH}px` } });
     this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -156,6 +166,10 @@ export class ResearchTree {
     else if (n.icon) body.append(pixelImg(this.app.sprites.url(`icon:${n.icon}`, 3)));
     else body.append(h('div', { class: 'rn-label' }, n.label || n.id));
     const parts = [body];
+    if (n.big) {
+      parts.push(h('div', { class: 'rn-big-name' }, n.name), h('div', { class: 'rn-world' }, this.app.i18n.t('ui.researchWorld')));
+      if (state === 'locked') parts.push(pixelImg(this.app.sprites.url('icon:lock', 2), 'rn-lock'));
+    }
     const max = n.tiers.length;
     if (max > 1) parts.push(h('div', { class: 'rn-level' }, `${this.game.research.level(n.id)} / ${max}`));
     if (state === 'soon') parts.push(h('div', { class: 'rn-ribbon' }, this.app.i18n.t('ui.soon')));
@@ -171,13 +185,13 @@ export class ResearchTree {
       const key = `${state}:${research.level(n.id)}`;
       if (card.dataset.key !== key) {
         card.dataset.key = key;
-        card.className = `rnode state-${state} ${n.tiers.length > 1 ? 'has-level' : ''} ${this.selected === n.id ? 'selected' : ''}`;
+        card.className = `rnode state-${state} ${n.tiers.length > 1 ? 'has-level' : ''} ${n.big ? 'big' : ''} ${this.selected === n.id ? 'selected' : ''}`;
         card.title = n.secret && state === 'locked' ? '???' : n.name;
         card.replaceChildren(...this.cardContent(n, state));
       }
     }
     this.drawLines();
-    this.renderItems();
+    itemChips(this.items, this.app, this.game);
     if (this.selected) this.renderDetails();
   }
 
@@ -185,6 +199,7 @@ export class ResearchTree {
     const research = this.game.research;
     const paths = [];
     for (const n of research.nodes) {
+      if (n.top) continue;
       for (const p of n.parents || []) {
         const a = this.cardXY(p);
         const b = this.cardXY(n.id);
@@ -197,17 +212,8 @@ export class ResearchTree {
         paths.push(`<path class="${visible ? '' : 'dim'}" d="M${ax},${ay + 2} V${mid} H${bx} V${by - 3}"/>`);
       }
     }
-    this.svg.innerHTML = paths.join('');
-  }
-
-  renderItems() {
-    const inv = this.game.inventory;
-    const i18n = this.app.i18n;
-    const order = (this.game.settings.items && this.game.settings.items.order) || [];
-    const chips = order
-      .filter((item) => inv.get(item) > 0)
-      .map((item) => h('span', { class: 'chip', title: i18n.item(item) }, pixelImg(this.app.sprites.url(`item:${item}`, 2)), formatCount(Math.floor(inv.get(item)))));
-    this.items.replaceChildren(...chips);
+    const key = paths.join('');
+    if (key !== this.linesKey) this.svg.innerHTML = this.linesKey = key;
   }
 
   select(id) {
@@ -215,6 +221,7 @@ export class ResearchTree {
     this.selected = id;
     const card = id && this.cards.get(id);
     if (card) card.classList.add('selected');
+    this.detailsKey = null;
     if (id) this.renderDetails();
     else this.details.hidden = true;
   }
@@ -261,6 +268,15 @@ export class ResearchTree {
     const lvl = research.level(n.id);
     const max = n.tiers.length;
     const hidden = n.secret && state === 'locked';
+    const inv = this.game.inventory;
+    // Rebuilt only when what it shows changes (a rebuilt Buy button would lose a click on its way).
+    const shownCost = state === 'maxed' || state === 'soon' ? null : research.nextCost(n.id);
+    const key = JSON.stringify([n.id, state, lvl, research.totalLevels(), shownCost && Object.entries(shownCost).map(([item, need]) => inv.get(item) >= need)]);
+    if (key === this.detailsKey) {
+      for (const chip of this.details.querySelectorAll('[data-have]')) chip.title = t('ui.have', { n: formatCount(Math.floor(inv.get(chip.dataset.have))) });
+      return;
+    }
+    this.detailsKey = key;
     const pic = h('div', { class: 'rd-icon' });
     if (hidden) pic.append(pixelImg(this.app.sprites.url('icon:secret', 3)));
     else if (n.icon) pic.append(pixelImg(this.app.sprites.url(`icon:${n.icon}`, 3)));
@@ -286,8 +302,7 @@ export class ResearchTree {
     } else if (state === 'soon') {
       parts.push(h('div', { class: 'rd-note' }, icon(this.app.sprites, 'soon'), ' ', t('ui.soonHint')));
     } else {
-      const cost = research.nextCost(n.id);
-      const inv = this.game.inventory;
+      const cost = shownCost;
       parts.push(
         h(
           'div',
@@ -300,7 +315,7 @@ export class ResearchTree {
               const have = inv.get(item);
               return h(
                 'span',
-                { class: `chip ${have >= need ? 'done' : 'missing'}`, title: t('ui.have', { n: formatCount(Math.floor(have)) }) },
+                { class: `chip ${have >= need ? 'done' : 'missing'}`, title: t('ui.have', { n: formatCount(Math.floor(have)) }), dataset: { have: item } },
                 pixelImg(this.app.sprites.url(`item:${item}`, 2)),
                 `${formatCount(need)} ${i18n.item(item)}`,
               );

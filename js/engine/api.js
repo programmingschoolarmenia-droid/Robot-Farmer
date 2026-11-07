@@ -4,12 +4,12 @@ import { BuiltinFunction, EnumValue, Namespace, DroneHandle, makeObject, formatV
 import { GameError } from '../lang/errors.js';
 import { createLibraries } from '../lang/stdlib.js';
 import { parseProgram } from '../lang/frontend-js.js';
-import { checkProgram } from '../lang/gate.js';
+import { checkProgram, lintProgram } from '../lang/gate.js';
 import { suggestNames } from '../core/util.js';
 import { DIRECTIONS } from './world.js';
 import { SEASON_NAMES, WEATHER_NAMES } from './calendar.js';
 
-export const ENTITY_NAMES = ['Grass', 'Bush', 'Tree', 'Carrot', 'Pumpkin', 'Dead_Pumpkin', 'Sunflower', 'Cactus', 'Hedge', 'Treasure', 'Apple', 'Dinosaur'];
+export const ENTITY_NAMES = ['Grass', 'Bush', 'Tree', 'Carrot', 'Pumpkin', 'Dead_Pumpkin', 'Sunflower', 'Cactus', 'Hedge', 'Treasure', 'Apple', 'Dinosaur', 'Mushroom', 'Maze'];
 export const ITEM_NAMES = [
   'Hay', 'Wood', 'Carrot', 'Pumpkin', 'Power', 'Water', 'Fertilizer', 'Weird_Substance', 'Cactus', 'Bone', 'Gold', 'Fish',
   'Flour', 'Jam', 'Lavash', 'Gata', 'Ghapama', 'Grilled_Fish', 'Star', 'Medal',
@@ -22,6 +22,8 @@ export const MACHINE_NAMES = ['Mill', 'JamPot', 'Tonir']; // the village kitchen
 
 // Python habits → JavaScript (shown in "not defined" errors).
 const PYTHON_HINTS = {
+  patahakan: 'Math.random()', // the command it replaced
+  պատահական: 'Math.random()',
   True: 'true',
   False: 'false',
   None: 'null',
@@ -199,10 +201,11 @@ export class GameApi {
       if (cached.errors.length) throw cached.errors[0];
       return cached;
     }
-    const result = { code, ast: null, errors: [], researchStamp: this.researchStamp() };
+    const result = { code, ast: null, errors: [], lints: [], researchStamp: this.researchStamp() };
     try {
       result.ast = parseProgram(code, name);
       result.errors = checkProgram(result.ast, this.gateContext());
+      result.lints = lintProgram(result.ast, (n) => (this.globals.get(this.canonicalName(n)) || {}).kind === 'function');
     } catch (e) {
       if (e instanceof GameError) result.errors = [e];
       else throw e;
@@ -357,6 +360,22 @@ export class GameApi {
     this.def('harvest', (I, args, node) => {
       const tile = api.droneTile(I);
       const t = api.now(I);
+      world().sync(tile, t);
+      // A ripe mushroom hides: the student says where to look, Aj or Dzax (World.mushroomFound).
+      if (world().isRipe(tile) && tile.entity.type === 'Mushroom') {
+        const side = args[0] === undefined ? null : api.needDirection(args[0], 'harvest', node);
+        if (side !== 'East' && side !== 'West') {
+          game.warn('mushroomSide', {}, node, I.drone);
+          api.act(I, false);
+          return false;
+        }
+        if (!world().mushroomFound(side)) {
+          world().clearTile(tile, t);
+          game.warn('mushroomHid', {}, node, I.drone);
+          api.act(I, true);
+          return false;
+        }
+      }
       const r = world().harvest(tile, t);
       if (!r.removed) {
         api.act(I, false);
@@ -364,6 +383,7 @@ export class GameApi {
       }
       api.act(I, true);
       game.onHarvest(r, I.drone, node);
+      if (r.unripe) game.warn('harvestUnripe', { entity: r.type }, node, I.drone);
       return r.ok;
     });
 
@@ -417,10 +437,10 @@ export class GameApi {
       api.needArgs(args, 1, 'plant', node);
       const type = api.needEnum(args[0], 'Entities', 'plant', 1, node);
       const tile = api.droneTile(I);
-      const r = world().plant(tile, type, api.now(I));
+      const r = type === 'Maze' ? game.plantMaze(tile, api.now(I)) : world().plant(tile, type, api.now(I));
       if (!r.ok) {
         api.act(I, false);
-        game.warn(`plant_${r.reason}`, { entity: type, cost: r.cost }, node, I.drone);
+        game.warn(r.reason.startsWith('maze') ? r.reason : `plant_${r.reason}`, { entity: type, cost: r.cost, need: r.need }, node, I.drone);
         return false;
       }
       api.act(I, true);
@@ -569,12 +589,6 @@ export class GameApi {
       return game.research.level(id);
     });
 
-    // --- research: random()
-    this.def('random', (I) => {
-      api.getter(I);
-      return game.rng.next();
-    });
-
     // --- research: Fishing (dig a pond, fill it with water, fish)
     this.def('digPond', (I) => {
       const tile = api.droneTile(I);
@@ -608,7 +622,7 @@ export class GameApi {
         const tile = api.droneTile(I);
         const problem = game.fishProblem(tile, api.now(I));
         if (problem) {
-          game.warn(problem, { water: Math.round(tile.water * 100) }, node, I.drone);
+          game.warn(problem, { water: Math.round(tile.water * 100), seconds: Math.ceil(tile.fishAt - api.now(I)) }, node, I.drone);
           api.act(I, false);
           return null;
         }
@@ -623,7 +637,7 @@ export class GameApi {
         yield 2; // Y.ACTION
         game.afterAction(d);
         if (game.fishProblem(tile, api.now(I))) return null; // the pond was filled in meanwhile
-        return api.enums.Fishes.get(game.catchFish(d, tile));
+        return api.enums.Fishes.get(game.catchFish(d, tile, api.now(I)));
       },
       { gen: true },
     );

@@ -247,6 +247,7 @@ export function validateConfig(config) {
     else {
       if (!ids.has(f.research)) err(S, 'fishing.research', `Անհայտ հետազոտություն «${f.research}»`);
       needNum('fishing.castSeconds', f.castSeconds, { min: 0.1 });
+      if (f.restSeconds !== undefined) needNum('fishing.restSeconds', f.restSeconds, { min: 0 });
       if (f.hat !== undefined && !settingsHats.includes(f.hat)) err(S, 'fishing.hat', `Անհայտ գլխարկ «${f.hat}» (ավելացրու settings.json → hats)`);
       for (const name of FISH_NAMES) {
         const fish = isObj(f.fish) ? f.fish[name] : null;
@@ -472,6 +473,11 @@ export function validateConfig(config) {
     if (!Number.isInteger(rq.perDay) || rq.perDay < 1) err(V, 'requests.perDay', 'Պետք է լինի 1 կամ ավելի ամբողջ թիվ');
     for (const key of ['stars', 'bonus', 'share']) if (rq[key] !== undefined && (!isNum(rq[key]) || rq[key] < 0)) err(V, `requests.${key}`, 'Պետք է լինի 0 կամ դրական թիվ');
     items('requests.items', rq.items, { min: 1 });
+    (rq.starShop || []).forEach((b, i) => {
+      if (!isObj(b) || !['speed', 'growth', 'goldenFish'].includes(b.kind) || ![b.multiplier, b.seconds, b.stars].every((n) => isNum(n) && n > 0)) {
+        err(V, `requests.starShop[${i}]`, 'Պետք է լինի { "kind": "speed" (speed, growth, goldenFish), "multiplier": 2, "seconds": 60, "stars": 3 }');
+      }
+    });
     if (!Array.isArray(rq.villagers) || !rq.villagers.length) err(V, 'requests.villagers', 'Պետք է լինի գյուղացիների ցուցակ');
     else
       rq.villagers.forEach((v, i) => {
@@ -669,6 +675,8 @@ export function validateConfig(config) {
       else for (const [item, v] of Object.entries(sell || {})) if (!ranchItems.includes(item) || !(isNum(v) && v > 0)) err(E, `festivals.${f.id}.ranch.sell.${item}`, 'Պետք է լինի ռանչոյի ապրանք և դրական թիվ');
     }
   }
+  const rescue = ranch.rescue;
+  if (rescue !== undefined && (!isObj(rescue) || !isObj((ranch.items || {})[rescue.item]) || !isNum(rescue.amount) || rescue.amount <= 0)) err(RA, 'rescue', 'Պետք է լինի { "item": "Grain", "amount": 5 }');
   const fair = ranch.fair;
   if (fair !== undefined) {
     if (!isObj(fair) || !(isNum(fair.carpet) && fair.carpet >= 0 && fair.carpet <= 1) || !(isNum(fair.pay) && fair.pay >= 0)) err(RA, 'fair', 'Պետք է լինի { "goods": { "Cheese": 20 }, "carpet": 0.95, "pay": 5000 }');

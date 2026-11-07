@@ -662,6 +662,7 @@
 
 .code-panel {
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* never wider than its place: the phone's symbol keys scroll inside it */
   grid-template-rows: auto minmax(0, 1fr) auto auto;
 }
 

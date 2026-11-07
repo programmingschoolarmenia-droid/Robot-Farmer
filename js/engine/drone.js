@@ -24,7 +24,8 @@ export class Drone {
     const s = g.config.settings;
     const time = s.time || {};
     const base = time.ticksPerSecond ?? 400;
-    let rate = base * Math.pow(time.speedPerTier ?? 1.5, g.research.level(time.speedResearch || 'Speed'));
+    const perTier = (g.isRanch && g.cfg.speedPerTier) || time.speedPerTier || 1.5; // (the ranch's shop has its own)
+    let rate = base * Math.pow(perTier, g.research.level(time.speedResearch || 'Speed'));
     if (g.inventory.get('Power') > 0) rate *= (s.power && s.power.speedMultiplier) || 2;
     rate *= g.boost('speed'); // gata (village kitchen)
     if (g.droneRate) rate *= g.droneRate(this); // the ranch: its dishes and the bees' stings

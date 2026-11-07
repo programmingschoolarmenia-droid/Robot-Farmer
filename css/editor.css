@@ -97,18 +97,26 @@
   background: var(--paper);
   color: #1e293b;
 }
+.editor-wrap.running .CodeMirror {
+  top: 30px;
+}
 .editor-banner {
   position: absolute;
-  bottom: 8px;
-  right: 14px;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
   z-index: 5;
   background: var(--gold-soft);
-  border: 2px solid var(--gold-dark);
+  border-bottom: 2px solid var(--gold-dark);
   color: #7a4f00;
   font-weight: 700;
-  font-size: 0.82rem;
-  border-radius: 10px;
-  padding: 4px 10px;
+  font-size: 0.8rem;
+  line-height: 28px;
+  padding: 0 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   pointer-events: none;
 }
 

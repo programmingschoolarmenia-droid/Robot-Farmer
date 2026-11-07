@@ -39,7 +39,7 @@ problem**; nothing breaks silently.
 |---|---|
 | `ticksPerSecond` | How many "ticks" the drone does per game second (400 = an action of 200 ticks takes 0.5 s) |
 | `speedResearch` | Research id that makes the drone faster (`"Speed"`) |
-| `speedPerTier` | Speed multiplier per level of that research (`1.5`) |
+| `speedPerTier` | Speed multiplier per level of that research (`1.33592`: 7 levels end at ×7.59; the ranch's shop has its own in `ranch.json`) |
 | `doAFlipSeconds` | How long `salto()` takes |
 
 ### `costs`
@@ -81,11 +81,11 @@ Each plant has:
 | `maze` | `research`, `maxReuses` (how many times the treasure can be moved) |
 | `dinosaur` | `research`, `appleCost`, `moveTicks`, `speedupPerApple` |
 | `polyculture` | `research`, `entities`, `distance`, `baseMultiplier` |
-| `fishing` | `research`, `castSeconds` (one cast at the base speed; speed upgrades make it faster), `fish` (`Carp`, `Barbel`, `Trout`, `Golden_Fish`, `Whitefish`, `Catfish`, each `{ "chance": 70, "amount": 1 }`: chance weight and how many fish it gives, doubled by every research level after the first; optional `"seasons": ["Winter"]` / `"weather": ["Rain", "Storm"]` = the fish bites only then), `hat` (unlocked by the first golden fish) |
+| `fishing` | `research`, `castSeconds` (one cast at the base speed; speed upgrades make it faster), `restSeconds` (how long a pond rests after a catch, so more fish take more ponds; `0` = no rest), `fish` (`Carp`, `Barbel`, `Trout`, `Golden_Fish`, `Whitefish`, `Catfish`, each `{ "chance": 70, "amount": 1 }`: chance weight and how many fish it gives, doubled by every research level after the first; optional `"seasons": ["Winter"]` / `"weather": ["Rain", "Storm"]` = the fish bites only then), `hat` (unlocked by the first golden fish) |
 
 **Fishing:** `porel()` digs a pond under the drone (plants can't grow there; `herkel()` fills it
 in again). `ogtagorcel(Irer.Jur)` fills it with water (a pond does not dry out); when
-`jriQanak()` is 1 the pond is full and `dzknorsel()` catches a random fish: Karas, Koxak, Ishxan
+`jriQanak()` is 1 the pond is full and `dzukBrnel()` catches a random fish: Karas, Koxak, Ishxan
 or the golden fish, in winter also Sig (whitefish) and in the rain Loqo (catfish). The fish
 (`Irer.Dzuk`) go to the storage, count for the leaderboard and pay for the next fishing levels.
 
@@ -183,11 +183,13 @@ Each card in `nodes`:
   },
   "available": false,            // optional: shows the card as "Coming soon"
   "secret": true,                // optional: shows "?" until it can be bought
-  "minLevels": 70                // optional: also needs this many research levels in all
+  "minLevels": 70,               // optional: also needs this many research levels in all
+  "top": true,                   // optional: stands in the top row beside the first card, away from the branches (no lines)
+  "big": true                    // optional: a big golden card, for a card that opens a whole new world
 }
 ```
 `"panels": ["ranch"]` (on the «Ranch» card) shows the 🐄 ranch button.
-Icons available: `hat, goldhat, speed, grass, expand, carrot, water, tree, fertilizer,
+Icons available: `mushroom, hat, goldhat, speed, grass, expand, carrot, water, tree, fertilizer,
 sunflower, maze, drones, pumpkin, cactus, polyculture, dinosaur, secret, debugger, trophy, fishing,
 calendar, ranch`.
 A function that is not listed in any card is available from the start (e.g. `harvest` = `havaqel()`).
@@ -373,13 +375,13 @@ repaired, Bridgy tells a chapter of the story and it unlocks new things.
 |---|---|
 | `buildings` | `id`, `name`, `icon` (the picture `assets/village/<icon>.png` and its ruin `assets/village/<icon>-ruin.png`: `bridge, mill, jamhouse, bakery, greenhouse, school, square`; a new building needs both pictures), `x`/`y` (the picture's centre on the map, % from the left/top), `w` (its width, % of the map; default 17), `after` (buildings that must be repaired first), `description`, `cost` (`{ "Wood": 300, "Star": 3 }`), `grants` (like research: `functions`, `machines`, `hats`), `story` (Bridgy's pages after the repair, like lessons: `text`, `code`, `quiz`), `available: false` (shows «Շուտով») |
 | `intro`, `finale` | Bridgy's pages the first time the village opens, and when every building is repaired |
-| `requests` | The requests board, opened by `building`: every day `perDay` villagers ask for items the student has already gathered, at least the number in `items` or `share` (2%) of everything they ever gathered of it. Each done request gives `stars` ⭐, all of them `bonus` ⭐ more. `villagers`: `name`, `face` (an emoji) or `portrait` (a picture), `lines` with `{amount}` and `{item}`. `x`/`y`/`w`: the board (`assets/village/board.png`) on the map |
+| `requests` | The requests board, opened by `building`: every day `perDay` villagers ask for items the student has already gathered, at least the number in `items` or `share` (6%) of everything they ever gathered of it. Each done request gives `stars` ⭐, all of them `bonus` ⭐ more. `starShop`: what stars buy once the whole village is repaired, `{ "kind": "speed" | "growth" | "goldenFish", "multiplier", "seconds", "stars" }`. `villagers`: `name`, `face` (an emoji) or `portrait` (a picture), `lines` with `{amount}` and `{item}`. `x`/`y`/`w`: the board (`assets/village/board.png`) on the map |
 | `machines` | `Mill`, `JamPot`, `Tonir`: `cost` to build one on the farm, `recipes` (`"Flour": { "in": { "Hay": 20 }, "seconds": 5 }`) |
 | `boosts` | Dishes that can be eaten: `kind` (`speed` = the drone, `growth` = the plants, `goldenFish`), `multiplier`, `seconds` (game time; eating again adds more) |
 | `greenhouse` | `cost` of one glass square |
 
 In code (unlocked by the buildings): `karucel(Sarqer.Jraxac / Katsa / Tonir)` builds a machine on
-the drone's square, `patrastel(Irer.Aljur)` starts a recipe (the ingredients come from the
+the drone's square, `patrastel(Irer.Alyur)` starts a recipe (the ingredients come from the
 storage), `hasunE()` says when it is ready and `havaqel()` takes it (an unfinished machine is
 never destroyed, `herkel()` removes it), `utel(Irer.Gata)` eats a dish, and `apakepatel()` puts
 a glass roof on the square: under glass it is always the plant's favourite season, and rain,
@@ -489,6 +491,7 @@ drone (`vacharel()`, villagers' orders) and spent in the 🛒 shop.
 | `cart` | Farm items for one ranch good: `{ "Bale": { "Hay": 10000 }, "Plank": { "Wood": 10000 } }` (`berel()`) |
 | `orders` | `perDay`, `pay` (× the base price), `base` (amounts asked, grown with the animals), `lines` (`{list}` and `{pay}`), `animals` (the chance that an order also asks for a live animal of a colour); the names and faces come from `village.json → requests.villagers` |
 | `hands` | What a drone holds at each «big hands» level: `[3, 5, 10, 20]` |
+| `rescue` | With starving animals and no feed, goods or ֏ for feed the ranch could never go on, so a villager brings this once a day: `{ "item": "Grain", "amount": 5 }` |
 | `shop` | `id`, `kind` and `cost` (or `costs`, one per level), `icon`, `name`, `about`, `needs` (buy that first), `available: false`. Kinds: `area` (its id is the area's; `animals` come with it, `grants` its commands), `animal` (`animal`), `size` (`area`; one cost per bigger size), `trough` (`FeedTrough` / `WaterTrough`: built with `karucel()`), `machine` (`Stove`: built in the workshop), `upgrade` (`Speed`: drones ×1.5 per level; `Hands`; `Drones`: one more drone in every area, with `grants`), `command` (`grants`: the commands it opens), `boost` (`{ "kind": "speed", "multiplier": 1.5, "seconds": 600 }`: a boost for the farm, bought again and again) |
 | `flowers`, `hive` | The flowers that can be planted; `hive`: `every` (seconds to fill with one kind of flower around it), `radius` (how many squares away a flower counts), `sting` (the drone's speed by a hive before the first honey), `stingRadius` |
 | `dishes` | What `utel()` eats: `{ "HoneyCake": { "multiplier": 2, "seconds": 60 } }`, the ranch's drones are faster for those seconds |

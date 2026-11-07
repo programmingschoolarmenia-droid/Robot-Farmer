@@ -3,7 +3,7 @@
 import { walk } from '../lang/frontend-js.js';
 
 // Quests inserted after saves kept only the position (index) of the current quest.
-const ADDED_LATER = new Set(['buy_fishing', 'fill_pond', 'fish_20', 'golden_fish', 'buy_calendar', 'season_code', 'repair_bridge', 'first_request', 'repair_mill', 'make_flour']);
+const ADDED_LATER = new Set(['buy_fishing', 'fill_pond', 'fish_20', 'golden_fish', 'buy_calendar', 'season_code', 'repair_bridge', 'first_request', 'repair_mill', 'make_flour', 'buy_utilities', 'buy_mushrooms', 'mushrooms_10']);
 
 export class QuestTracker {
   constructor(game, saved = {}, quests = (game.config.bridgy && game.config.bridgy.quests) || []) {

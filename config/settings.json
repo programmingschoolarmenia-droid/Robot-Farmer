@@ -16,7 +16,7 @@
   "time": {
     "ticksPerSecond": 400,
     "speedResearch": "Speed",
-    "speedPerTier": 1.5,
+    "speedPerTier": 1.33592,
     "doAFlipSeconds": 1
   },
 
@@ -122,6 +122,16 @@
       "plantCostScales": true,
       "sizes": [0, 9]
     },
+    "Mushroom": {
+      "seasons": ["Autumn", "Winter"],
+      "grounds": ["Grassland", "Soil"],
+      "growTime": [3, 5],
+      "yield": { "Weird_Substance": 1 },
+      "yieldResearch": "Mushrooms",
+      "yieldBaseLevel": 1,
+      "plantCost": { "Wood": 2 }
+    },
+    "Maze": { "plantable": false },
     "Dead_Pumpkin": { "plantable": false },
     "Hedge": { "plantable": false },
     "Treasure": { "plantable": false },
@@ -207,9 +217,10 @@
   },
 
   "fishing": {
-    "_readme": "Ձկնորսություն։ porel()-ը փորում է լճակ, ogtagorcel(Irer.Jur)-ը լցնում է այն (լիքը = 1), dzknorsel()-ը լիքը լճակում բռնում է պատահական ձուկ։ chance՝ հավանականության կշիռը, amount՝ քանի ձուկ է այն տալիս (հետազոտության ամեն նոր մակարդակ կրկնապատկում է), seasons / weather՝ եթե կա, ձուկը բռնվում է միայն այդ սեզոններին / եղանակին (տես calendar)։ castSeconds՝ մեկ նետման տևողությունը։ hat՝ գլխարկը, որը բացվում է առաջին ոսկե ձկնից։",
+    "_readme": "Ձկնորսություն։ porel()-ը փորում է լճակ, ogtagorcel(Irer.Jur)-ը լցնում է այն (լիքը = 1), dzknorsel()-ը լիքը լճակում բռնում է պատահական ձուկ։ chance՝ հավանականության կշիռը, amount՝ քանի ձուկ է այն տալիս (հետազոտության ամեն նոր մակարդակ կրկնապատկում է), seasons / weather՝ եթե կա, ձուկը բռնվում է միայն այդ սեզոններին / եղանակին (տես calendar)։ castSeconds՝ մեկ նետման տևողությունը։ restSeconds՝ քանի վայրկյան է լճակը հանգստանում բռնելուց հետո (այդ ժամանակ ձուկ չի բռնվում, ուստի շատ ձկան համար պետք են շատ լճակներ)։ hat՝ գլխարկը, որը բացվում է առաջին ոսկե ձկնից։",
     "research": "Fishing",
     "castSeconds": 3,
+    "restSeconds": 15,
     "fish": {
       "Carp": { "chance": 70, "amount": 1 },
       "Barbel": { "chance": 25, "amount": 3 },

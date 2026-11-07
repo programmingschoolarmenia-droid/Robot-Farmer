@@ -135,6 +135,14 @@ export class Village {
     return stars;
   }
 
+  // When the whole village stands, stars buy boosts (requests.starShop). True when bought.
+  buyBoost(i) {
+    const b = ((this.cfg.requests || {}).starShop || [])[i];
+    if (!b || !this.allRepaired() || !this.game.inventory.pay({ Star: b.stars }, 'shop')) return false;
+    this.game.addBoost(b.kind, 'Star', b.multiplier, b.seconds);
+    return true;
+  }
+
   // One recipe of the unlocked machines for this week (Bridgy's TV): { machine, item, in, seconds }
   weeklyRecipe() {
     const list = [];

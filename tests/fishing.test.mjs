@@ -43,6 +43,29 @@ test('fishing: a cast takes 3 seconds at the base speed and drones fish too', ()
   assert.match(out.out[0], /^Dzkner\.\w+ Dzkner\.\w+$/);
 });
 
+test('fishing: a pond rests after a catch, so more ponds catch more', () => {
+  const levels = { Fishing: 1, Watering: 1, Loops: 1, Speed: 5, Expand: 4, Plant: 1, Debug: 1, Operators: 1, Variables: 1, Senses: 1 };
+  const rest = (game) => game.settings.fishing.restSeconds;
+  const one = makeGame({ levels, items: { Water: 4 } });
+  const r = runCode(one, 'porel();\nogtagorcel(Irer.Jur, 4);\ntpel(dzknorsel() !== null);\ntpel(dzknorsel());', {});
+  assert.deepEqual([r.out, r.warnings], [['true', 'null'], ['pondResting']]);
+  assert.ok(rest(one) > 0);
+  const rate = (code) => {
+    const game = makeGame({ levels, items: { Water: 10000 } });
+    const res = runCode(game, code, { maxSeconds: 300, step: 0.05 });
+    assert.equal(res.error, null);
+    return game.stats.total('Fish') / (res.seconds / 60);
+  };
+  const onePond = rate('porel();\nogtagorcel(Irer.Jur, 4);\nwhile (true) {\n  dzknorsel();\n}');
+  const manyPonds = rate('let n = fermayiChap();\nfor (let y = 0; y < n; y++) {\n  for (let x = 0; x < n; x++) {\n    porel();\n    ogtagorcel(Irer.Jur, 4);\n    gnal(Aj);\n  }\n  gnal(Verev);\n}\nwhile (true) {\n  for (let y = 0; y < n; y++) {\n    for (let x = 0; x < n; x++) {\n      dzknorsel();\n      gnal(Aj);\n    }\n    gnal(Verev);\n  }\n}');
+  assert.ok(manyPonds > 5 * onePond, `one pond ${onePond} fish/min, 36 ponds ${manyPonds}`);
+  // with no rest in settings.json a pond never waits
+  const norest = makeGame({ levels, items: { Water: 4 } });
+  norest.settings.fishing.restSeconds = 0;
+  const free = runCode(norest, 'porel();\nogtagorcel(Irer.Jur, 4);\ndzknorsel();\ntpel(dzknorsel() !== null);');
+  assert.deepEqual([free.out, free.warnings], [['true'], []]);
+});
+
 test('fishing: the chances follow settings.json', () => {
   const game = makeGame({ unlockAll: true });
   const tile = game.world.tile(0, 0);

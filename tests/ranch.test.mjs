@@ -64,6 +64,54 @@ test('a new ranch: two hens and the market on one map, 50 ֏ and some grain, a c
   assert.deepEqual(r.quests.current().id, 'ranch_egg');
 });
 
+test('rescue: nothing to feed, sell or buy with brings a villager with feed, once a day', () => {
+  const game = makeGame({ seed: 3 });
+  const r = game.ranch;
+  game.stats.clock = () => noon('20260105');
+  const pen = r.penOf('Hen');
+  const broke = () => {
+    for (const item of ['Grain', 'Dram']) r.inventory.add(item, -r.inventory.get(item));
+    pen.ground = {};
+    for (const o of pen.objects) if (o.type === 'FeedTrough') o.amount = 0;
+    for (const a of pen.animals) Object.assign(a, { hunger: 100, thirst: 100, prod: 0 });
+  };
+  const look = () => {
+    r.rescueAt = 0;
+    r.rescue();
+    return r.inventory.get('Grain');
+  };
+  const events = [];
+  r.events.on('rescue', (e) => events.push(e));
+  assert.equal(look(), 6, 'a new ranch needs no help');
+  broke();
+  assert.equal(look(), 5, 'starving, no feed, no goods, no money');
+  assert.equal(events.length, 1);
+  assert.ok(events[0].who.name);
+  broke();
+  assert.equal(look(), 0, 'only once a day');
+  assert.equal(reload(game).ranch.rescueDay, r.rescueDay, 'remembered in the save');
+  game.stats.clock = () => noon('20260106');
+  // each of these still has a way out, so nobody comes
+  broke();
+  pen.ground = { '1,1': 'Egg' };
+  assert.equal(look(), 0, 'an egg on the ground');
+  broke();
+  r.inventory.add('Egg', 1);
+  assert.equal(look(), 0, 'an egg to sell');
+  r.inventory.add('Egg', -1);
+  broke();
+  r.inventory.add('Dram', 15);
+  assert.equal(look(), 0, 'money for the feed command');
+  broke();
+  pen.animals[0].hunger = 50;
+  assert.equal(look(), 0, 'a hen that can still lay');
+  broke();
+  assert.equal(look(), 5, 'and on a new day, help again');
+  // a challenge is on its own
+  const test = testRanch(game.config, { seed: 1, levels: {} }).ranch;
+  assert.equal(test.noRescue, true);
+});
+
 test('animals: hunger grows; a hungry hen walks to the trough with grain and eats from it', () => {
   const r = makeGame({ seed: 3 }).ranch;
   const pen = r.penOf('Hen');

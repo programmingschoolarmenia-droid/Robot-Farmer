@@ -356,6 +356,16 @@ export class World {
     return true;
   }
 
+  // The tricky mushroom hides away from where it expects the student to look, and it expects what
+  // followed the same last 3 choices the last time. Any habit loses; only random choices win half the time.
+  mushroomFound(side) {
+    const m = (this.mushroomMemory ||= { last: '', next: {} });
+    const expected = m.next[m.last] ?? (this.rng.next() < 0.5 ? 'East' : 'West');
+    m.next[m.last] = side;
+    m.last = (m.last + side[0]).slice(-3);
+    return side !== expected;
+  }
+
   isFullPond(tile) {
     return tile.ground === 'Pond' && tile.water >= 0.999;
   }
@@ -374,6 +384,7 @@ export class World {
     };
     let tiles = [tile];
 
+    if (e.type === 'Grass' && e.progress < 1) return { ok: false, removed: false }; // (a beginner's first loop runs here: it just waits)
     if (e.type === 'Dead_Pumpkin' || e.progress < 1) {
       this.clearTile(tile, t);
       return { ok: false, removed: true, items, tiles, type: e.type, unripe: e.type !== 'Dead_Pumpkin' };
@@ -525,11 +536,11 @@ export class World {
     return Math.pow(2, Math.max(0, lvl - 1));
   }
 
-  // Creates a maze around a grown bush. Returns { ok, reason }.
-  createMaze(tile, amount, t) {
+  // Creates a maze around a grown bush (planted: around the drone, on anything). Returns { ok, reason }.
+  createMaze(tile, amount, t, planted = false) {
     this.sync(tile, t);
     const e = tile.entity;
-    if (!e || e.type !== 'Bush' || e.progress < 1) return { ok: false, reason: 'mazeNeedsBush' };
+    if (!planted && (!e || e.type !== 'Bush' || e.progress < 1)) return { ok: false, reason: 'mazeNeedsBush' };
     const side = Math.min(this.width, this.height, Math.floor(amount / this.mazeMultiplier()));
     if (side < 2) return { ok: false, reason: 'mazeTooSmall', need: 2 * this.mazeMultiplier() };
     if (this.maze) this.removeMaze(t);

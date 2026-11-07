@@ -55,6 +55,7 @@ function needFn(interp, fn, name, node) {
 }
 
 export const ARRAY_METHODS = {
+  __proto__: null, // (list.toString must not find Object's own)
   push: {
     fn(I, a, args, node) {
       checkLength(a.length + args.length, node);
@@ -90,6 +91,7 @@ export const ARRAY_METHODS = {
     },
     cost: (a) => 1 + a.length,
   },
+  toString: { fn: (I, a) => ARRAY_METHODS.join.fn(I, a, []), cost: (a) => 1 + a.length },
   join: {
     fn: (I, a, [sep]) => a.map((x) => (x === null || x === undefined ? '' : formatValue(x))).join(sep === undefined ? ',' : String(sep)),
     cost: (a) => 1 + a.length,
@@ -197,6 +199,8 @@ export const ARRAY_METHODS = {
 };
 
 export const STRING_METHODS = {
+  __proto__: null, // (list.toString must not find Object's own)
+  toString: { fn: (I, s) => s },
   toUpperCase: { fn: (I, s) => s.toUpperCase() },
   toLowerCase: { fn: (I, s) => s.toLowerCase() },
   includes: { fn: (I, s, [x]) => s.includes(String(x)) },
@@ -224,11 +228,13 @@ export const STRING_METHODS = {
 };
 
 export const NUMBER_METHODS = {
+  __proto__: null, // (list.toString must not find Object's own)
   toFixed: { fn: (I, n, [d]) => n.toFixed(Math.max(0, Math.min(20, toInt(d, 0)))) },
-  toString: { fn: (I, n) => String(n) },
+  toString: { fn: (I, n, [base]) => n.toString(base === undefined ? 10 : Math.max(2, Math.min(36, toInt(base, 10)))) },
 };
 
 export const MAP_METHODS = {
+  __proto__: null, // (list.toString must not find Object's own)
   get: { fn: (I, m, [k]) => m.get(k) },
   set: {
     fn(I, m, [k, v], node) {
@@ -254,6 +260,7 @@ export const MAP_METHODS = {
 };
 
 export const SET_METHODS = {
+  __proto__: null, // (list.toString must not find Object's own)
   add: {
     fn(I, s, [v], node) {
       if (!s.has(v)) checkLength(s.size + 1, node);
@@ -309,6 +316,7 @@ export function createLibraries() {
 
   const NumberNs = new Namespace('Number', 'lib');
   NumberNs.set('isInteger', fn('Number.isInteger', (I, [v]) => Number.isInteger(v)));
+  NumberNs.callable = fn('Number', (I, args) => (args.length ? (isUserObject(args[0]) ? NaN : Number(args[0])) : 0));
 
   return {
     Math: MathNs,

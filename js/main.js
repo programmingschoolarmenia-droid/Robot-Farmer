@@ -10,13 +10,21 @@ import { GameAudio } from './audio.js';
 import { Confetti } from './ui/confetti.js';
 import { h } from './ui/dom.js';
 
-// Phones: size the app to the visible area (on iPhone the keyboard only shrinks the visual viewport).
+// Phones: size the app to the visible area (on iPhone the keyboard only shrinks the visual viewport), and
+// know whether the keyboard is really open: it can be closed while the editor keeps the focus.
 function fitVisualViewport() {
   const vv = window.visualViewport;
   if (!vv) return;
+  const root = document.documentElement;
+  const touch = window.matchMedia('(pointer: coarse)').matches;
+  const tallest = new Map(); // the visible height at each width, without the keyboard
   const fit = () => {
-    document.documentElement.style.setProperty('--app-h', `${vv.height}px`);
-    if (vv.offsetTop) window.scrollTo(0, 0);
+    if (vv.scale > 1.01) return; // pinch zoom doesn't change the app
+    const width = Math.round(vv.width);
+    tallest.set(width, Math.max(tallest.get(width) || 0, vv.height));
+    root.style.setProperty('--app-h', `${vv.height}px`);
+    root.classList.toggle('keyboard', touch && vv.height < tallest.get(width) * 0.8);
+    if (vv.offsetTop || window.scrollY) window.scrollTo(0, 0); // (a page left scrolled hides the bottom bars)
   };
   vv.addEventListener('resize', fit);
   vv.addEventListener('scroll', fit);

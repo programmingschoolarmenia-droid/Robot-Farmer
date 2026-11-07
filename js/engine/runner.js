@@ -57,8 +57,9 @@ export class Runner {
     const game = this.game;
     const script = game.scripts.find((s) => s.name === scriptName);
     if (!script) return { ok: false };
+    let compiled;
     try {
-      game.api.compile(script.name, script.code);
+      compiled = game.api.compile(script.name, script.code);
     } catch (e) {
       if (!(e instanceof GameError)) throw e;
       this.lastError = e;
@@ -85,6 +86,7 @@ export class Runner {
     this.lastError = null;
     this.stepTarget = null;
     game.warned.clear();
+    for (const w of compiled.lints) game.warn(w.code, w.params, w.node, d);
     game.stats.runs++;
     game.events.emit('runStart', { script: script.name });
     return { ok: true };

@@ -63,6 +63,8 @@ export class Ranch {
     this.keptProgress = s.keptProgress || 0; // Perfection: what was bought before New Game Plus
     this.challenge = { week: '', scripts: {}, best: 0, bestCode: '', prev: null, ...(s.challenge || {}) }; // the ranch's weekly challenge
     this.contestPrizeWeek = s.contestPrizeWeek || ''; // the carpet contest week whose prizes were looked for
+    this.rescueDay = s.rescueDay || ''; // the day a villager last brought feed (see rescue())
+    this.rescueAt = 0;
     this.functionGate = new Map();
     for (const item of this.shop) for (const f of item.grants || []) this.functionGate.set(f, item.id);
     const layout = (this.cfg.map && this.cfg.map.layout) || [];
@@ -358,6 +360,30 @@ export class Ranch {
       return;
     }
     this.time = Math.max(this.time, this.runDrones(runners, this.time + dt, g.frameBudgetMs ?? 12));
+    this.rescue();
+  }
+
+  // Starving animals give nothing, so with no feed, no goods and no ֏ for feed the ranch would end here
+  // for good. A villager then brings some feed, once a day (ranch.json → rescue). Looked at every few seconds.
+  rescue() {
+    const c = this.cfg.rescue;
+    if (!c || this.noRescue || this.time < this.rescueAt) return;
+    this.rescueAt = this.time + 5;
+    const pens = [...this.pens.values()];
+    const useful = (item) => {
+      const i = (this.cfg.items || {})[item] || {};
+      return i.feed || i.sell;
+    };
+    if (Object.keys(this.cfg.items || {}).some((item) => useful(item) && this.inventory.get(item) > 0)) return;
+    if (pens.some((p) => Object.keys(p.ground).length || Object.entries(p.drone.hands).some(([item, n]) => n > 0 && useful(item)) || p.objects.some((o) => o.type === 'FeedTrough' && o.amount > 0))) return;
+    const animals = pens.flatMap((p) => p.animals);
+    if (!animals.length || animals.some((a) => a.hunger < 100 || a.prod >= 1)) return;
+    if (this.inventory.get('Dram') >= (this.hasFunction('buy') ? this.price(c.item) : this.shopItem('buy').cost)) return;
+    const day = this.today();
+    if (this.rescueDay === day) return;
+    this.rescueDay = day;
+    this.inventory.add(c.item, c.amount, 'transfer');
+    this.events.emit('rescue', { item: c.item, amount: c.amount, who: this.villager(Number(day) % (((this.config.village || {}).requests || {}).villagers || [1]).length) });
   }
 
   // Steps the drone with the smallest game time of all areas, again and again (the rule Runner.update
@@ -974,6 +1000,7 @@ export class Ranch {
       keptProgress: this.keptProgress,
       challenge: this.challenge,
       contestPrizeWeek: this.contestPrizeWeek,
+      rescueDay: this.rescueDay,
       scripts: this.scripts.map((x) => ({ name: x.name, code: x.code })),
       activeScript: this.activeScript,
       pens,

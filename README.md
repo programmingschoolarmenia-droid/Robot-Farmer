@@ -17,8 +17,8 @@ python3 -m http.server 8080      # or: npm start
 ```
 
 Then open <http://localhost:8080> in Chrome, Edge, Firefox or Safari — on a computer, a
-tablet or a phone (phones get a tabbed layout: Farm / Code / Storage, with a symbol bar
-above the keyboard).
+tablet or a phone (phones get a tabbed layout: Farm / Code / Storage, with a symbol bar and
+a strip of command names above the keyboard).
 
 To put it online (e.g. GitHub Pages), upload the whole folder as a static site — no build
 step is needed.
@@ -30,7 +30,7 @@ step is needed.
 * **Prepare a lesson quickly:** set `"unlockAll": true` in `config/settings.json → dev`.
 * **The village** («Գյուղ», after the «Plant» research): students rebuild a ruined village
   building by building with the items they gather, villagers post 3 requests a day that pay
-  ⭐ stars, and the repaired buildings unlock kitchen machines on the farm (mill, jam pot,
+  ⭐ stars (once the whole village stands, stars buy short boosts on the requests board), and the repaired buildings unlock kitchen machines on the farm (mill, jam pot,
   tonir: flour, jam, lavash, gata, ghapama…), dishes that boost the drone, and greenhouse glass.
   Everything is in [`config/village.json`](config/README.md).
 * **Festivals and the weekly challenge** (see [`config/README.md`](config/README.md) →
@@ -57,12 +57,15 @@ step is needed.
   corner (`xuzel()`, the bell `zangel()`); wool becomes yarn on the wheel, plants dye it, and the 9×9
   loom weaves carpets with nested loops (`gorg()`, `hyusel(x, y, guyn)`, no knot can be changed): orders
   pay by how alike a carpet is to its sample, free carpets go to the gallery, the player card and a weekly
-  contest with likes. Hives fill by the kinds of flowers around them (`tnkel()`, `caxkiTesak()`) and sting
+  contest with likes. Hives fill by the kinds of flowers around them (`tnkel()`, `caxkiTesakner()`) and sting
   until the first honey; buffalo need a pool; rabbits breed into a crowd unless the code sells them; the
-  donkey carries loads from any area (`eshBerel()`, `eshTanel()`). The village fair (`tonavachar()`) ends the
+  donkey carries loads from any area (`eshovBerel()`, `eshovTanel()`). The village fair (`tonavachar()`) ends the
   story, and New Game Plus starts the ranch over, harder, with the code kept. Festivals change ranch prices,
   hide objects in the pens and bring a special sample; the School has a weekly ranch challenge too.
   Everything is in [`config/ranch.json`](config/README.md).
+* **Mushrooms** («Սունկեր», a research card after Math, paid with fish): a ripe mushroom hides on the
+  left or on the right (`havaqel(Aj)` / `havaqel(Dzax)`) and learns the student's habits, so only choices made
+  with `Math.random()` win. They give weird substance, for the mazes (`tnkel(Buyser.Labirint)`).
 * **The player market** («Առևտուր», a research card after Objects): students trade farm goods with
   each other. An order is taken whole, one side may be worth at most 3× the other (no gifts), and only
   goods your own farm has made can be traded. Traded goods give no points. See `settings.json` → `market`.

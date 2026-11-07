@@ -85,6 +85,30 @@ function featuresOf(node, parent, key) {
   }
 }
 
+// Mistakes that are valid JavaScript, so nothing else tells the student: a function's name without ()
+// (it does nothing, or as a condition it is always true) and = instead of == in a condition.
+// isGameFunction(name) -> bool. Returns [{ code, params, node }].
+export function lintProgram(ast, isGameFunction) {
+  const declared = declaredNames(ast);
+  const own = new Set();
+  walk(ast, (n) => {
+    if (n.type === 'FunctionDeclaration' && n.id) own.add(n.id.name);
+  });
+  const isFunction = (n) => n.type === 'Identifier' && (own.has(n.name) || (!declared.has(n.name) && isGameFunction(n.name)));
+  const out = [];
+  const condition = (test) => {
+    if (test.type === 'UnaryExpression' && test.operator === '!') condition(test.argument);
+    else if (test.type === 'LogicalExpression') [test.left, test.right].forEach(condition);
+    else if (isFunction(test)) out.push({ code: 'fnAsCondition', params: { name: test.name }, node: test });
+    else if (test.type === 'AssignmentExpression' && test.operator === '=') out.push({ code: 'assignInCondition', params: {}, node: test });
+  };
+  walk(ast, (n) => {
+    if (n.type === 'ExpressionStatement' && isFunction(n.expression)) out.push({ code: 'fnNoCall', params: { name: n.expression.name }, node: n });
+    if (n.test && n.type !== 'SwitchCase') condition(n.test);
+  });
+  return out;
+}
+
 // ctx: {
 //   isSyntaxUnlocked(feature) -> bool
 //   globalStatus(name) -> 'unlocked' | 'locked' | 'unknown'

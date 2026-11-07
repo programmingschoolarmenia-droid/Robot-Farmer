@@ -1,5 +1,5 @@
 // The main game screen: wires the engine to the farm view, editor, Bridgy and panels.
-import { h, icon, pixelImg, mobileQuery, sizeFarm, CALENDAR_ICONS } from './dom.js';
+import { h, icon, pixelImg, mobileQuery, sizeFarm, isPressing, CALENDAR_ICONS } from './dom.js';
 import { Game, SAVE_VERSION } from '../engine/game.js';
 import { QuestTracker } from '../engine/quests.js';
 import { FarmView } from './farmView.js';
@@ -28,7 +28,7 @@ import { weekTask, givePrize, giveContestPrize } from '../engine/challenge.js';
 
 
 // Warnings Bridgy explains in a dialog the first time they happen.
-const TEACH_WARNINGS = new Set(['plant_wrongGround', 'plant_cost', 'plant_entityLocked', 'hatLocked', 'indexOutOfRange', 'notEnoughItem']);
+const TEACH_WARNINGS = new Set(['plant_wrongGround', 'plant_cost', 'plant_entityLocked', 'hatLocked', 'indexOutOfRange', 'notEnoughItem', 'harvestUnripe', 'fnNoCall', 'fnAsCondition', 'assignInCondition', 'enumVsText', 'pondResting', 'mushroomSide', 'mushroomHid']);
 
 export class GameScreen {
   // save: the player's saved farm (null for a new one); onExit: after logging out.
@@ -97,7 +97,7 @@ export class GameScreen {
     const t = app.i18n.t;
     const game = this.game;
 
-    this.questSlot = h('div', { style: { flex: '1', minWidth: '0', display: 'flex' } });
+    this.questSlot = h('div', { class: 'quest-slot', style: { flex: '1', minWidth: '0', display: 'flex' } });
     this.researchBadge = h('span', { class: 'badge', hidden: true });
     this.researchBtn = h(
       'button',
@@ -154,9 +154,7 @@ export class GameScreen {
           'aside',
           { class: 'side-panel' },
           h('section', { class: 'panel grow' }, h('div', { class: 'panel-head' }, icon(app.sprites, 'storage'), ' ', t('ui.inventory')), this.inventoryList),
-          this.villageBtn,
-          this.ranchBtn,
-          this.marketBtn,
+          (this.sideRow = h('div', { class: 'side-row' }, this.villageBtn, this.ranchBtn, this.marketBtn)),
           this.researchBtn,
         )),
       ),
@@ -189,7 +187,7 @@ export class GameScreen {
     });
     this.inventory = new InventoryPanel({ app, game, list: this.inventoryList });
     this.debugPanel = new DebugPanel({ app, game, container: this.sidePanel });
-    this.sidePanel.insertBefore(this.debugPanel.el, this.villageBtn);
+    this.sidePanel.insertBefore(this.debugPanel.el, this.sideRow);
     this.questBar = new QuestBar({
       app,
       game,
@@ -402,7 +400,7 @@ export class GameScreen {
       this.updateBoostChips();
       if (!e.until) return;
       const b = this.game.boosts[e.kind];
-      this.bridgy.toast(t('ui.boostStart', { effect: t(`ui.boostEffects.${e.kind}`, { n: b.multiplier }), seconds: Math.round(b.until - this.game.time) }), 5000);
+      this.bridgy.toast(t(e.item === 'Star' ? 'ui.boostStartStars' : 'ui.boostStart', { effect: t(`ui.boostEffects.${e.kind}`, { n: b.multiplier }), seconds: Math.round(b.until - this.game.time) }), 5000);
     });
     on('items', () => {
       this.itemsDirty = true;
@@ -993,7 +991,8 @@ export class GameScreen {
     this.frame++;
     const game = this.game;
     game.update(dt);
-    const farmShown = this.tab === 'farm' || !mobileQuery.matches;
+    // (not behind the full-screen research tree and village: weak computers need the time)
+    const farmShown = (this.tab === 'farm' || !mobileQuery.matches) && !this.research.isOpen && !this.villageView.isOpen;
     if (farmShown && (!this.prefs.lowGraphics || this.frame % 2 === 0)) this.farm.render(now);
     this.controls.update(!!this.lastError);
 
@@ -1008,7 +1007,7 @@ export class GameScreen {
     this.slowTimer += dt;
     if (this.slowTimer > 0.2) {
       this.slowTimer = 0;
-      if (this.itemsDirty || this.villageDirty) {
+      if ((this.itemsDirty || this.villageDirty) && !isPressing()) {
         this.itemsDirty = false;
         this.villageDirty = false;
         this.inventory.update();

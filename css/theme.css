@@ -45,10 +45,12 @@ html,
 body {
   margin: 0;
   height: 100%;
+  overscroll-behavior: none; /* phones: pulling down must not reload the game */
 }
 
 html {
   font-size: var(--base-font);
+  touch-action: manipulation; /* phones: quick taps on the symbol keys must not zoom the page */
 }
 
 body {

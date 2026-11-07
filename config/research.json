@@ -23,9 +23,9 @@
       "id": "Speed",
       "icon": "speed",
       "name": "Արագություն",
-      "description": "Դրոնը և կոդը աշխատում են 1,5 անգամ ավելի արագ։",
+      "description": "Ամեն մակարդակ դրոնն ու կոդը աշխատում են ավելի արագ։ Վերջին երկու մակարդակների համար պետք է նաև ձուկ։",
       "parents": ["Loops"],
-      "tiers": [{ "Hay": 20 }, { "Wood": 20 }, { "Wood": 50, "Carrot": 50 }, { "Carrot": 500 }, { "Carrot": 1000 }],
+      "tiers": [{ "Hay": 20 }, { "Wood": 20 }, { "Wood": 30, "Carrot": 20 }, { "Wood": 50, "Carrot": 50 }, { "Carrot": 300 }, { "Carrot": 800, "Fish": 100 }, { "Carrot": 1500, "Fish": 300 }],
       "grants": {}
     },
     {
@@ -175,7 +175,7 @@
       "id": "Fishing",
       "icon": "fishing",
       "name": "Ձկնորսություն",
-      "description": "Փորիր լճակ porel()-ով, լցրու այն ջրով և ձկնորսիր dzknorsel()-ով։ Ամեն նոր մակարդակ կրկնապատկում է բռնված ձկները։",
+      "description": "Փորիր լճակ porel()-ով, լցրու այն ջրով և ձկնորսիր dzukBrnel()-ով։ Բռնելուց հետո լճակը մի քիչ հանգստանում է, ուստի շատ լճակները շատ ձուկ են տալիս։ Ամեն նոր մակարդակ կրկնապատկում է բռնված ձկները։",
       "parents": ["Watering"],
       "tiers": [{ "Wood": 300, "Carrot": 200 }, { "Fish": 200 }, { "Fish": 1000 }, { "Fish": 5000 }, { "Fish": 25000 }],
       "grants": { "functions": ["digPond", "catchFish"] }
@@ -184,17 +184,17 @@
       "id": "Mazes",
       "icon": "maze",
       "name": "Լաբիրինթոսներ",
-      "description": "Տարօրինակ նյութը թփից ստեղծում է լաբիրինթոս՝ մեջը գանձով։ karoxEmGnal() հրամանը։",
+      "description": "Տարօրինակ նյութով տնկիր լաբիրինթոս՝ tnkel(Buyser.Labirint), իսկ մեջը գանձ կլինի։ karoxEmGnal() հրամանը։",
       "parents": ["Fertilizer"],
       "tiers": [
-        { "Weird_Substance": 1000 },
+        { "Weird_Substance": 300 },
         { "Cactus": 12000 },
         { "Cactus": 72000 },
         { "Cactus": 432000 },
         { "Cactus": 2590000 },
         { "Cactus": 15600000 }
       ],
-      "grants": { "functions": ["canMove"] }
+      "grants": { "functions": ["canMove"], "entities": ["Maze"] }
     },
     {
       "id": "Megafarm",
@@ -391,6 +391,8 @@
       "name": "Ռանչո",
       "description": "Գյուղի ետևում կա հին ռանչո՝ կենդանիներով։ Այնտեղ ամեն վայր ունի իր դրոնը և իր կոդը, իսկ ձուն ու կաթը վաճառվում են ֏-ով։ Բացվում է 40 հետազոտությունից հետո։",
       "parents": ["Objects", "Functions"],
+      "top": true,
+      "big": true,
       "minLevels": 40,
       "tiers": [{ "Hay": 250000, "Wood": 250000, "Carrot": 100000, "Pumpkin": 50000 }],
       "grants": { "panels": ["ranch"] }
@@ -401,6 +403,7 @@
       "name": "Առևտուր",
       "description": "Փոխանակիր ապրանք իսկական խաղացողների հետ։ Դիր պատվեր, մյուսները կտեսնեն և կվերցնեն։ Գինը պետք է արդար լինի, իսկ նվերներ չեն լինում։",
       "parents": ["Objects"],
+      "top": true,
       "minLevels": 20,
       "tiers": [{ "Hay": 2500, "Wood": 2500, "Carrot": 1000 }],
       "grants": { "panels": ["market"] }
@@ -425,12 +428,21 @@
     },
     {
       "id": "Utilities",
-      "label": "patahakan()",
-      "name": "Օգնականներ",
-      "description": "patahakan(), Math.floor(), Math.max() և այլ օգտակար ֆունկցիաներ։",
+      "label": "Math",
+      "name": "Math և պատահական թվեր",
+      "description": "Math դասը՝ Math.random(), Math.floor(), Math.max() և այլ օգտակար ֆունկցիաներ։",
       "parents": ["Functions"],
       "tiers": [{ "Pumpkin": 1000 }],
-      "grants": { "functions": ["random", "Math", "Number", "parseInt", "parseFloat", "String", "isNaN"] }
+      "grants": { "functions": ["Math"] }
+    },
+    {
+      "id": "Mushrooms",
+      "icon": "mushroom",
+      "name": "Սունկեր",
+      "description": "Սունկը տալիս է տարօրինակ նյութ, բայց թաքնվում է աջում կամ ձախում և սովորում է քո սովորությունները։ Հաղթել նրան կարող է միայն Math.random()-ը։ Հաջորդ մակարդակները կրկնապատկում են բերքը։",
+      "parents": ["Utilities"],
+      "tiers": [{ "Fish": 500, "Pumpkin": 500 }, { "Fish": 2000 }, { "Fish": 8000 }, { "Fish": 32000 }, { "Fish": 128000 }],
+      "grants": { "entities": ["Mushroom"] }
     }
   ]
 }

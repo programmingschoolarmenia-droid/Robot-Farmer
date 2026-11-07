@@ -36,13 +36,6 @@
   .topbar {
     gap: 6px;
   }
-  .screen-ranch .topbar {
-    flex-wrap: wrap;
-    height: auto;
-  }
-  .ranch-quest-slot {
-    flex: 1 1 100% !important;
-  }
   .screen-ranch .calendar-chip {
     display: none;
   }
@@ -68,6 +61,9 @@
   }
   .player-pill {
     padding: 7px 10px;
+  }
+  .side-nav .btn-label {
+    display: inline;
   }
 
   .game-main {
@@ -121,31 +117,47 @@
     right: -4px;
   }
 
-  /* ---------- typing: the keyboard is open, give the editor the room */
-  .typing .screen-game {
-    grid-template-rows: auto minmax(0, 1fr);
+  /* ---------- typing: the keyboard is really open (js/main.js), give the editor all the room */
+  .typing.keyboard .screen-game {
+    grid-template-rows: minmax(0, 1fr);
   }
-  .typing .controlbar,
-  .typing .mobile-tabs,
-  .typing .console {
+  .typing.keyboard .topbar,
+  .typing.keyboard .controlbar,
+  .typing.keyboard .mobile-tabs,
+  .typing.keyboard .console {
     display: none;
   }
   .editor-wrap .CodeMirror {
     font-size: max(16px, var(--code-font));
   }
-  .symbol-bar {
+  .phone-keys {
+    display: block;
+    border-top: 2px solid var(--line);
+    background: var(--paper-2);
+  }
+  .symbol-bar,
+  .suggest-bar {
     display: flex;
     gap: 4px;
     overflow-x: auto;
     padding: 5px 6px;
-    border-top: 2px solid var(--line);
-    background: var(--paper-2);
     scrollbar-width: none;
   }
-  .symbol-bar .sym {
+  /* Its room is kept while the editor has the focus: a resized editor redraws the line and loses the word
+     the keyboard is composing. */
+  .suggest-bar {
+    display: none;
+    padding-bottom: 0;
+  }
+  .typing .suggest-bar {
+    display: flex;
+    box-sizing: border-box;
+    height: 47px;
+  }
+  .sym {
     flex: none;
-    min-width: 38px;
-    height: 38px;
+    min-width: 42px;
+    height: 42px;
     border: 2px solid var(--navy);
     border-radius: 9px;
     background: #fff;
@@ -153,6 +165,16 @@
     font-family: var(--font-code);
     font-size: 1.1rem;
     font-weight: 700;
+  }
+  .sym.sym-run {
+    background: var(--green);
+    color: #fff;
+  }
+  .sym.suggest {
+    padding: 0 10px;
+    border-color: var(--green-dark);
+    background: var(--green-soft);
+    font-size: 0.95rem;
   }
   .console {
     height: clamp(64px, 16vh, 120px);
@@ -336,6 +358,24 @@
     padding: 0 3px;
     border-width: 1.5px;
     font-size: 0.58rem;
+  }
+}
+
+/* Phones held upright: the quest gets its own row, or its name shrinks to one letter. */
+@media (max-width: 599px) {
+  .topbar {
+    flex-wrap: wrap;
+    height: auto;
+  }
+  .quest-slot {
+    flex: 1 1 100% !important;
+  }
+  .bridgy-toasts {
+    top: 112px;
+  }
+  /* the map is small: only the chosen building shows its name (its panel is right below) */
+  .village-spot:not(.selected) .village-name {
+    display: none;
   }
 }
 

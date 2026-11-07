@@ -2,6 +2,9 @@
 // error explanations, the help menu and quick reaction bubbles.
 import { h, icon, highlightCode } from './dom.js';
 
+const TOAST_HURRY = 4000; // ms a message stays at most while others wait
+const TOAST_QUEUE = 5; // messages waiting at most (the oldest goes)
+
 export class Bridgy {
   constructor({ app, codeKind, onShowLine, getHelpContext }) {
     this.app = app;
@@ -33,6 +36,8 @@ export class Bridgy {
     );
     this.root = h('div', { class: 'bridgy-dialog', hidden: true }, this.portrait, this.box);
     this.toasts = h('div', { class: 'bridgy-toasts' });
+    this.toastQueue = [];
+    this.toastNow = null;
     document.body.append(this.root, this.toasts);
     // Load the friends' pictures now, so the portrait swap does not wait for the network.
     for (const f of Object.values(this.cfg.friends || {})) if (f.portrait) new Image().src = f.portrait;
@@ -41,6 +46,7 @@ export class Bridgy {
   destroy() {
     clearInterval(this.timer);
     clearTimeout(this.swapTimer);
+    clearTimeout(this.toastTimer);
     this.root.remove();
     this.toasts.remove();
   }
@@ -241,20 +247,43 @@ export class Bridgy {
     if (this.conv) this.end();
   }
 
+  // One message at a time: the others wait, and the one on show hurries up for them.
   toast(text, ms = 3600) {
+    const showing = this.toastNow;
+    if ((showing && showing.text === text) || this.toastQueue.some((q) => q.text === text)) return;
+    this.toastQueue.push({ text, ms });
+    if (this.toastQueue.length > TOAST_QUEUE) this.toastQueue.shift();
+    if (!showing) this.nextToast();
+    else if (!showing.hiding) this.planToastEnd();
+  }
+
+  nextToast() {
+    const next = (this.toastNow = this.toastQueue.shift() || null);
+    if (!next) return;
     const avatar = document.querySelector('.help-button img');
     if (avatar) {
       avatar.classList.remove('react');
       void avatar.offsetWidth;
       avatar.classList.add('react');
     }
-    const el = h('div', { class: 'bridgy-toast' }, text);
-    this.toasts.append(el);
-    while (this.toasts.children.length > 3) this.toasts.firstChild.remove();
-    setTimeout(() => {
-      el.classList.add('hide');
-      setTimeout(() => el.remove(), 450);
-    }, ms);
+    next.el = h('div', { class: 'bridgy-toast' }, next.text);
+    next.shownAt = Date.now();
+    this.toasts.append(next.el);
+    this.planToastEnd();
+  }
+
+  planToastEnd() {
+    const now = this.toastNow;
+    const ms = this.toastQueue.length ? Math.min(now.ms, TOAST_HURRY) : now.ms;
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => {
+      now.hiding = true;
+      now.el.classList.add('hide');
+      this.toastTimer = setTimeout(() => {
+        now.el.remove();
+        this.nextToast();
+      }, 450);
+    }, Math.max(0, ms - (Date.now() - now.shownAt)));
   }
 
   pick(key) {

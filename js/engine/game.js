@@ -17,7 +17,9 @@ import { Ranch } from './ranch.js';
 import { locOf } from '../lang/errors.js';
 import { DIR_BITS } from './maze.js';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
+// Saves from when Speed had 5 levels: the 7-level one at least as fast (the top speed is the same).
+const OLD_SPEED_LEVEL = [0, 2, 3, 5, 6, 7];
 
 export class Game {
   constructor(config, save = {}) {
@@ -36,7 +38,8 @@ export class Game {
     this.inventory = new Inventory(this, save.inventory ?? (this.settings.game && this.settings.game.startItems) ?? {});
     const extra = this.settings.dev && this.settings.dev.extraItems;
     if (extra && !save.inventory) for (const [k, v] of Object.entries(extra)) this.inventory.items.set(k, v);
-    this.research = new Research(this, save.research);
+    const oldSpeed = save.v === 1 && save.research && save.research.Speed;
+    this.research = new Research(this, oldSpeed ? { ...save.research, Speed: OLD_SPEED_LEVEL[oldSpeed] } : save.research);
     const [w, h] = this.worldSizeForLevel(this.research.level(this.sizeResearch));
     if (save.world && save.world.w && save.world.h) {
       this.world = World.fromSave(this, save.world, this.time);
@@ -366,6 +369,17 @@ export class Game {
     return false;
   }
 
+  // tnkel(Buyser.Labirint): a maze as big as the farm, or as the weird substance allows, around the drone.
+  plantMaze(tile, t) {
+    if (!this.research.hasEntity('Maze')) return { ok: false, reason: 'entityLocked' };
+    const w = this.world;
+    const mult = w.mazeMultiplier();
+    const side = Math.min(w.width, w.height, Math.floor(this.inventory.get('Weird_Substance') / mult));
+    const r = w.createMaze(tile, side * mult, t, true);
+    if (r.ok) this.inventory.add('Weird_Substance', -side * mult, 'use');
+    return r;
+  }
+
   // Weird substance: makes a maze from a grown bush (after Mazes research), moves a maze's
   // treasure, or toggles infection on a plant and its neighbours.
   useWeirdSubstance(drone, tile, count, t, node) {
@@ -407,18 +421,21 @@ export class Game {
     return any;
   }
 
-  // Why the drone can't fish here: 'pondNeeded' | 'pondNotFull' | null.
+  // Why the drone can't fish here: 'pondNeeded' | 'pondNotFull' | 'pondResting' | null.
   fishProblem(tile, t) {
     this.world.sync(tile, t);
     if (tile.ground !== 'Pond') return 'pondNeeded';
-    return this.world.isFullPond(tile) ? null : 'pondNotFull';
+    if (!this.world.isFullPond(tile)) return 'pondNotFull';
+    return tile.fishAt > t ? 'pondResting' : null;
   }
 
   // A random fish from a full pond (settings.json → fishing; some bite only in their seasons or
-  // weather). Its fish go to the storage; the first golden fish also unlocks the fisher's hat.
+  // weather). Its fish go to the storage; the first golden fish also unlocks the fisher's hat. After a
+  // catch the pond rests (settings.json → fishing.restSeconds), so more fish take more ponds.
   // Returns the species.
-  catchFish(drone, tile) {
+  catchFish(drone, tile, t = this.time) {
     const cfg = this.settings.fishing || {};
+    tile.fishAt = t + (cfg.restSeconds ?? 0);
     const chance = (f) => this.calendar.fishChance(f, cfg.fish && cfg.fish[f]) * (f === 'Golden_Fish' ? this.boost('goldenFish') : 1);
     let r = this.rng.next() * FISH_NAMES.reduce((sum, f) => sum + chance(f), 0);
     const species = FISH_NAMES.find((f) => (r -= chance(f)) < 0) || FISH_NAMES[0];

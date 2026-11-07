@@ -5,6 +5,7 @@
   z-index: 50;
   background: linear-gradient(180deg, #8fc8f5 0%, #b8dcf8 45%, #d9eefd 100%);
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* never wider than the screen, however many items are in the head */
   grid-template-rows: auto minmax(0, 1fr);
   animation: fadein 0.18s ease;
 }
@@ -155,6 +156,67 @@
   border-radius: 999px;
   padding: 1px 7px;
   border: 2px solid #1d2740;
+}
+/* A card as large as the world it opens (research.json → big; its width is BIG_W in researchTree.js). */
+.rnode.big {
+  width: 190px;
+  height: 108px;
+  flex-direction: row;
+  gap: 8px;
+  padding: 0 8px;
+  border: 6px solid #ffc83d;
+  background: linear-gradient(150deg, #5a3a0c, #1d2740 70%);
+  box-shadow: 0 0 0 3px #fff1b8, 0 0 20px 4px rgba(255, 190, 50, 0.85), 0 6px 0 rgba(90, 60, 0, 0.45);
+}
+.rnode.big img {
+  width: 58px;
+  height: 58px;
+}
+.rnode.big.state-locked {
+  border-color: #ffc83d;
+  background: linear-gradient(150deg, #5a3a0c, #1d2740 70%);
+  opacity: 1;
+}
+.rnode.big.state-locked .rn-body img {
+  filter: saturate(0.5) brightness(0.8);
+}
+.rnode.big.state-affordable {
+  animation: goldpulse 1.5s ease-in-out infinite;
+}
+.rnode.big .rn-big-name {
+  color: #ffe08a;
+  font-weight: 800;
+  font-size: 1.15rem;
+}
+.rnode.big .rn-world {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 1px 9px;
+  border: 2px solid #7a4d05;
+  border-radius: 999px;
+  background: #ffc83d;
+  color: #3b2503;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.rnode.big img.rn-lock {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 22px;
+  height: 22px;
+}
+@keyframes goldpulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px #fff1b8, 0 0 14px 2px rgba(255, 190, 50, 0.7), 0 6px 0 rgba(90, 60, 0, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 3px #fff1b8, 0 0 30px 10px rgba(255, 190, 50, 0.95), 0 6px 0 rgba(90, 60, 0, 0.45);
+  }
 }
 .rnode.selected {
   outline: 4px solid #fff;
@@ -384,8 +446,10 @@
 }
 .village-farm {
   position: absolute;
-  left: 3%;
-  bottom: 3%;
+  left: 15.5%;
+  bottom: 4%;
+  transform: translateX(-50%);
+  white-space: nowrap;
   padding: 0 6px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.85);
@@ -459,14 +523,22 @@
   font-size: 0.82rem;
   font-weight: 700;
 }
+.village-stars .btn {
+  width: 100%;
+  justify-content: flex-start;
+  margin-top: 6px;
+  text-align: left;
+  white-space: normal;
+}
 .village-done {
   color: var(--green-dark);
   font-size: 0.85rem;
   font-weight: 800;
 }
-/* While the village is open on wide screens, Bridgy's toasts go over the map, not over the panel. */
+/* While the village or the research tree is open on wide screens, Bridgy's toasts go over the map or
+   the tree, not over the panel with the prices. */
 @media (min-width: 1024px) and (min-height: 600px) {
-  body:has(.village-overlay) .bridgy-toasts {
+  body:has(.research-overlay) .bridgy-toasts {
     right: 392px;
   }
 }

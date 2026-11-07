@@ -715,6 +715,13 @@ export class Interpreter {
     throw new GameError('noMember', { type: typeKey(obj), prop: propName(key), suggestions: [] }, node);
   }
 
+  // inchKa() == "Xot" is never true, and nothing would tell the student why.
+  warnEnumText(l, r, node) {
+    const value = l instanceof EnumValue ? l : r instanceof EnumValue ? r : null;
+    const text = value === l ? r : l;
+    if (value && typeof text === 'string' && this.host.warn) this.host.warn('enumVsText', { text, label: value.label }, node, this);
+  }
+
   noMember(type, key, names, node, owner) {
     const prop = propName(key);
     const suggestions = this.host.suggest ? this.host.suggest(prop, names) : [];
@@ -799,14 +806,18 @@ export class Interpreter {
             return l >>> r;
         }
       case '==':
+        this.warnEnumText(l, r, node);
         // eslint-disable-next-line eqeqeq
         return isPrimitive(l) && isPrimitive(r) ? l == r : l === r;
       case '!=':
+        this.warnEnumText(l, r, node);
         // eslint-disable-next-line eqeqeq
         return isPrimitive(l) && isPrimitive(r) ? l != r : l !== r;
       case '===':
+        this.warnEnumText(l, r, node);
         return l === r;
       case '!==':
+        this.warnEnumText(l, r, node);
         return l !== r;
       case '<':
       case '>':
@@ -1373,6 +1384,7 @@ export class Interpreter {
 
   // Calls any callable value with already-evaluated arguments.
   *callFunction(fn, args, node) {
+    if (fn instanceof Namespace && fn.callable) fn = fn.callable; // Number("7"), and Number.isInteger too
     if (fn instanceof Closure) return yield* this.callClosure(fn, args, node);
     if (fn instanceof BuiltinFunction) {
       if (fn.gen) return yield* fn.impl(this, args, node);

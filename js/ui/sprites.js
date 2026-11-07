@@ -126,6 +126,8 @@ export class SpriteBook {
     for (let s = 0; s < 4; s++) this.put(`tree${s}`, tree(s));
     for (let s = 0; s < 4; s++) this.put(`carrot${s}`, carrot(s));
     this.put('carrotIcon', carrotIcon());
+    for (let s = 0; s < 4; s++) this.put(`mushroom${s}`, mushroom(s));
+    this.put('icon:mushroom', this.get('mushroom3'));
     for (let size = 0; size <= 9; size++) this.put(`cactus${size}`, cactus(size, true));
     this.put('cactusSprout', cactus(0, false));
     this.put('hedge', hedge());
@@ -410,6 +412,22 @@ function tree(stage) {
       [6, 9],
     ]) p.set(x, y, PAL.lime);
   }
+  p.outline();
+  return p;
+}
+
+// A purple spotted mushroom: it gives weird substance, so it has the flask's colours.
+function mushroom(stage) {
+  const p = new Pixels();
+  const stem = [2, 3, 4, 4][stage];
+  const cap = [[2], [2, 4], [4, 6], [6, 10, 10]][stage]; // the widths of the cap's rows, from the top
+  const top = 14 - stem - cap.length;
+  p.rect(7, 14 - stem, 2, stem, PAL.sand);
+  cap.forEach((w, y) => {
+    p.rect(8 - w / 2, top + y, w, 1, y ? PAL.purple : PAL.pink);
+    p.set(8 - w / 2, top + y, PAL.pink);
+  });
+  if (stage === 3) for (const [x, y] of [[5, 1], [10, 1], [8, 2]]) p.set(x, top + y, PAL.white);
   p.outline();
   return p;
 }
