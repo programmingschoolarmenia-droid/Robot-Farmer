@@ -3,7 +3,7 @@
 A browser game for learning JavaScript: students write code that drives a drone on a
 farm, buy research to unlock new plants, functions and JavaScript features, and Bridgy
 the robot teaches them with lessons, quizzes, quests and hints (never ready-made answers).
-The interface and the game commands are in Armenian (`havaqel()`, `tnkel(Buyser.Gazar)`,
+The interface and the game commands are in Armenian (`havaqel()`, `tnkel(Buyser.Badrjan)`,
 `gnal(Aj)`); JavaScript itself (`while`, `if`, `let`, `function`…) stays as it is.
 
 ## Run it
@@ -40,7 +40,7 @@ step is needed.
   challenge on a test farm that is the same for everyone (fastest time wins, the top 3 get hats
   and 🏅 medals). Villagers also give secret code notes (`gtnel()` digs out their treasure), the
   Profile has a sticker album, and the Perfection star (%) shows how much of the game a student has done.
-* **Bridgy's ranch** («Ռանչո», a research that appears after 40 research levels): a second
+* **Bridgy's ranch** («Ռանչո», the big card at the top of the research tree; it only costs resources): a second
   world on its own screen (the farm waits meanwhile). Every area — the henhouse, the cowshed, the
   market — has its own drone and its own code tab; the big ▶ runs them all. Animals walk, get
   hungry, thirsty, dirty and sad, and give eggs or milk only when they are cared for, so the code
@@ -65,8 +65,8 @@ step is needed.
   Everything is in [`config/ranch.json`](config/README.md).
 * **Mushrooms** («Սունկեր», a research card after Math, paid with fish): a ripe mushroom hides on the
   left or on the right (`havaqel(Aj)` / `havaqel(Dzax)`) and learns the student's habits, so only choices made
-  with `Math.random()` win. They give weird substance, for the mazes (`tnkel(Buyser.Labirint)`).
-* **The player market** («Առևտուր», a research card after Objects): students trade farm goods with
+  with `Math.random()` win. They give magic dust («Կախարդական փոշի»), for the mazes (`tnkel(Buyser.Labirint)`).
+* **The player market** («Առևտուր», a card at the top of the research tree; it only costs resources): students trade farm goods with
   each other. An order is taken whole, one side may be worth at most 3× the other (no gifts), and only
   goods your own farm has made can be traded. Traded goods give no points. See `settings.json` → `market`.
 * **Seasons, weather and the luck of the day** follow the real clock, the same for every

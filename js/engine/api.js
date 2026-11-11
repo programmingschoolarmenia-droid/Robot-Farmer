@@ -342,7 +342,7 @@ export class GameApi {
     return type ? this.enums.Entities.get(type) || this.enums.Machines.get(type) || null : null;
   }
 
-  // { Hay: 20 } -> player object with shown item names: { ChorXot: 20 }
+  // { Hay: 20 } -> player object with shown item names: { Coren: 20 }
   itemObject(items) {
     const o = makeObject();
     for (const [k, n] of Object.entries(items)) o[this.enums.Items.labelOf(k)] = n;

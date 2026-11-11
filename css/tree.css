@@ -164,24 +164,14 @@
   flex-direction: row;
   gap: 8px;
   padding: 0 8px;
-  border: 6px solid #ffc83d;
-  background: linear-gradient(150deg, #5a3a0c, #1d2740 70%);
-  box-shadow: 0 0 0 3px #fff1b8, 0 0 20px 4px rgba(255, 190, 50, 0.85), 0 6px 0 rgba(90, 60, 0, 0.45);
+  border-color: #d9a53a;
 }
 .rnode.big img {
   width: 58px;
   height: 58px;
 }
 .rnode.big.state-locked {
-  border-color: #ffc83d;
-  background: linear-gradient(150deg, #5a3a0c, #1d2740 70%);
-  opacity: 1;
-}
-.rnode.big.state-locked .rn-body img {
-  filter: saturate(0.5) brightness(0.8);
-}
-.rnode.big.state-affordable {
-  animation: goldpulse 1.5s ease-in-out infinite;
+  border-color: #b98c33;
 }
 .rnode.big .rn-big-name {
   color: #ffe08a;
@@ -208,15 +198,6 @@
   bottom: 4px;
   width: 22px;
   height: 22px;
-}
-@keyframes goldpulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 3px #fff1b8, 0 0 14px 2px rgba(255, 190, 50, 0.7), 0 6px 0 rgba(90, 60, 0, 0.45);
-  }
-  50% {
-    box-shadow: 0 0 0 3px #fff1b8, 0 0 30px 10px rgba(255, 190, 50, 0.95), 0 6px 0 rgba(90, 60, 0, 0.45);
-  }
 }
 .rnode.selected {
   outline: 4px solid #fff;

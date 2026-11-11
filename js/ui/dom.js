@@ -54,7 +54,7 @@ export function pixelImg(src, cls = '', alt = '') {
 }
 
 // The pictures of the seasons and the weathers (calendar.js names).
-export const CALENDAR_ICONS = { Spring: 'blossom', Summer: 'sunflower', Autumn: 'leaf', Winter: 'snowflake', Sunny: 'sun', Rain: 'rain', Storm: 'storm', Heat: 'flame', Snow: 'snow' };
+export const CALENDAR_ICONS = { Spring: 'blossom', Summer: 'summer', Autumn: 'leaf', Winter: 'snowflake', Sunny: 'sun', Rain: 'rain', Storm: 'storm', Heat: 'flame', Snow: 'snow' };
 
 // The storage chips in a full-screen window's head: only the numbers change while items come in.
 export function itemChips(box, { sprites, i18n }, game) {

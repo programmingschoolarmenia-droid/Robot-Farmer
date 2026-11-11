@@ -261,6 +261,7 @@ export function validateConfig(config) {
       }
     }
   }
+  if (isObj(settings.fertilizer) && settings.fertilizer.infectedWeird !== undefined) needNum('fertilizer.infectedWeird', settings.fertilizer.infectedWeird, { min: 0 });
   if (settings.calendar !== undefined) {
     const c = settings.calendar;
     if (!isObj(c)) err(S, 'calendar', 'Պետք է լինի օբյեկտ');

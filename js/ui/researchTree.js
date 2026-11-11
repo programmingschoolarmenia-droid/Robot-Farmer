@@ -200,7 +200,9 @@ export class ResearchTree {
     const paths = [];
     for (const n of research.nodes) {
       if (n.top) continue;
-      for (const p of n.parents || []) {
+      // only the branch a card stands on: a second parent is a requirement whose line would cross the
+      // tree (its name is in the card's panel)
+      for (const p of (n.parents || []).slice(0, 1)) {
         const a = this.cardXY(p);
         const b = this.cardXY(n.id);
         const ax = a.x + CARD_W / 2;

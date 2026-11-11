@@ -408,7 +408,7 @@ export class World {
         }
         const amount = this.pumpkinYield(g.size) * mult;
         add('Pumpkin', amount);
-        if (infected) add('Weird_Substance', Math.ceil(amount * this.infectedShare() * (infected / (g.size * g.size))));
+        if (infected) add('Weird_Substance', infected * this.infectedWeird());
         for (const tl of tiles) {
           tl.entity = null;
           this.spawnGrass(tl, t);
@@ -427,7 +427,7 @@ export class World {
         tl.entity = null;
         this.spawnGrass(tl, t);
       }
-      if (infected) add('Weird_Substance', Math.ceil((n * n * mult * this.infectedShare() * infected) / n));
+      if (infected) add('Weird_Substance', infected * this.infectedWeird());
       return { ok: true, removed: true, items, tiles: chain, type: 'Cactus', chain: n };
     }
 
@@ -439,18 +439,16 @@ export class World {
       for (const [item, n] of Object.entries(cfg.yield || {})) add(item, n * mult * this.polycultureBonus(tile, e));
     }
 
-    if (e.data.infected) {
-      const total = Object.values(items).reduce((a, b) => a + b, 0);
-      add('Weird_Substance', Math.ceil(total * this.infectedShare()));
-    }
+    if (e.data.infected) add('Weird_Substance', this.infectedWeird());
     tile.entity = null;
     this.spawnGrass(tile, t);
     return { ok: true, removed: true, items, tiles, type: e.type, ...extra };
   }
 
-  infectedShare() {
-    const f = this.settings.fertilizer || {};
-    return f.infectedYieldToWeird ?? 0.5;
+  // Weird substance from each infected plant, however big its harvest: a share of the harvest grew with the
+  // crops' levels into thousands a minute, and the mushrooms (whose job it is) were not worth growing.
+  infectedWeird() {
+    return (this.settings.fertilizer || {}).infectedWeird ?? 1;
   }
 
   // ------------------------------------------------------------------ sunflowers

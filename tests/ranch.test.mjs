@@ -40,13 +40,11 @@ const buy = (r, ...ids) => {
   for (const id of ids) assert.deepEqual(r.buy(id), { ok: true }, id);
 };
 
-test('the ranch research appears after 40 research levels and shows the ranch button', () => {
-  const levels = { Loops: 1, Speed: 5, Grass: 10, Expand: 7, Plant: 1, Carrots: 10, Operators: 1, Variables: 1, Lists: 1, Objects: 1, Functions: 1 };
-  const game = makeGame({ levels, items: { Hay: 250000, Wood: 250000, Carrot: 100000, Pumpkin: 50000 } });
-  assert.equal(game.research.totalLevels(), 39);
-  assert.equal(game.research.state('Ranch'), 'locked', 'its parents are done, but only 39 levels');
-  game.research.levels.set('Expand', 8);
-  assert.equal(game.research.state('Ranch'), 'affordable');
+test('the ranch and the market only cost resources: no research before them', () => {
+  const game = makeGame({ items: { Hay: 250000, Wood: 250000, Carrot: 100000, Pumpkin: 50000 } });
+  assert.equal(game.research.totalLevels(), 0);
+  assert.deepEqual([game.research.state('Ranch'), game.research.state('Market')], ['affordable', 'affordable']);
+  assert.deepEqual([makeGame().research.state('Ranch'), makeGame().research.state('Market')], ['expensive', 'expensive'], 'without the resources they wait');
   assert.equal(game.research.hasPanel('ranch'), false);
   assert.equal(game.research.buy('Ranch').ok, true);
   assert.equal(game.research.hasPanel('ranch'), true);
@@ -900,7 +898,7 @@ tpel(numItems(Irer.Gazar));`,
     return { out: out.out, stats: game.stats.total('Honey') - shipped };
   };
   const a = play(0.1);
-  assert.deepEqual(a.out[3].split(' ').slice(0, 3), ['arrived', 'Irer.Gazar', '3']);
+  assert.deepEqual(a.out[3].split(' ').slice(0, 3), ['arrived', 'Irer.Badrjan', '3']);
   assert.equal(a.stats, 0, 'a move, not a harvest');
   assert.deepEqual(play(0.033).out, a.out);
 });

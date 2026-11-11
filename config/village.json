@@ -26,12 +26,12 @@
       "y": 24,
       "w": 17,
       "after": ["Bridge"],
-      "description": "Ջրաղացը չոր խոտից ալյուր է աղում։ Վերանորոգելուց հետո կկարողանաս ջրաղաց կառուցել հենց ֆերմայում։",
+      "description": "Ջրաղացը ցորենից ալյուր է աղում։ Վերանորոգելուց հետո կկարողանաս ջրաղաց կառուցել հենց ֆերմայում։",
       "cost": { "Wood": 3000, "Hay": 5000, "Carrot": 1000, "Star": 3 },
       "grants": { "functions": ["build", "make"], "machines": ["Mill"] },
       "story": [
         { "emotion": "celebrating", "text": "Ջրաղացը նորից պտտվում է։ Ջրաղացպանը շնորհակալ է և սովորեցրեց քեզ ջրաղաց կառուցել հենց ֆերմայում։" },
-        { "emotion": "thinking", "text": "karucel(Sarqer.Jraxac)-ը դրոնի տակ ջրաղաց է կառուցում (այն արժե փայտ)։ patrastel(Irer.Alyur)-ը ջրաղացում 20 չոր խոտից ալյուր է աղում մի քանի վայրկյանում։", "code": "karucel(Sarqer.Jraxac);\npatrastel(Irer.Alyur);" },
+        { "emotion": "thinking", "text": "karucel(Sarqer.Jraxac)-ը դրոնի տակ ջրաղաց է կառուցում (այն արժե փայտ)։ patrastel(Irer.Alyur)-ը ջրաղացում 20 ցորենից ալյուր է աղում մի քանի վայրկյանում։", "code": "karucel(Sarqer.Jraxac);\npatrastel(Irer.Alyur);" },
         { "emotion": "happy", "text": "Երբ ալյուրը պատրաստ է, hasunE()-ը վերադարձնում է true, իսկ havaqel()-ը վերցնում է այն։ Մտածիր՝ ինչպես կոդով անել, որ ջրաղացը երբեք պարապ չմնա։", "code": "if (hasunE()) {\n  havaqel();\n  patrastel(Irer.Alyur);\n}" }
       ]
     },
@@ -43,12 +43,12 @@
       "y": 17,
       "w": 17,
       "after": ["Mill"],
-      "description": "Այստեղ գազարից մուրաբա են եփում։ Բացում է մուրաբայի կաթսան։",
+      "description": "Այստեղ բադրիջանից մուրաբա են եփում։ Բացում է մուրաբայի կաթսան։",
       "cost": { "Carrot": 10000, "Pumpkin": 2000, "Wood": 5000, "Star": 6 },
       "grants": { "machines": ["JamPot"] },
       "story": [
         { "emotion": "celebrating", "text": "Մուրաբայի տունը բաց է։ Անահիտ տատիկն իր գաղտնի բաղադրատոմսը տվեց քեզ" },
-        { "emotion": "thinking", "text": "karucel(Sarqer.Katsa)-ով ֆերմայում կաթսա դիր։ patrastel(Irer.Muraba)-ն 10 գազարից և 1 ջրից մուրաբա է եփում։ Մուրաբան պետք կգա փռում։", "code": "karucel(Sarqer.Katsa);\npatrastel(Irer.Muraba);" }
+        { "emotion": "thinking", "text": "karucel(Sarqer.Katsa)-ով ֆերմայում կաթսա դիր։ patrastel(Irer.Muraba)-ն 10 բադրիջանից և 1 ջրից մուրաբա է եփում։ Մուրաբան պետք կգա փռում։", "code": "karucel(Sarqer.Katsa);\npatrastel(Irer.Muraba);" }
       ]
     },
     {

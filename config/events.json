@@ -15,7 +15,7 @@
       "to": "02-15",
       "object": "firewood",
       "objectName": "խարույկի փայտ",
-      "luck": { "text": "Տրնդեզ։ Թփերն ու ծառերը տալիս են կրկնակի փայտ խարույկի համար։", "yield": { "Wood": 2 } },
+      "luck": { "text": "Տրնդեզ։ Մասուրներն ու ծիրանենիները տալիս են կրկնակի փայտ խարույկի համար։", "yield": { "Wood": 2 } },
       "hat": "Trndez_Hat",
       "goldHat": "Trndez_Gold_Hat",
       "colors": ["#e4572e", "#ffd23f", "#ffffff"],
@@ -62,7 +62,7 @@
       "to": "08-12",
       "object": "basket",
       "objectName": "բերքի զամբյուղ",
-      "luck": { "text": "Նավասարդ՝ հին հայկական Ամանորը։ Դդումներն այսօր չեն փչանում։", "pumpkinDeath": 0 },
+      "luck": { "text": "Նավասարդ՝ հին հայկական Ամանորը։ Ձմերուկներն այսօր չեն փչանում։", "pumpkinDeath": 0 },
       "hat": "Navasard_Hat",
       "goldHat": "Navasard_Gold_Hat",
       "colors": ["#d9a441", "#8c5a2b", "#e4572e"],
@@ -78,7 +78,7 @@
       "to": "09-02",
       "object": "book",
       "objectName": "գիրք",
-      "luck": { "text": "Գիտելիքի օր։ Գազարը տալիս է կրկնակի բերք։", "yield": { "Carrot": 2 } },
+      "luck": { "text": "Գիտելիքի օր։ Բադրիջանը տալիս է կրկնակի բերք։", "yield": { "Carrot": 2 } },
       "hat": "Knowledge_Hat",
       "goldHat": "Knowledge_Gold_Hat",
       "colors": ["#2b59c3", "#f2c14e", "#ffffff"],
@@ -120,7 +120,7 @@
   ],
 
   "notes": {
-    "_readme": "Գաղտնի գրառումներ։ chance՝ խնդրանքը կատարելուց հետո գրառում ստանալու հավանականությունը, stars՝ գանձի համար, hat՝ գլխարկը բոլորը լուծելու համար։ list՝ գրառումները հերթով. x/y՝ գանձի վանդակը կամ fact՝ sunflower (ամենաշատ թերթիկներով արևածաղիկը), cactus (ամենամեծ կակտուսը), giant (ամենամեծ հսկա դդումի ձախ ներքևի անկյունը), ponds (x = լճակների քանակը), gold (x = ոսկի % 10) և dx/dy՝ դրանից քանի քայլ, needs՝ որ հետազոտությունից հետո (դրանք ֆերմայում պետք է լինեն)։ kind՝ math, code, cipher կամ fact, hint՝ Էրիկի հուշումը։",
+    "_readme": "Գաղտնի գրառումներ։ chance՝ խնդրանքը կատարելուց հետո գրառում ստանալու հավանականությունը, stars՝ գանձի համար, hat՝ գլխարկը բոլորը լուծելու համար։ list՝ գրառումները հերթով. x/y՝ գանձի վանդակը կամ fact՝ sunflower (ամենաշատ հատիկներով նուռը), cactus (ամենամեծ խաղողը), giant (ամենամեծ հսկա ձմերուկի ձախ ներքևի անկյունը), ponds (x = լճակների քանակը), gold (x = ոսկի % 10) և dx/dy՝ դրանից քանի քայլ, needs՝ որ հետազոտությունից հետո (դրանք ֆերմայում պետք է լինեն)։ kind՝ math, code, cipher կամ fact, hint՝ Էրիկի հուշումը։",
     "chance": 0.25,
     "stars": 3,
     "hat": "Treasure_Hat",
@@ -379,27 +379,27 @@
       {
         "id": "n31",
         "kind": "fact",
-        "text": "Գանձը թաքնված է այն արևածաղկի տակ, որն ամենաշատ թերթիկներն ունի։ Երբ փորես, արևածաղիկը պետք է աճի ֆերմայում։",
+        "text": "Գանձը թաքնված է այն նռան տակ, որն ամենաշատ հատիկներն ունի։ Երբ փորես, նուռը պետք է աճի ֆերմայում։",
         "fact": "sunflower",
         "needs": "Sunflowers",
-        "hint": "chapel()-ը արևածաղկի վրա ասում է թերթիկների քանակը։ Չափիր բոլորը և հիշիր՝ որտեղ է ամենամեծը։"
+        "hint": "chapel()-ը նռան վրա ասում է հատիկների քանակը։ Չափիր բոլորը և հիշիր՝ որտեղ է ամենամեծը։"
       },
       {
         "id": "n32",
         "kind": "fact",
-        "text": "Գանձը ամենամեծ կակտուսից մեկ քայլ աջ է։",
+        "text": "Գանձը ամենամեծ խաղողից մեկ քայլ աջ է։",
         "fact": "cactus",
         "needs": "Cactus",
         "dx": 1,
-        "hint": "chapel()-ը կակտուսի վրա ասում է նրա չափը։ Գտիր ամենամեծը և գնա մեկ քայլ աջ։"
+        "hint": "chapel()-ը խաղողի վրա ասում է նրա չափը։ Գտիր ամենամեծը և գնա մեկ քայլ աջ։"
       },
       {
         "id": "n33",
         "kind": "fact",
-        "text": "Գանձը ամենամեծ հսկա դդումի ձախ ներքևի անկյունում է։",
+        "text": "Գանձը ամենամեծ հսկա ձմերուկի ձախ ներքևի անկյունում է։",
         "fact": "giant",
         "needs": "Pumpkins",
-        "hint": "Հսկա դդումը մի քանի վանդակ է։ Նրա ձախ ներքևի վանդակն ունի ամենափոքր x-ը և ամենափոքր y-ը։"
+        "hint": "Հսկա ձմերուկը մի քանի վանդակ է։ Նրա ձախ ներքևի վանդակն ունի ամենափոքր x-ը և ամենափոքր y-ը։"
       },
       {
         "id": "n34",
@@ -442,26 +442,26 @@
   "contest": {"_readme": "Գորգերի շաբաթական մրցույթ։ hat՝ առաջին երեքի գլխարկը, medals՝ 1-ին, 2-րդ և 3-րդ տեղերի մեդալները։", "hat": "Carpet_Hat", "medals": [3, 2, 1]},
 
   "challenges": [
-    {"id": "hay500", "name": "Խոտհավաք", "about": "Հավաքիր 500 չոր խոտ։", "goal": {"items": {"Hay": 500}}, "levels": {"Expand": 3, "Grass": 2}, "seed": 101},
-    {"id": "giant3", "name": "Հսկա դդում 3×3", "about": "Աճեցրու և հավաքիր 3×3 հսկա դդում։ Մեռած դդումի տեղը նորը տնկիր։", "goal": {"giant": 3}, "levels": {"Expand": 2, "Carrots": 1, "Pumpkins": 1}, "items": {"Carrot": 200}, "seed": 102},
+    {"id": "hay500", "name": "Հունձ", "about": "Հավաքիր 500 ցորեն։", "goal": {"items": {"Hay": 500}}, "levels": {"Expand": 3, "Grass": 2}, "seed": 101},
+    {"id": "giant3", "name": "Հսկա ձմերուկ 3×3", "about": "Աճեցրու և հավաքիր 3×3 հսկա ձմերուկ։ Փտած ձմերուկի տեղը նորը տնկիր։", "goal": {"giant": 3}, "levels": {"Expand": 2, "Carrots": 1, "Pumpkins": 1}, "items": {"Carrot": 200}, "seed": 102},
     {"id": "fish150", "name": "Ձկնորս", "about": "Հավաքիր 150 ձուկ։ Ձուկը բռնվում է միայն լիքը լճակում։", "goal": {"items": {"Fish": 150}}, "levels": {"Expand": 3, "Fishing": 2, "Watering": 1}, "items": {"Water": 300}, "seed": 103},
-    {"id": "chain16", "name": "Կակտուսի շարք 4×4", "about": "Դասավորիր կակտուսները և մեկ havaqel()-ով հավաքիր 16 կակտուսի շղթա։", "goal": {"chain": 16}, "levels": {"Expand": 3, "Carrots": 1, "Cactus": 1}, "items": {"Pumpkin": 100}, "seed": 104},
-    {"id": "wood500", "name": "Փայտահատ", "about": "Հավաքիր 500 փայտ։ Հուշում՝ կողք կողքի ծառերը դանդաղ են աճում։", "goal": {"items": {"Wood": 500}}, "levels": {"Expand": 3, "Trees": 2}, "seed": 105},
-    {"id": "dino12", "name": "Փոքրիկ վիշապ", "about": "Դինոզավրին դարձրու 12 վանդակ երկար։ Մի՛ բախվիր պոչին։", "goal": {"dino": 12}, "levels": {"Expand": 3, "Hats": 1, "Dinosaurs": 1}, "items": {"Cactus": 100}, "seed": 106},
+    {"id": "chain16", "name": "Խաղողի շարք 4×4", "about": "Դասավորիր խաղողի վազերը և մեկ havaqel()-ով հավաքիր 16 խաղողի շղթա։", "goal": {"chain": 16}, "levels": {"Expand": 3, "Carrots": 1, "Cactus": 1}, "items": {"Pumpkin": 100}, "seed": 104},
+    {"id": "wood500", "name": "Փայտահատ", "about": "Հավաքիր 500 փայտ։ Հուշում՝ կողք կողքի ծիրանենիները դանդաղ են աճում։", "goal": {"items": {"Wood": 500}}, "levels": {"Expand": 3, "Trees": 2}, "seed": 105},
+    {"id": "dino12", "name": "Փոքրիկ վիշապ", "about": "Օձին դարձրու 12 վանդակ երկար։ Մի՛ բախվիր պոչին։", "goal": {"dino": 12}, "levels": {"Expand": 3, "Hats": 1, "Dinosaurs": 1}, "items": {"Cactus": 100}, "seed": 106},
     {"id": "maze3", "name": "Լաբիրինթոս", "about": "Գտիր և հավաքիր 3 լաբիրինթոսի գանձ։", "goal": {"harvest": {"Treasure": 3}}, "levels": {"Expand": 4, "Watering": 1, "Mazes": 1}, "items": {"Weird_Substance": 100}, "seed": 107},
-    {"id": "power100", "name": "Արևի էներգիա", "about": "Հավաքիր 100 էներգիա։ Ամենաշատ թերթիկներով արևածաղիկը 8 անգամ ավելի է տալիս։", "goal": {"items": {"Power": 100}}, "levels": {"Expand": 3, "Carrots": 1, "Sunflowers": 1}, "items": {"Carrot": 300}, "seed": 108},
-    {"id": "carrot200", "name": "Գազարի բերք", "about": "Հավաքիր 200 գազար։ Գազարը աճում է միայն հերկած հողում։", "goal": {"items": {"Carrot": 200}}, "levels": {"Expand": 3, "Carrots": 2}, "items": {"Hay": 300, "Wood": 300}, "seed": 109},
-    {"id": "giant4", "name": "Հսկա դդում 4×4", "about": "Աճեցրու և հավաքիր 4×4 հսկա դդում։", "goal": {"giant": 4}, "levels": {"Expand": 3, "Carrots": 1, "Pumpkins": 1}, "items": {"Carrot": 300}, "seed": 110},
+    {"id": "power100", "name": "Նռան հյութ", "about": "Հավաքիր 100 նռան հյութ։ Ամենաշատ հատիկներով նուռը 8 անգամ ավելի է տալիս։", "goal": {"items": {"Power": 100}}, "levels": {"Expand": 3, "Carrots": 1, "Sunflowers": 1}, "items": {"Carrot": 300}, "seed": 108},
+    {"id": "carrot200", "name": "Բադրիջանի բերք", "about": "Հավաքիր 200 բադրիջան։ Բադրիջանը աճում է միայն հերկած հողում։", "goal": {"items": {"Carrot": 200}}, "levels": {"Expand": 3, "Carrots": 2}, "items": {"Hay": 300, "Wood": 300}, "seed": 109},
+    {"id": "giant4", "name": "Հսկա ձմերուկ 4×4", "about": "Աճեցրու և հավաքիր 4×4 հսկա ձմերուկ։", "goal": {"giant": 4}, "levels": {"Expand": 3, "Carrots": 1, "Pumpkins": 1}, "items": {"Carrot": 300}, "seed": 110},
     {"id": "trout", "name": "Իշխան", "about": "Բռնիր մեկ իշխան։ Իշխանը հազվադեպ է բռնվում, ուրեմն արագ ձկնորսիր։", "goal": {"harvest": {"Trout": 1}}, "levels": {"Expand": 3, "Fishing": 1, "Watering": 1}, "items": {"Water": 200}, "seed": 111},
-    {"id": "drones2000", "name": "Դրոնների թիմ", "about": "Հավաքիր 2000 չոր խոտ։ Օգնության կանչիր նոր դրոններ՝ norDron()։", "goal": {"items": {"Hay": 2000}}, "levels": {"Expand": 4, "Grass": 2, "Megafarm": 2}, "seed": 112},
-    {"id": "chain36", "name": "Կակտուսի շարք 6×6", "about": "Դասավորիր 36 կակտուս և հավաքիր դրանք մեկ շղթայով։", "goal": {"chain": 36}, "levels": {"Expand": 4, "Carrots": 1, "Cactus": 1}, "items": {"Pumpkin": 200}, "seed": 113},
-    {"id": "mixed", "name": "Ամեն ինչից", "about": "Հավաքիր 150 չոր խոտ, 150 փայտ և 100 գազար։", "goal": {"items": {"Hay": 150, "Wood": 150, "Carrot": 100}}, "levels": {"Expand": 3, "Trees": 1, "Carrots": 1}, "items": {"Hay": 200, "Wood": 200}, "seed": 114},
-    {"id": "pumpkin500", "name": "Դդմի սար", "about": "Հավաքիր 500 դդում։", "goal": {"items": {"Pumpkin": 500}}, "levels": {"Expand": 3, "Carrots": 1, "Pumpkins": 2}, "items": {"Carrot": 400}, "seed": 115},
-    {"id": "dino30", "name": "Մեծ վիշապ", "about": "Դինոզավրին դարձրու 30 վանդակ երկար 6×6 ֆերմայում։", "goal": {"dino": 30}, "levels": {"Expand": 4, "Hats": 1, "Dinosaurs": 1}, "items": {"Cactus": 200}, "seed": 116},
+    {"id": "drones2000", "name": "Դրոնների թիմ", "about": "Հավաքիր 2000 ցորեն։ Օգնության կանչիր նոր դրոններ՝ norDron()։", "goal": {"items": {"Hay": 2000}}, "levels": {"Expand": 4, "Grass": 2, "Megafarm": 2}, "seed": 112},
+    {"id": "chain36", "name": "Խաղողի շարք 6×6", "about": "Դասավորիր 36 խաղող և հավաքիր դրանք մեկ շղթայով։", "goal": {"chain": 36}, "levels": {"Expand": 4, "Carrots": 1, "Cactus": 1}, "items": {"Pumpkin": 200}, "seed": 113},
+    {"id": "mixed", "name": "Ամեն ինչից", "about": "Հավաքիր 150 ցորեն, 150 փայտ և 100 բադրիջան։", "goal": {"items": {"Hay": 150, "Wood": 150, "Carrot": 100}}, "levels": {"Expand": 3, "Trees": 1, "Carrots": 1}, "items": {"Hay": 200, "Wood": 200}, "seed": 114},
+    {"id": "pumpkin500", "name": "Ձմերուկի սար", "about": "Հավաքիր 500 ձմերուկ։", "goal": {"items": {"Pumpkin": 500}}, "levels": {"Expand": 3, "Carrots": 1, "Pumpkins": 2}, "items": {"Carrot": 400}, "seed": 115},
+    {"id": "dino30", "name": "Մեծ վիշապ", "about": "Օձին դարձրու 30 վանդակ երկար 6×6 ֆերմայում։", "goal": {"dino": 30}, "levels": {"Expand": 4, "Hats": 1, "Dinosaurs": 1}, "items": {"Cactus": 200}, "seed": 116},
     {"id": "gold500", "name": "Ոսկու որս", "about": "Հավաքիր 500 ոսկի լաբիրինթոսներից։", "goal": {"items": {"Gold": 500}}, "levels": {"Expand": 4, "Watering": 1, "Mazes": 1}, "items": {"Weird_Substance": 200}, "seed": 117},
-    {"id": "giant6", "name": "Հսկա դդում 6×6", "about": "Ամբողջ ֆերման մեկ հսկա դդում դարձրու և հավաքիր այն։", "goal": {"giant": 6}, "levels": {"Expand": 4, "Carrots": 1, "Pumpkins": 1}, "items": {"Carrot": 600}, "seed": 118},
-    {"id": "power300", "name": "Արևային կայան", "about": "Հավաքիր 300 էներգիա 6×6 ֆերմայում։", "goal": {"items": {"Power": 300}}, "levels": {"Expand": 4, "Carrots": 1, "Sunflowers": 1}, "items": {"Carrot": 600}, "seed": 119},
-    {"id": "chain64", "name": "Կակտուսի թագավոր", "about": "Դասավորիր 64 կակտուս 8×8 ֆերմայում և հավաքիր մեկ շղթայով։ Դրոնները կարող են օգնել։", "goal": {"chain": 64}, "levels": {"Expand": 5, "Carrots": 1, "Cactus": 1, "Megafarm": 2}, "items": {"Pumpkin": 400}, "seed": 120}
+    {"id": "giant6", "name": "Հսկա ձմերուկ 6×6", "about": "Ամբողջ ֆերման մեկ հսկա ձմերուկ դարձրու և հավաքիր այն։", "goal": {"giant": 6}, "levels": {"Expand": 4, "Carrots": 1, "Pumpkins": 1}, "items": {"Carrot": 600}, "seed": 118},
+    {"id": "power300", "name": "Հյութի գործարան", "about": "Հավաքիր 300 նռան հյութ 6×6 ֆերմայում։", "goal": {"items": {"Power": 300}}, "levels": {"Expand": 4, "Carrots": 1, "Sunflowers": 1}, "items": {"Carrot": 600}, "seed": 119},
+    {"id": "chain64", "name": "Խաղողի թագավոր", "about": "Դասավորիր 64 խաղող 8×8 ֆերմայում և հավաքիր մեկ շղթայով։ Դրոնները կարող են օգնել։", "goal": {"chain": 64}, "levels": {"Expand": 5, "Carrots": 1, "Cactus": 1, "Megafarm": 2}, "items": {"Pumpkin": 400}, "seed": 120}
   ],
 
   "stickers": [
@@ -476,12 +476,12 @@
     {"id": "import", "group": "code", "icon": "inbox", "name": "Ներմուծում", "about": "Օգտագործիր ուրիշ ֆայլի կոդը import-ով։", "when": {"feature": "import"}},
     {"id": "drones5", "group": "code", "icon": "drones", "name": "Դրոնների թիմ", "about": "Միաժամանակ աշխատեցրու 5 դրոն։", "when": {"drones": 5}},
     {"id": "words1000", "group": "code", "icon": "code", "name": "1000 կոդի բառ", "about": "Հավաքիր 1000 կոդի բառ «Լավագույն կոդ» ցուցակի համար։", "when": {"codeWords": 1000}},
-    {"id": "giant6", "group": "farm", "icon": "pumpkin", "name": "Հսկաների հսկա", "about": "Հավաքիր 6×6 հսկա դդում։", "when": {"giant": 6}},
-    {"id": "chain30", "group": "farm", "icon": "cactus", "name": "Կակտուսի շղթա", "about": "Մեկ havaqel()-ով հավաքիր 30 կակտուս։", "when": {"chain": 30}},
-    {"id": "sun", "group": "farm", "icon": "sunflower", "name": "Արևի ուժ", "about": "Հավաքիր ամենամեծ արևածաղիկը բոնուսով։", "when": {"sunflowerBonus": true}},
+    {"id": "giant6", "group": "farm", "icon": "pumpkin", "name": "Հսկաների հսկա", "about": "Հավաքիր 6×6 հսկա ձմերուկ։", "when": {"giant": 6}},
+    {"id": "chain30", "group": "farm", "icon": "cactus", "name": "Խաղողի շղթա", "about": "Մեկ havaqel()-ով հավաքիր 30 խաղող։", "when": {"chain": 30}},
+    {"id": "sun", "group": "farm", "icon": "sunflower", "name": "Նռան ուժ", "about": "Հավաքիր ամենամեծ նուռը բոնուսով։", "when": {"sunflowerBonus": true}},
     {"id": "fishAll", "group": "farm", "icon": "fish", "name": "Բոլոր ձկները", "about": "Բռնիր ձկան բոլոր տեսակները։", "when": {"fishAll": true}},
     {"id": "golden10", "group": "farm", "icon": "goldFish", "name": "10 ոսկե ձուկ", "about": "Բռնիր 10 ոսկե ձուկ։", "when": {"goldenFish": 10}},
-    {"id": "hayMillion", "group": "farm", "icon": "farm", "name": "Միլիոն խոտ", "about": "Հավաքիր 1 000 000 չոր խոտ։", "when": {"total": {"Hay": 1000000}}},
+    {"id": "hayMillion", "group": "farm", "icon": "farm", "name": "Միլիոն ցորեն", "about": "Հավաքիր 1 000 000 ցորեն։", "when": {"total": {"Hay": 1000000}}},
     {"id": "gold10k", "group": "farm", "icon": "gold", "name": "Ոսկու սար", "about": "Հավաքիր 10 000 ոսկի։", "when": {"total": {"Gold": 10000}}},
     {"id": "researchAll", "group": "farm", "icon": "research", "name": "Ամբողջ ծառը", "about": "Բաց հետազոտությունների ամբողջ ծառը։", "when": {"researchAll": true}},
     {"id": "village", "group": "village", "icon": "village", "name": "Գյուղապետ", "about": "Վերանորոգիր գյուղի բոլոր շենքերը։", "when": {"village": "all"}},
@@ -510,7 +510,7 @@
     {"id": "flips100", "group": "secret", "icon": "flip", "name": "Ակրոբատ", "about": "Դրոնը 100 անգամ սալտո արեց։", "when": {"flips": 100}, "secret": true},
     {"id": "hats10", "group": "secret", "icon": "hat", "name": "Նորաձև դրոն", "about": "Դրոնը կրել է 10 տարբեր գլխարկ։", "when": {"hats": 10}, "secret": true},
     {"id": "eat20", "group": "secret", "icon": "dish", "name": "Գուրման", "about": "Կերար 20 ուտելիք։", "when": {"eaten": 20}, "secret": true},
-    {"id": "dragon", "group": "secret", "icon": "dino", "name": "Վիշապ", "about": "Դինոզավրը դարձավ 30 վանդակ երկար։", "when": {"dino": 30}, "secret": true},
+    {"id": "dragon", "group": "secret", "icon": "dino", "name": "Վիշապ", "about": "Օձը դարձավ 30 վանդակ երկար։", "when": {"dino": 30}, "secret": true},
     {"id": "iceFish", "group": "secret", "icon": "iceFish", "name": "Սառցե ձկնորս", "about": "Բռնիր սիգ՝ ձմեռային ձուկը։", "when": {"fish": "Whitefish"}, "secret": true}
   ],
 

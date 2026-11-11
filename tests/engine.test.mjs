@@ -35,6 +35,19 @@ test('other plants harvested unripe are still lost, and the student is told once
   assert.equal(game.world.tile(0, 0).entity.type, 'Grass', 'the bush is gone');
 });
 
+test('fertilizer: an infected plant gives the same small weird substance, however big its harvest', () => {
+  const weirdFrom = (carrots) => {
+    const game = makeGame({ levels: { Loops: 1, Plant: 1, Operators: 1, Carrots: carrots, Watering: 1, Fertilizer: 1 }, items: { Hay: 1e6, Wood: 1e6, Fertilizer: 1 } });
+    const r = runCode(game, 'till();\nplant(Entities.Carrot);\nuseItem(Items.Fertilizer);\nwhile (!canHarvest()) {\n  doAFlip();\n}\nharvest();');
+    assert.equal(r.error, null);
+    return [game.stats.total('Carrot'), game.inventory.get('Weird_Substance')];
+  };
+  const [small, weirdSmall] = weirdFrom(1);
+  const [big, weirdBig] = weirdFrom(8);
+  assert.ok(big >= 100 * small, `${small} and ${big} carrots`);
+  assert.deepEqual([weirdSmall, weirdBig], [1, 1]);
+});
+
 test('silent mistakes get a message; correct code gets none', () => {
   const lv = { Loops: 1, Plant: 1, Operators: 1, Variables: 1, Functions: 1, Debug: 1 };
   const warns = (code) => runCode(makeGame({ levels: lv }), code, { maxSeconds: 1 }).warnings;

@@ -1,5 +1,5 @@
 // Tiny pixel painter used to draw the game's own 16×16 sprites in code
-// (ground, bush, tree, carrot, cactus, item icons, …) in the same style as the
+// (ground, rosehip, apricot tree, grapes, item icons, …) in the same style as the
 // CC0 crop pack: flat colours, light top-left, dark outline.
 
 // Palette taken from the crop pack (ENDESGA-like).

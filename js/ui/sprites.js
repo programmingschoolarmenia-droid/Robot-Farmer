@@ -1,12 +1,12 @@
 // All game graphics: crops from the CC0 "Farming crops 16x16" pack by josehzz
 // (assets/sprites/crops-josehzz.png), the user's drone/Bridgy images, and sprites
-// drawn in code with the Pixels painter (ground, bush, tree, carrot, cactus, icons…).
+// drawn in code with the Pixels painter (ground, rosehip, apricot tree, pomegranate, grapes, icons…).
 import { Pixels, PAL, makeCanvas, seeded } from './pixel.js';
 
 const SHEET = { cell: 16 };
 // Sheet rows (each row has two crops: columns 0-5 and 6-11; col 0/6 = icon,
 // col 1/7 = ripe … col 4/10 = sprout, col 5/11 = seeds).
-const CROP_ROWS = { wheat: [5, 0], pumpkin: [8, 0], sunflower: [9, 6] };
+const CROP_ROWS = { wheat: [5, 0], eggplant: [3, 0], melon: [2, 6], sunflower: [9, 6] };
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -116,18 +116,22 @@ export class SpriteBook {
     stagesFrom('grass', 'wheat');
     // Ripe wheat is very orange in the pack; make it straw-yellow so it doesn't look like fire.
     this.put('grass3', this.recolorCanvas(this.get('grass3'), { '#fa6a0a': '#f9a31b', '#f9a31b': '#ffd541' }));
-    stagesFrom('pumpkin', 'pumpkin');
-    stagesFrom('sunflower', 'sunflower');
-    this.put('deadPumpkin', this.recolorCanvas(this.get('pumpkinIcon'), DEAD_PUMPKIN));
+    stagesFrom('pumpkin', 'melon'); // the pumpkin is a watermelon now; its ripe picture is drawn below
+    this.put('pumpkinIcon', watermelon());
+    stagesFrom('carrot', 'eggplant'); // the carrot is an eggplant now
+    this.put('icon:summer', this.sheetCell(...CROP_ROWS.sunflower)); // the season keeps its real sunflower
+    this.put('deadPumpkin', watermelon(true));
     this.put('deadPumpkinSmall', this.recolorCanvas(this.get('pumpkin3'), DEAD_PUMPKIN));
 
     // --- crops drawn in code
     for (let s = 0; s < 3; s++) this.put(`bush${s}`, bush(s));
     for (let s = 0; s < 4; s++) this.put(`tree${s}`, tree(s));
-    for (let s = 0; s < 4; s++) this.put(`carrot${s}`, carrot(s));
-    this.put('carrotIcon', carrotIcon());
     for (let s = 0; s < 4; s++) this.put(`mushroom${s}`, mushroom(s));
     this.put('icon:mushroom', this.get('mushroom3'));
+    // the sunflower is a pomegranate now: leaves → flower → fruit
+    for (let s = 0; s < 4; s++) this.put(`sunflower${s}`, pomegranate(s));
+    this.put('sunflowerIcon', pomegranateIcon());
+    // the cactus is a grape vine now; its bunch grows with its size
     for (let size = 0; size <= 9; size++) this.put(`cactus${size}`, cactus(size, true));
     this.put('cactusSprout', cactus(0, false));
     this.put('hedge', hedge());
@@ -137,16 +141,16 @@ export class SpriteBook {
     this.put('dinoTail', dinoTail());
 
     // --- items
-    this.put('item:Hay', hayBale());
+    this.put('item:Hay', this.get('grass3')); // wheat
     this.put('item:Wood', woodLog());
     this.put('item:Carrot', this.get('carrotIcon'));
     this.put('item:Pumpkin', this.get('pumpkinIcon'));
-    this.put('item:Power', bolt());
+    this.put('item:Power', juice());
     this.put('item:Water', droplet());
-    this.put('item:Fertilizer', sack());
+    this.put('item:Fertilizer', humusSack());
     this.put('item:Weird_Substance', flask());
-    this.put('item:Cactus', cactus(6, true));
-    this.put('item:Bone', bone());
+    this.put('item:Cactus', this.sheetCell(5, 6)); // a bunch of grapes
+    this.put('item:Bone', snakeSkin());
     this.put('item:Gold', coin());
     this.put('item:Fish', fish(PAL.sky, PAL.pale, PAL.blue));
     this.put('fish:Carp', fish('#8f9a5c', '#c2cc84', '#5d6638'));
@@ -205,7 +209,7 @@ export class SpriteBook {
     this.put('item:Egg', egg());
     this.put('item:Milk', milkCan());
     this.put('item:Grain', grainSack());
-    this.put('item:Bale', this.get('item:Hay'));
+    this.put('item:Bale', hayBale());
     this.put('item:Dram', banknote());
     this.put('thing:FeedTrough', trough());
     this.put('thing:WaterTrough', trough());
@@ -356,34 +360,36 @@ function soilTile(seed) {
 
 // ------------------------------------------------------------------ crops
 
+const APRICOT = '#f9a31b', APRICOT_LIGHT = '#ffd541', APRICOT_DARK = '#fa6a0a', BLUSH = '#df3e23';
+const BLOSSOM = '#ffffff', BLOSSOM_PINK = '#f5a3c7';
+const GRAPE = '#793a80', GRAPE_LIGHT = '#bc4a9b', GRAPE_DARK = '#403353';
+const HIP = '#df3e23', HIP_DARK = '#b4202a';
+
+// Rosehip (մասուր): a thorny green bush; pink flowers while growing, red hips when ripe.
 function bush(stage) {
   const p = new Pixels();
   const r = [3, 4.6, 6][stage];
   const cy = 15.5 - r * 0.9;
-  p.ellipse(8, cy, r, r * 0.9, PAL.green);
+  p.ellipse(8, cy, r, r * 0.85, PAL.darkGreen);
   if (stage >= 1) {
-    p.disc(8 - r * 0.6, cy + r * 0.25, r * 0.55, PAL.green);
-    p.disc(8 + r * 0.6, cy + r * 0.3, r * 0.55, PAL.green);
+    p.disc(8 - r * 0.6, cy + r * 0.25, r * 0.55, PAL.darkGreen);
+    p.disc(8 + r * 0.6, cy + r * 0.3, r * 0.55, PAL.darkGreen);
   }
-  p.shade(PAL.green, PAL.lightGreen, PAL.darkGreen);
-  if (stage >= 1) {
-    p.set(6, Math.round(cy - 1), PAL.paleGreen).set(9, Math.round(cy - r * 0.5), PAL.paleGreen);
-  }
+  p.shade(PAL.darkGreen, PAL.green, PAL.deepGreen);
+  if (stage >= 1) p.set(6, Math.round(cy - 1), PAL.lightGreen).set(9, Math.round(cy - r * 0.5), PAL.lightGreen);
+  if (stage === 1) for (const [x, y] of [[6, 9], [10, 10]]) p.set(x, y, BLOSSOM_PINK).set(x + 1, y, BLOSSOM_PINK).set(x, y + 1, BLOSSOM_PINK).set(x + 1, y + 1, PAL.yellow);
   if (stage === 2) {
-    // ripe: berries
-    for (const [x, y] of [
-      [5, 9],
-      [10, 8],
-      [8, 12],
-      [11, 12],
-    ]) {
-      p.set(x, y, PAL.brightRed).set(x, y - 1, PAL.white);
+    const inBush = (x, y) => [[0, 0], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]].every(([i, j]) => p.get(x + i, y + j - 1) !== null);
+    for (const [x, y] of [[4, 10], [7, 7], [10, 9], [7, 12], [11, 12]]) {
+      if (!inBush(x, y)) continue;
+      p.set(x, y, '#ff8a6a').set(x + 1, y, HIP).set(x, y + 1, HIP).set(x + 1, y + 1, HIP_DARK).set(x + 1, y - 1, PAL.darkBrown);
     }
   }
   p.outline();
   return p;
 }
 
+// Apricot tree (ծիրանենի): white-pink blossoms on the way, orange apricots when ripe.
 function tree(stage) {
   const p = new Pixels();
   if (stage === 0) {
@@ -392,25 +398,27 @@ function tree(stage) {
     p.outline();
     return p;
   }
-  const crown = [0, 3.6, 5, 6.4][stage];
-  const cy = [0, 8.5, 7, 6.2][stage];
+  const crown = [0, 3.6, 5, 6.2][stage];
+  const cy = [0, 8.5, 7, 6.3][stage];
   const trunkTop = Math.round(cy + crown * 0.6);
   p.rect(7, trunkTop, 2, 16 - trunkTop, PAL.brown);
   p.rect(7, trunkTop, 1, 16 - trunkTop, PAL.lightBrown);
-  p.disc(8, cy, crown, PAL.darkGreen);
+  p.set(6, 15, PAL.brown).set(9, 15, PAL.brown);
+  p.disc(8, cy, crown, PAL.green);
   if (stage >= 2) {
-    p.disc(8 - crown * 0.55, cy + crown * 0.35, crown * 0.55, PAL.darkGreen);
-    p.disc(8 + crown * 0.55, cy + crown * 0.35, crown * 0.55, PAL.darkGreen);
+    p.disc(8 - crown * 0.6, cy + crown * 0.3, crown * 0.55, PAL.green);
+    p.disc(8 + crown * 0.6, cy + crown * 0.3, crown * 0.55, PAL.green);
   }
-  p.shade(PAL.darkGreen, PAL.green, PAL.deepGreen);
-  p.set(6, Math.round(cy - crown * 0.4), PAL.lightGreen).set(7, Math.round(cy - crown * 0.55), PAL.lightGreen);
+  p.shade(PAL.green, PAL.lightGreen, PAL.darkGreen);
+  p.set(6, Math.round(cy - crown * 0.45), PAL.paleGreen).set(7, Math.round(cy - crown * 0.6), PAL.paleGreen);
+  if (stage === 2) {
+    for (const [x, y] of [[5, 4], [10, 3], [12, 7], [4, 8], [8, 6], [9, 9]]) p.set(x, y, BLOSSOM).set(x + 1, y, BLOSSOM_PINK);
+  }
   if (stage === 3) {
-    for (const [x, y] of [
-      [5, 5],
-      [10, 4],
-      [11, 8],
-      [6, 9],
-    ]) p.set(x, y, PAL.lime);
+    for (const [x, y] of [[4, 5], [9, 2], [11, 6], [6, 8], [2, 9], [12, 10], [8, 10]]) {
+      p.set(x, y, APRICOT).set(x + 1, y, APRICOT_DARK).set(x, y + 1, APRICOT_DARK).set(x + 1, y + 1, BLUSH);
+      p.set(x, y, APRICOT_LIGHT);
+    }
   }
   p.outline();
   return p;
@@ -432,81 +440,78 @@ function mushroom(stage) {
   return p;
 }
 
-function carrot(stage) {
+// Pomegranate fruit (նուռ) with its little crown.
+function pomegranateIcon() {
   const p = new Pixels();
-  const leafH = [2, 4, 6, 8][stage];
-  const baseY = stage >= 2 ? 12 : 14;
-  // leaves (three blades)
-  for (let i = 0; i < leafH; i++) {
-    const y = baseY - i;
-    p.set(8, y, i % 2 ? PAL.lightGreen : PAL.green);
-    if (i > 0 && stage >= 1) p.set(7 - Math.floor(i / 3), y, PAL.green);
-    if (i > 0 && stage >= 1) p.set(9 + Math.floor(i / 3), y, PAL.lightGreen);
-  }
-  if (stage >= 2) {
-    const w = stage === 3 ? 6 : 4;
-    const x0 = 8 - w / 2;
-    p.rect(x0, baseY + 1, w, 2, PAL.orange);
-    p.rect(x0 + 1, baseY + 3, w - 2, 1, PAL.orange);
-    p.set(x0, baseY + 1, PAL.amber);
-    p.set(x0 + 1, baseY + 1, PAL.amber);
-  }
+  p.disc(8, 9.5, 5.8, PAL.brightRed);
+  p.shade(PAL.brightRed, '#ff7a5c', PAL.red);
+  p.rect(7, 2, 3, 2, PAL.red);
+  p.set(6, 2, PAL.red).set(10, 2, PAL.red).set(6, 1, PAL.red).set(8, 1, PAL.red).set(10, 1, PAL.red);
+  p.set(5, 7, PAL.white).set(6, 6, '#ffb3a0');
+  for (const [x, y] of [[10, 12], [11, 11], [9, 13]]) p.set(x, y, '#8a1a24');
   p.outline();
   return p;
 }
 
-function carrotIcon() {
-  const p = new Pixels();
-  p.polygon(
-    [
-      [2.5, 14.5],
-      [8.6, 4.2],
-      [12.8, 8.4],
-    ],
-    PAL.orange,
-  );
-  p.disc(10.9, 6.1, 2.6, PAL.orange);
-  p.shade(PAL.orange, PAL.amber, PAL.brightRed);
-  for (const [x, y] of [
-    [6, 10],
-    [8, 9],
-    [5, 12],
-  ])
-    p.set(x, y, PAL.brightRed);
-  p.line(12, 4, 14, 1, PAL.green);
-  p.line(12, 5, 15, 3, PAL.lightGreen);
-  p.line(11, 3, 11, 0, PAL.green);
-  p.line(13, 4, 15, 1, PAL.green);
-  p.outline();
-  return p;
-}
-
-function cactus(size, grown) {
-  const p = new Pixels();
-  if (!grown) {
-    p.rect(7, 12, 2, 4, PAL.green).set(7, 12, PAL.lightGreen);
-    p.outline();
+// Pomegranate: a low leafy plant → a red flower → the ripe fruit sitting on its leaves.
+function pomegranate(stage) {
+  if (stage === 3) {
+    const p = pomegranateIcon();
+    for (const [x, y] of [[1, 13], [2, 12], [3, 13], [13, 13], [14, 12], [12, 14]]) if (p.get(x, y) === null) p.set(x, y, PAL.green);
     return p;
   }
-  const h = 6 + Math.round(size * 0.9);
-  const top = 16 - h;
-  p.rect(6, top + 1, 4, h - 1, PAL.green);
-  p.rect(7, top, 2, 1, PAL.green);
-  if (size >= 3) {
-    const ay = top + Math.round(h * 0.45);
-    p.rect(4, ay, 2, 1, PAL.green);
-    p.rect(3, ay - 3, 2, 4, PAL.green);
+  const p = new Pixels();
+  const leaves = [[[7, 13], [9, 12]], [[5, 12], [7, 10], [9, 11], [11, 12]], [[4, 12], [6, 9], [9, 10], [11, 11], [7, 13]]][stage];
+  for (const [x, y] of leaves) {
+    p.line(8, 15, x + 1, y + 1, PAL.darkGreen);
+    p.rect(x, y, 2, 2, PAL.green).set(x, y, PAL.lightGreen);
   }
-  if (size >= 6) {
-    const ay = top + Math.round(h * 0.3);
-    p.rect(10, ay + 1, 2, 1, PAL.green);
-    p.rect(11, ay - 2, 2, 4, PAL.green);
+  if (stage === 2) {
+    p.rect(7, 5, 3, 3, PAL.brightRed).set(7, 5, PAL.orange).set(9, 7, PAL.red).set(8, 4, PAL.brightRed).set(6, 5, PAL.red).set(10, 5, PAL.red);
+    p.line(8, 8, 8, 10, PAL.darkGreen);
   }
+  p.outline();
+  return p;
+}
+
+// Grape vine (խաղող): leaves on a stake, and a bunch of 2-pixel berries that grows with its size (0–9).
+function cactus(size, grown) {
+  const p = new Pixels();
+  p.rect(8, 2, 1, 14, PAL.lightBrown).set(8, 15, PAL.brown);
+  if (!grown) {
+    p.set(7, 12, PAL.lightGreen).set(6, 11, PAL.green).set(9, 11, PAL.lightGreen).set(10, 10, PAL.green);
+    p.outline(PAL.outlineBrown);
+    return p;
+  }
+  for (const [x, y, r] of [[4, 3, 2.6], [12, 3, 2.6], [8, 2, 2.4]]) p.disc(x, y, r, PAL.green);
   p.shade(PAL.green, PAL.lightGreen, PAL.darkGreen);
-  for (let y = top + 2; y < 15; y += 3) p.set(8, y, PAL.lime);
-  if (size >= 8) {
-    p.set(7, top - 1, PAL.pink).set(8, top - 1, PAL.pink).set(7, top - 2, '#f5a3c7');
+  p.set(14, 6, PAL.lightGreen).set(15, 7, PAL.lightGreen).set(14, 8, PAL.lightGreen); // a curly tendril
+  const rows = 1 + Math.ceil(size * 0.55); // 1…6 rows of berries
+  const wide = Math.min(4, 1 + Math.ceil(size / 2.5)); // 1…4 berries in the top row
+  for (let j = 0; j < rows; j++) {
+    const n = Math.max(1, wide - Math.floor((j * wide) / rows));
+    const x0 = 9 - n;
+    for (let i = 0; i < n; i++) {
+      const x = x0 + i * 2, y = 4 + j * 2;
+      p.set(x, y, GRAPE_LIGHT).set(x + 1, y, GRAPE).set(x, y + 1, GRAPE).set(x + 1, y + 1, GRAPE_DARK);
+    }
   }
+  p.outline(PAL.outlineBrown);
+  return p;
+}
+
+// Watermelon (ձմերուկ): dark green with light zig-zag stripes.
+function watermelon(dead = false) {
+  const p = new Pixels();
+  const [base, light, dark, stripe] = dead ? ['#6d758d', '#8b93af', '#333941', '#ba756a'] : [PAL.darkGreen, PAL.green, PAL.deepGreen, PAL.paleGreen];
+  p.ellipse(8, 9.5, 7, 5.6, base);
+  for (const sx of [4, 8, 12]) for (let y = 4; y < 16; y++) {
+    const x = sx + ((y >> 1) % 2 ? 1 : 0);
+    if (p.get(x, y) === base) p.set(x, y, stripe);
+  }
+  p.shade(base, light, dark);
+  p.set(4, 6, PAL.white).set(5, 5, PAL.white);
+  p.set(8, 3, PAL.brown).set(9, 3, PAL.brown);
   p.outline();
   return p;
 }
@@ -542,15 +547,19 @@ function apple() {
   return p;
 }
 
+// The drone as a snake: a head facing right (flipped when moving left) with a forked tongue,
+// and round body segments with a scale pattern.
 function dinoHead() {
   const p = new Pixels();
-  p.ellipse(8, 9, 6, 5, PAL.lightGreen);
-  p.ellipse(11, 10.5, 3.5, 2.5, PAL.lightGreen);
+  p.ellipse(6.5, 8, 4.5, 4.5, PAL.lightGreen);
+  p.ellipse(10, 8, 3.6, 3.4, PAL.lightGreen);
+  p.ellipse(12.4, 8, 1.6, 2, PAL.lightGreen);
   p.shade(PAL.lightGreen, PAL.paleGreen, PAL.green);
-  p.set(9, 7, PAL.white).set(10, 7, PAL.outline);
-  p.set(13, 11, PAL.outline);
-  for (const x of [3, 5, 7]) p.set(x, 4 + (x === 5 ? -1 : 0), PAL.amber);
+  for (const [x, y] of [[4, 6], [6, 5], [3, 9], [5, 10], [7, 8]]) p.set(x, y, PAL.green);
+  for (const y of [5.5, 9.5]) p.rect(9, y, 2, 2, PAL.outline).set(9, Math.floor(y), PAL.yellow);
+  p.set(13, 7, PAL.green).set(13, 9, PAL.green);
   p.outline();
+  p.set(15, 8, PAL.brightRed).set(14, 8, PAL.brightRed);
   return p;
 }
 
@@ -558,7 +567,8 @@ function dinoTail() {
   const p = new Pixels();
   p.disc(8, 8, 5, PAL.lightGreen);
   p.shade(PAL.lightGreen, PAL.paleGreen, PAL.green);
-  p.set(8, 3, PAL.amber).set(8, 2, PAL.amber);
+  for (const [x, y] of [[6, 6], [9, 6], [5, 9], [8, 9], [11, 9], [7, 12], [10, 12]]) p.set(x, y, PAL.green);
+  p.set(6, 5, PAL.lime);
   p.outline();
   return p;
 }
@@ -590,22 +600,17 @@ function woodLog() {
   return p;
 }
 
-function bolt() {
+// Juice jug (pomegranate juice), replacing the lightning bolt.
+function juice() {
   const p = new Pixels();
-  p.polygon(
-    [
-      [9.5, 0.5],
-      [3, 9],
-      [7.5, 9],
-      [5.5, 15.5],
-      [13, 6.5],
-      [8.5, 6.5],
-      [11, 0.5],
-    ],
-    PAL.yellow,
-  );
-  p.shade(PAL.yellow, PAL.brightYellow, PAL.amber);
-  p.outline(PAL.outlineBrown);
+  p.rect(5, 6, 6, 9, PAL.brightRed);
+  p.rect(6, 4, 4, 2, PAL.lightGrey);
+  p.rect(5, 3, 6, 1, PAL.lightGrey);
+  p.rect(11, 8, 2, 1, PAL.lightGrey).rect(12, 8, 1, 4, PAL.lightGrey).rect(11, 11, 1, 1, PAL.lightGrey);
+  p.shade(PAL.brightRed, '#ff7a5c', PAL.red);
+  p.rect(5, 6, 6, 1, '#ffb3a0');
+  p.set(6, 8, PAL.white).set(6, 9, PAL.white);
+  p.outline();
   return p;
 }
 
@@ -626,13 +631,15 @@ function droplet() {
   return p;
 }
 
-function sack() {
+// Humus: an open sack of dark soil with a sprout.
+function humusSack() {
   const p = new Pixels();
   p.ellipse(8, 10.5, 5.5, 4.8, PAL.tan);
-  p.rect(6, 3, 4, 4, PAL.tan);
   p.shade(PAL.tan, PAL.sand, PAL.lightBrown);
-  p.rect(5, 6, 6, 1, PAL.brown);
-  p.set(7, 10, PAL.green).set(8, 9, PAL.lightGreen).set(9, 10, PAL.green).set(8, 11, PAL.green).set(8, 10, PAL.green);
+  p.ellipse(8, 6.3, 5, 1.8, PAL.soilDark);
+  p.set(6, 6, PAL.soil).set(10, 7, PAL.soil).set(9, 6, PAL.darkBrown);
+  p.rect(4, 8, 8, 1, PAL.lightBrown);
+  p.set(8, 5, PAL.green).set(8, 4, PAL.green).set(7, 3, PAL.lightGreen).set(9, 3, PAL.paleGreen);
   p.outline(PAL.outlineBrown);
   return p;
 }
@@ -648,20 +655,16 @@ function flask() {
   return p;
 }
 
-function bone() {
+// Snake skin: a pale shed skin lying in an S, with a diamond pattern and an empty head at one end.
+function snakeSkin() {
   const p = new Pixels();
-  p.line(4, 12, 12, 4, PAL.sand);
-  p.line(4, 11, 11, 4, PAL.sand);
-  p.line(5, 12, 12, 5, PAL.sand);
-  for (const [x, y] of [
-    [3, 11],
-    [5, 13],
-    [11, 3],
-    [13, 5],
-  ])
-    p.disc(x, y, 1.7, PAL.sand);
-  p.shade(PAL.sand, PAL.white, PAL.tan);
-  p.outline(PAL.outlineBrown);
+  const skin = '#e6e2c0';
+  for (let x = 2; x <= 12; x += 0.5) p.disc(x, 8 + 3 * Math.sin(((x - 2) / 10) * Math.PI * 2), 1.9, skin);
+  p.ellipse(13, 8, 2.2, 2, skin);
+  p.shade(skin, PAL.white, '#c9c39a');
+  for (let x = 3; x <= 11; x += 2) p.set(x, Math.round(8 + 3 * Math.sin(((x - 2) / 10) * Math.PI * 2)), '#a59c6c');
+  p.set(14, 8, PAL.grey);
+  p.outline(PAL.grey);
   return p;
 }
 
@@ -1084,17 +1087,14 @@ function topHat(name, color, band) {
     p.disc(8, 8, 3.6, '#111827');
     p.set(6, 6, '#4b5563');
   } else if (name === 'Dinosaur_Hat') {
-    p.disc(8, 8, 6, color);
-    for (const [x, y] of [
-      [8, 1],
-      [8, 15],
-      [1, 8],
-      [15, 8],
-      [3, 3],
-      [13, 13],
-    ])
-      p.set(x, y, PAL.amber);
+    // a coiled snake seen from above
+    p.disc(8, 8, 6.5, color);
     p.shade(color, PAL.paleGreen, band);
+    for (let a = 0; a < 9; a += 0.25) {
+      const r = 5.5 - a * 0.55;
+      p.set(Math.round(8 + Math.cos(a * 2.2) * r), Math.round(8 + Math.sin(a * 2.2) * r), band);
+    }
+    p.set(8, 8, PAL.yellow);
   } else {
     p.disc(8, 8, 7.2, color);
     p.disc(8, 8, 4.6, band);

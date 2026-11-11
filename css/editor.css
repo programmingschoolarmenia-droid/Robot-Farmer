@@ -47,14 +47,14 @@
   color: var(--red);
 }
 .tab.running::before {
-  content: '';
+  content: "";
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--green);
 }
 .tab.has-error::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 4px;
   right: 4px;
@@ -90,7 +90,9 @@
   height: auto;
   /* no ligatures: beginners must see exactly what they type (== and >= stay two characters) */
   font-variant-ligatures: none;
-  font-feature-settings: 'liga' 0, 'calt' 0;
+  font-feature-settings:
+    "liga" 0,
+    "calt" 0;
   font-family: var(--font-code);
   font-size: var(--code-font);
   line-height: 1.55;
@@ -346,4 +348,21 @@ li.CodeMirror-hint-active {
   padding: 0 5px;
   margin-right: 6px;
   font-size: 0.75rem;
+}
+
+
+
+.a{
+  animation: asd 4s infinite;
+}
+@keyframes asd {
+  0% {
+    height: 100px;
+  }
+  50% {
+    height: 200px;
+  }
+  100% {
+    height: 100px;
+  }
 }

@@ -53,6 +53,12 @@ problem**; nothing breaks silently.
 level of it: `[[1,1], [3,1], [3,3], …]` (level 0 = first item).
 
 ### `entities` (plants)
+The plant ids are the old English ones and never change, because saves and scores use them.
+Players see Armenian plants instead: Grass = wheat (Ցորեն), Bush = rosehip (Մասուր), Tree = apricot
+tree (Ծիրանենի), Carrot = eggplant (Բադրիջան), Pumpkin = watermelon (Ձմերուկ), Sunflower = pomegranate
+(Նուռ, `petals` are its seeds), Cactus = grape vine (Խաղող). Items: Hay = wheat, Power = pomegranate
+juice (Նռան հյութ), Weird_Substance = magic dust (Կախարդական փոշի). Names live in `texts.json` and `aliases.json`.
+
 Each plant has:
 | Field | Meaning | Example |
 |---|---|---|
@@ -75,7 +81,7 @@ Each plant has:
 | Section | Fields |
 |---|---|
 | `water` | `research`, `secondsPerItem` (one tank every N s, halves per level), `tankAmount` (0.25), `evaporationPerSecond`, `maxGrowthMultiplier` (5) |
-| `fertilizer` | `research`, `secondsPerItem`, `secondsSaved` (growth per use), `infectedYieldToWeird` (share of yield given as weird substance) |
+| `fertilizer` | `research`, `secondsPerItem`, `secondsSaved` (growth per use), `infectedWeird` (weird substance from each infected plant harvested, whatever its harvest) |
 | `power` | `speedMultiplier` (2), `actionsPerPower` (one power used per N actions) |
 | `megafarm` | `research`, `dronesPerLevel` (`[1, 2, 4, 8, 16, 32]`) |
 | `maze` | `research`, `maxReuses` (how many times the treasure can be moved) |
@@ -169,7 +175,7 @@ Each card in `nodes`:
   "id": "Carrots",               // internal name (Latin letters); in code students write its
                                  //   Armenian name from aliases.json: Hetazotutyunner.Gazar
   "icon": "carrot",              // picture  (or "label": "while" to show code text)
-  "name": "Գազար",               // Armenian name
+  "name": "Բադրիջան",               // Armenian name
   "description": "…",            // Armenian description
   "parents": ["Plant"],          // cards that must be bought first (draws the tree)
   "tiers": [{ "Wood": 50 }, { "Wood": 250 }],   // price of each level
@@ -245,7 +251,7 @@ autocomplete, error messages); the other names also work. The English name alway
 "functions":  { "harvest": ["havaqel", "հավաքել"] },
 "constants":  { "East": ["Aj", "Աջ", "Arevelq", "Արևելք"] },
 "namespaces": { "Entities": ["Buyser", "Բույսեր"] },
-"members":    { "Entities": { "Carrot": ["Gazar", "Գազար"] } }
+"members":    { "Entities": { "Carrot": ["Badrjan", "Բադրիջան", "Gazar"] } }
 ```
 If you rename a command here, also update the texts that mention it (`bridgy.json`,
 `guide.json`, `texts.json`). JavaScript itself (`while`, `if`, `let`, `Math.floor`…) is not
@@ -463,7 +469,7 @@ by level; animals, troughs and machines don't count) plus the fair. New Game Plu
 what was reached. «Soon» things don't count; `hat` comes at 100%.
 
 ## ranch.json (Bridgy's ranch)
-The ranch opens with the research named in `research` («Ռանչո», after 40 research levels). It is a
+The ranch opens with the research named in `research` («Ռանչո», the big card at the top of the tree; it only costs resources). It is a
 second world on its own screen: only the open world runs, so the farm waits while the ranch is open
 and the ranch waits while the farm is. Its areas lie on one map, each with **its own drone and its
 own code tab** (pen coordinates start at (0, 0) in the area's bottom-left corner; the fences stop
