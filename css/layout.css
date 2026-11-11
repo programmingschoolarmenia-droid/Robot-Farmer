@@ -23,9 +23,12 @@
   animation: bob 1.6s ease-in-out infinite;
 }
 .loading-text {
+  max-width: 460px;
+  padding: 0 16px;
   font-weight: 700;
   color: var(--ink-soft);
   font-size: 1.2rem;
+  text-align: center;
 }
 
 .screen-error {
@@ -133,6 +136,19 @@
   margin: 2px 0 18px;
   color: var(--ink-soft);
   font-weight: 600;
+}
+.login-continue {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.login-continue .btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  font-size: 1.05rem;
 }
 .login-tabs {
   display: flex;

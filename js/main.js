@@ -98,8 +98,7 @@ async function boot() {
     );
   }
   loading.hidden = true;
-  if (account.user) showGame();
-  else showLogin();
+  showLogin(); // (a player still logged in gets «Continue as …» there)
 }
 
 function showConfigErrors(root, errors, texts) {

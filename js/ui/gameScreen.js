@@ -1,5 +1,5 @@
 // The main game screen: wires the engine to the farm view, editor, Bridgy and panels.
-import { h, icon, pixelImg, mobileQuery, sizeFarm, isPressing, CALENDAR_ICONS } from './dom.js';
+import { h, icon, pixelImg, mobileQuery, sizeFarm, isPressing, CALENDAR_ICONS, frameError } from './dom.js';
 import { Game, SAVE_VERSION } from '../engine/game.js';
 import { QuestTracker } from '../engine/quests.js';
 import { FarmView } from './farmView.js';
@@ -80,6 +80,9 @@ export class GameScreen {
     window.addEventListener('resize', this.onResize);
     this.onKey = (e) => this.handleKey(e);
     document.addEventListener('keydown', this.onKey);
+    this.onInput = () => (this.touched = true); // (see syncCloud)
+    document.addEventListener('pointerdown', this.onInput, true);
+    document.addEventListener('keydown', this.onInput, true);
     this.layoutSizes();
     setTimeout(() => this.startStory(), 400);
     this.save();
@@ -986,44 +989,49 @@ export class GameScreen {
 
   tick(now) {
     if (this.destroyed) return;
-    const dt = Math.max(0, (now - this.last) / 1000);
-    this.last = now;
-    this.frame++;
-    const game = this.game;
-    game.update(dt);
-    // (not behind the full-screen research tree and village: weak computers need the time)
-    const farmShown = (this.tab === 'farm' || !mobileQuery.matches) && !this.research.isOpen && !this.villageView.isOpen;
-    if (farmShown && (!this.prefs.lowGraphics || this.frame % 2 === 0)) this.farm.render(now);
-    this.controls.update(!!this.lastError);
+    try {
+      const dt = Math.max(0, (now - this.last) / 1000);
+      this.last = now;
+      this.frame++;
+      const game = this.game;
+      game.update(dt);
+      // (not behind the full-screen research tree and village: weak computers need the time)
+      const farmShown = (this.tab === 'farm' || !mobileQuery.matches) && !this.research.isOpen && !this.villageView.isOpen;
+      if (farmShown && (!this.prefs.lowGraphics || this.frame % 2 === 0)) this.farm.render(now);
+      this.controls.update(!!this.lastError);
 
-    const r = game.runner;
-    if (r.isActive()) {
-      const d = game.mainDrone;
-      const node = d.interp && d.interp.currentNode;
-      if (node && node.loc) this.editor.setExecLine(node._mod, node.loc.start.line);
-      this.checkIdle();
-    }
-
-    this.slowTimer += dt;
-    if (this.slowTimer > 0.2) {
-      this.slowTimer = 0;
-      if ((this.itemsDirty || this.villageDirty) && !isPressing()) {
-        this.itemsDirty = false;
-        this.villageDirty = false;
-        this.inventory.update();
-        this.updateResearchBadge();
-        this.updateVillageButton();
-        if (this.research.isOpen) this.research.refresh();
-        this.checkTier();
-      } else this.inventory.update();
-      if (Object.keys(this.game.boosts).length) this.updateBoostChips();
-      this.debugPanel.update();
-      if (this.questDirty) {
-        this.questDirty = false;
-        this.questBar.render();
-        this.updateResearchBadge();
+      const r = game.runner;
+      if (r.isActive()) {
+        const d = game.mainDrone;
+        const node = d.interp && d.interp.currentNode;
+        if (node && node.loc) this.editor.setExecLine(node._mod, node.loc.start.line);
+        this.checkIdle();
       }
+
+      this.slowTimer += dt;
+      if (this.slowTimer > 0.2) {
+        this.slowTimer = 0;
+        if ((this.itemsDirty || this.villageDirty) && !isPressing()) {
+          this.itemsDirty = false;
+          this.villageDirty = false;
+          this.inventory.update();
+          this.updateResearchBadge();
+          this.updateVillageButton();
+          if (this.research.isOpen) this.research.refresh();
+          this.checkTier();
+        } else this.inventory.update();
+        if (Object.keys(this.game.boosts).length) this.updateBoostChips();
+        this.debugPanel.update();
+        if (this.questDirty) {
+          this.questDirty = false;
+          this.questBar.render();
+          this.updateResearchBadge();
+        }
+      }
+    } catch (e) {
+      frameError(this.app, e);
     }
+    if (this.destroyed) return;
     this.raf = requestAnimationFrame((t) => this.tick(t));
   }
 
@@ -1109,7 +1117,11 @@ export class GameScreen {
     if (this.pushing) return this.pushing.then(() => this.syncCloud({ now, keepalive }));
     const every = ((this.app.config.settings.online || {}).cloudSaveSeconds || 60) * 1000;
     if (!this.cloudDirty || (!now && !this.cloudSoon && Date.now() - this.lastPush < every)) return Promise.resolve(true);
-    this.cloudDirty = this.cloudSoon = false;
+    // An open tab nobody uses sends nothing (plants grow, so the save always differs): only after a
+    // click, a key or with a program running. A hidden or closing tab still sends (now).
+    const busy = this.game.runner.isActive() || this.game.ranch.state() !== 'idle';
+    if (!now && !this.touched && !busy) return Promise.resolve(true);
+    this.cloudDirty = this.cloudSoon = this.touched = false;
     this.lastPush = Date.now();
     const t = this.app.i18n.t;
     const stats = this.game.leaderStats();
@@ -1178,6 +1190,8 @@ export class GameScreen {
     window.removeEventListener('beforeunload', this.onUnload);
     window.removeEventListener('resize', this.onResize);
     document.removeEventListener('keydown', this.onKey);
+    document.removeEventListener('pointerdown', this.onInput, true);
+    document.removeEventListener('keydown', this.onInput, true);
     this.offs.forEach((f) => f());
     this.quests.destroy();
     this.editor.destroy();

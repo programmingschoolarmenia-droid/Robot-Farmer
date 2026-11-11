@@ -143,3 +143,14 @@ export function highlightCode(code, codeKind = () => null) {
   flush();
   return frag;
 }
+
+// A frame that throws must not stop the game loop (that was the 2026-10-31 freeze): each new error
+// goes to the console once, and the player gets one calm message.
+const frameErrors = new Set();
+export function frameError(app, e) {
+  const key = String((e && e.stack) || e);
+  if (frameErrors.has(key)) return;
+  frameErrors.add(key);
+  console.error('Game frame error:', e);
+  if (frameErrors.size === 1) app.toast(app.i18n.t('ui.frameError'), 'warn');
+}

@@ -24,7 +24,15 @@
   <script src="vendor/codemirror/addon/closebrackets.js"></script>
   <script src="vendor/codemirror/addon/active-line.js"></script>
   <script src="vendor/codemirror/addon/comment.js"></script>
-  <script type="module" src="js/main.js"></script>
+  <script>
+    // Flaky internet: a file that fails to load would leave «Բեռնվում է…» forever, so say what to do.
+    function loadProblem(failed) {
+      var text = document.querySelector('#screen-loading:not([hidden]) .loading-text');
+      if (text) text.textContent = failed ? 'Խաղը լրիվ չբեռնվեց (համացանցը ընդհատվեց)։ Սեղմիր F5՝ նորից փորձելու համար։' : 'Երկար է տևում… Եթե չի բեռնվում, սեղմիր F5։';
+    }
+    setTimeout(function () { if (!window.bridgysFarm) loadProblem(false); }, 20000);
+  </script>
+  <script type="module" src="js/main.js" onerror="loadProblem(true)"></script>
 </head>
 <body>
   <div id="app">

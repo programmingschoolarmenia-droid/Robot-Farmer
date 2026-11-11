@@ -1347,6 +1347,7 @@ function icons(book) {
   put('compass', compass());
   put('bug', bug());
   put('eye', eye());
+  put('undo', undoArrow());
   put('cart', cart());
   put('board', clipboard());
   put('soon', cone());
@@ -1599,6 +1600,27 @@ function eye() {
   p.disc(8, 8, 1.3, PAL.outline);
   p.set(7, 7, PAL.white);
   p.outline(PAL.outline);
+  return p;
+}
+
+// Undo: an arrow that turns back to the left (the phone symbol bar).
+function undoArrow() {
+  const p = new Pixels();
+  p.art(1, 2, [
+    '...X..........',
+    '..XX..........',
+    '.XXXXXXXXX....',
+    'XXXXXXXXXXXX..',
+    '.XXXXXXXXXXXX.',
+    '..XX......XXX.',
+    '...X.......XXX',
+    '...........XXX',
+    '...........XXX',
+    '..........XXX.',
+    '...XXXXXXXXXX.',
+    '...XXXXXXXXX..',
+  ], { X: PAL.blue });
+  p.outline(PAL.navy);
   return p;
 }
 

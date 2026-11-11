@@ -123,6 +123,16 @@ export class Accounts {
     this.cache.clear();
   }
 
+  // A forgotten password: the student registers a new name, then the teacher moves the old farm,
+  // points and row there. The old name is blocked like a delete (its online farm stays as a backup).
+  async moveFarm(fromId, toName) {
+    const to = String(toName || '').trim().toLowerCase();
+    if (!this.isAdmin || fromId === this.session.id) throw new AccountError('unknown', 'not allowed');
+    if (!NAME_RE.test(to) || to === fromId) throw new AccountError('nameInvalid');
+    await this.backend.moveFarm(this.session, fromId, to);
+    this.cache.clear();
+  }
+
   async register(name, password) {
     const n = String(name || '').trim();
     if (!NAME_RE.test(n)) throw new AccountError('nameInvalid');
@@ -459,8 +469,13 @@ class FirebaseBackend {
     ];
   }
 
+  // Closing the page (keepalive): no time for check(), the page dies before it answers, so a token
+  // still valid is used as it is (the rules refuse a deleted player anyway). Browsers send at most
+  // 64 KB with keepalive; a bigger farm goes as a normal request and may not arrive.
   async putSave(s, data, row, keepalive) {
-    await call(`${this.url}:commit`, { token: await this.check(s), keepalive, body: { writes: this.saveWrites(s, data, row) } });
+    const body = { writes: this.saveWrites(s, data, row) };
+    const token = keepalive && s.idToken && Date.now() < s.expires - 60000 ? s.idToken : await this.check(s);
+    await call(`${this.url}:commit`, { token, keepalive: keepalive && JSON.stringify(body).length < 60000, body });
   }
 
   // ---- the player market
@@ -533,14 +548,39 @@ class FirebaseBackend {
     await call(`${this.url}:commit`, { token: await this.check(s), body: { writes: [{ delete: `${this.docs}/carpets/${week}~${owner}` }] } });
   }
 
+  // The farm gets a rev above the new account's, so an open game of that account is refused and
+  // sent to the login instead of writing its fresh farm over the moved one.
+  async moveFarm(s, from, to) {
+    const token = await this.check(s);
+    const get = (path) => call(`${this.url}/${path}`, { token, missingOk: true });
+    const [save, row, target, targetSave] = await Promise.all([get(`saves/${from}`), get(`players/${from}`), get(`players/${to}`), get(`saves/${to}`)]);
+    if (!target) throw new AccountError('noPlayer');
+    if (!save || !save.fields) throw new AccountError('noFarm');
+    const data = JSON.parse(save.fields.data.stringValue);
+    data.rev = Math.max(data.rev || 0, Number((targetSave && targetSave.fields && targetSave.fields.rev && targetSave.fields.rev.integerValue) || 0)) + 1;
+    const doc = (collection, id) => `${this.docs}/${collection}/${id}`;
+    const writes = [
+      { update: { name: doc('saves', to), fields: { data: { stringValue: JSON.stringify(data) }, rev: int(data.rev) } } },
+      { update: { name: doc('players', to), fields: { ...(row ? row.fields : {}), name: target.fields.name } } },
+      { update: { name: doc('deleted', from), fields: { by: { stringValue: s.id }, movedTo: { stringValue: to } } } },
+      { delete: doc('players', from) },
+      ...(await this.ordersOrNone(from)).map((o) => ({ delete: doc('orders', o.id) })),
+    ];
+    await call(`${this.url}:commit`, { token, body: { writes } });
+  }
+
+  ordersOrNone(id) {
+    return this.ordersOf(id).catch((e) => {
+      if (e.code === 'config') return []; // the rules have no market part yet
+      throw e;
+    });
+  }
+
   // Another player's documents go and deleted/{id} blocks the name (the Firestore rules let only
   // the teachers do this; Auth accounts can be deleted only in the Firebase console).
   async removePlayer(s, id) {
     const doc = (collection) => `${this.docs}/${collection}/${id}`;
-    const orders = await this.ordersOf(id).catch((e) => {
-      if (e.code === 'config') return []; // the rules have no market part yet
-      throw e;
-    });
+    const orders = await this.ordersOrNone(id);
     await call(`${this.url}:commit`, {
       token: await this.check(s),
       body: { writes: [{ update: { name: doc('deleted'), fields: { by: { stringValue: s.id } } } }, { delete: doc('saves') }, { delete: doc('players') }, ...orders.map((o) => ({ delete: `${this.docs}/orders/${o.id}` }))] },
@@ -638,6 +678,20 @@ class LocalBackend {
     for (const key of Object.keys(table)) if (table[key].owner === id) delete table[key];
     this.adapter.set('orders.v1', JSON.stringify(table));
     return this.remove({ id });
+  }
+
+  async moveFarm(s, from, to) {
+    const users = this.table('users.v1');
+    if (!users[to]) throw new AccountError('noPlayer');
+    const data = readJSON(this.adapter, saveKey(from));
+    if (!data) throw new AccountError('noFarm');
+    const old = readJSON(this.adapter, saveKey(to));
+    data.rev = Math.max(data.rev || 0, (old && old.rev) || 0) + 1;
+    this.adapter.set(saveKey(to), JSON.stringify(data));
+    const players = this.table('players.v1');
+    if (players[from]) players[to] = { ...players[from], name: users[to].name };
+    this.adapter.set('players.v1', JSON.stringify(players));
+    await this.removePlayer(s, from);
   }
 
   // the player market, in this browser

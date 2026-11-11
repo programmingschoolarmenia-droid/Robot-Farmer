@@ -2,7 +2,7 @@
 // task, the top 10, my place and last week's best solution) and the challenge page, a clear full
 // screen like the game: the test farm, its own editor, console, storage and controls. The main
 // farm waits while it is open, and every ▶ starts a fresh test farm.
-import { h, icon, sizeFarm, mobileQuery, highlightCode } from './dom.js';
+import { h, icon, sizeFarm, mobileQuery, highlightCode, frameError } from './dom.js';
 import { FarmView } from './farmView.js';
 import { EditorPanel } from './editor.js';
 import { Controls, InventoryPanel } from './panels.js';
@@ -231,27 +231,32 @@ export class ChallengeScreen {
 
   tick(now) {
     if (this.closed) return;
-    const dt = Math.max(0, (now - this.last) / 1000);
-    this.last = now;
-    const game = this.game;
-    game.update(dt);
-    if (this.tab === 'farm' || !mobileQuery.matches) this.farm.render(now);
-    this.controls.update(!!this.lastError);
-    const r = game.runner;
-    const goal = this.goal;
-    if (r.isActive()) {
-      const node = game.mainDrone.interp && game.mainDrone.interp.currentNode;
-      if (node && node.loc) this.editor.setExecLine(node._mod, node.loc.start.line);
+    try {
+      const dt = Math.max(0, (now - this.last) / 1000);
+      this.last = now;
+      const game = this.game;
+      game.update(dt);
+      if (this.tab === 'farm' || !mobileQuery.matches) this.farm.render(now);
+      this.controls.update(!!this.lastError);
+      const r = game.runner;
+      const goal = this.goal;
+      if (r.isActive()) {
+        const node = game.mainDrone.interp && game.mainDrone.interp.currentNode;
+        if (node && node.loc) this.editor.setExecLine(node._mod, node.loc.start.line);
+      }
+      // (a program may reach the goal and end in the same frame)
+      if (goal && !goal.finished && (goal.done !== null || (r.isActive() && game.time >= this.limit))) this.finish(goal);
+      const shown = goal && goal.done !== null ? goal.done : goal ? Math.min(game.time, this.limit) : 0;
+      this.timeChip.textContent = `⏱ ${formatTenths(shown * 10)}`;
+      this.slowTimer += dt;
+      if (this.slowTimer > 0.2) {
+        this.slowTimer = 0;
+        this.inventory.update();
+      }
+    } catch (e) {
+      frameError(this.app, e);
     }
-    // (a program may reach the goal and end in the same frame)
-    if (goal && !goal.finished && (goal.done !== null || (r.isActive() && game.time >= this.limit))) this.finish(goal);
-    const shown = goal && goal.done !== null ? goal.done : goal ? Math.min(game.time, this.limit) : 0;
-    this.timeChip.textContent = `⏱ ${formatTenths(shown * 10)}`;
-    this.slowTimer += dt;
-    if (this.slowTimer > 0.2) {
-      this.slowTimer = 0;
-      this.inventory.update();
-    }
+    if (this.closed) return;
     this.raf = requestAnimationFrame((t) => this.tick(t));
   }
 

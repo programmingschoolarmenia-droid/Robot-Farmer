@@ -1,8 +1,8 @@
 // Start screen (login / registration / leaderboard), the profile window and the leaderboard table.
 import { h, icon, pixelImg, carpetCanvas } from './dom.js';
-import { openModal, confirmModal } from './modal.js';
+import { openModal, confirmModal, askText } from './modal.js';
 import { formatClock, formatCount, formatTenths, dayKey, prevDayKey, prevMonthKey, dayNumber, keyOfDay, weekKey } from '../core/util.js';
-import { boardField, playerRow, ascending, CARPET_RE } from '../storage/account.js';
+import { boardField, playerRow, ascending, CARPET_RE, NAME_RE } from '../storage/account.js';
 import { festivalOn } from '../engine/festivals.js';
 
 const AVATAR_COLORS = ['#2d6be0', '#36a852', '#e2483d', '#f08a24', '#7c3aed', '#0e7490', '#c026d3', '#b45309'];
@@ -84,6 +84,16 @@ export class LoginScreen {
     meadow.style.backgroundImage = `url(${app.sprites.url('meadow0', 3)}), url(${app.sprites.url('meadow2', 3)})`;
     meadow.style.backgroundPosition = '0 0, 24px 48px';
     const adapter = app.account.adapter;
+    // Shared school computers: the last player is not let in by itself, the next student logs in below.
+    const last = app.account.user;
+    const resume = last
+      ? h(
+          'div',
+          { class: 'login-continue' },
+          h('button', { type: 'button', class: 'btn btn-run', onclick: () => this.onLogin() }, icon(app.sprites, 'player'), t('ui.continueAs', { name: last.name })),
+          h('p', { class: 'form-hint' }, t('ui.continueOther')),
+        )
+      : null;
     this.el = h(
       'section',
       { class: 'screen screen-login' },
@@ -96,6 +106,7 @@ export class LoginScreen {
           { class: 'login-main' },
           h('h1', { class: 'game-title' }, t('ui.title')),
           h('p', { class: 'game-subtitle' }, t('ui.subtitle')),
+          resume,
           h('div', { class: 'login-tabs', role: 'tablist' }, this.tabs),
           this.form,
           this.board,
@@ -294,6 +305,21 @@ function openCard(app, r, ctx) {
       app.toast(accountErrorText(app.i18n, e), 'warn');
     }
   };
+  // Teachers: a forgotten password, the farm goes to the student's new account.
+  const move = async (close) => {
+    const valid = (v) => (NAME_RE.test(v) && v.toLowerCase() !== r.id ? null : t('accountErrors.nameInvalid'));
+    const to = await askText(app.i18n, { title: t('ui.moveFarm'), label: t('ui.moveFarmAsk', { name: r.name }), validate: valid });
+    if (!to) return;
+    try {
+      await account.moveFarm(r.id, to);
+      close();
+      app.toast(t('ui.moveFarmDone', { name: r.name, to }));
+      ctx.reload();
+    } catch (e) {
+      app.toast(accountErrorText(app.i18n, e), 'warn');
+    }
+  };
+  const teacher = account.isAdmin && r.id !== account.user.id;
   openModal({
     title: t('ui.cardTitle'),
     width: 'min(420px, calc(100vw - 32px))',
@@ -318,7 +344,8 @@ function openCard(app, r, ctx) {
       ),
     ),
     buttons: [
-      account.isAdmin && r.id !== account.user.id ? { label: t('ui.deletePlayer'), class: 'btn-danger', onClick: remove } : null,
+      teacher ? { label: t('ui.moveFarm'), onClick: move } : null,
+      teacher ? { label: t('ui.deletePlayer'), class: 'btn-danger', onClick: remove } : null,
       { label: t('ui.close'), class: 'btn-primary' },
     ].filter(Boolean),
   });

@@ -3,7 +3,7 @@
 // the market board with the fair, the loom's window. The farm waits while it is open (GameScreen.openRanch);
 // the main game's autosave keeps saving the ranch with it. The ranch's weekly challenge shows a test ranch
 // on this screen too (`challenge`: js/ui/ranchChallenge.js), with only what a try needs.
-import { h, icon, pixelImg, mobileQuery, sizeFarm, CALENDAR_ICONS } from './dom.js';
+import { h, icon, pixelImg, mobileQuery, sizeFarm, CALENDAR_ICONS, frameError } from './dom.js';
 import { RanchView } from './ranchView.js';
 import { LoomScreen } from './loom.js';
 import { EditorPanel } from './editor.js';
@@ -334,32 +334,37 @@ export class RanchScreen {
 
   tick(now) {
     if (this.closed) return;
-    const dt = Math.max(0, (now - this.last) / 1000);
-    this.last = now;
-    const ranch = this.ranch;
-    ranch.update(dt);
-    const pen = this.activePen();
-    this.view.selected = pen ? pen.id : null;
-    if (this.view.focus && pen && this.view.focus !== pen.id) {
-      this.view.focus = pen.id;
-      this.view.layoutKey = '';
+    try {
+      const dt = Math.max(0, (now - this.last) / 1000);
+      this.last = now;
+      const ranch = this.ranch;
+      ranch.update(dt);
+      const pen = this.activePen();
+      this.view.selected = pen ? pen.id : null;
+      if (this.view.focus && pen && this.view.focus !== pen.id) {
+        this.view.focus = pen.id;
+        this.view.layoutKey = '';
+      }
+      if (this.tab === 'farm' || !mobileQuery.matches) this.view.render(now);
+      this.controls.update(!!this.lastError);
+      if (this.challenge) this.challenge.tick();
+      if (this.closed) return;
+      const node = pen && pen.runner.isActive() && pen.drone.interp && pen.drone.interp.currentNode;
+      if (node && node.loc) this.editor.setExecLine(node._mod, node.loc.start.line);
+      else this.editor.setExecLine(null, null);
+      const readOnly = !!pen && pen.runner.isActive();
+      if (readOnly !== this.editor.running) this.editor.setRunning(readOnly);
+      this.slowTimer += dt;
+      if (this.slowTimer > 0.2) {
+        this.slowTimer = 0;
+        this.inventory.update();
+        this.updateSide();
+        if (this.loom) this.loom.update();
+      }
+    } catch (e) {
+      frameError(this.app, e);
     }
-    if (this.tab === 'farm' || !mobileQuery.matches) this.view.render(now);
-    this.controls.update(!!this.lastError);
-    if (this.challenge) this.challenge.tick();
     if (this.closed) return;
-    const node = pen && pen.runner.isActive() && pen.drone.interp && pen.drone.interp.currentNode;
-    if (node && node.loc) this.editor.setExecLine(node._mod, node.loc.start.line);
-    else this.editor.setExecLine(null, null);
-    const readOnly = !!pen && pen.runner.isActive();
-    if (readOnly !== this.editor.running) this.editor.setRunning(readOnly);
-    this.slowTimer += dt;
-    if (this.slowTimer > 0.2) {
-      this.slowTimer = 0;
-      this.inventory.update();
-      this.updateSide();
-      if (this.loom) this.loom.update();
-    }
     this.raf = requestAnimationFrame((t) => this.tick(t));
   }
 

@@ -1,6 +1,6 @@
 // Code editor (CodeMirror 5) with file tabs, live error marks, the running-line highlight,
 // autocomplete limited to unlocked functions, and the console.
-import { h, clear, mobileQuery } from './dom.js';
+import { h, clear, mobileQuery, icon } from './dom.js';
 import { describeError } from './errorText.js';
 import { askText, confirmModal } from './modal.js';
 
@@ -166,6 +166,8 @@ export class EditorPanel {
       { class: 'symbol-bar' },
       // ▶ runs the code without closing the keyboard first
       h('button', { class: 'sym sym-run', type: 'button', title: this.i18n.t('ui.run'), onmousedown: (e) => e.preventDefault(), onclick: () => this.runFromKeys() }, '▶'),
+      // Phone keyboards mostly have no undo
+      h('button', { class: 'sym', type: 'button', title: this.i18n.t('ui.undo'), onmousedown: (e) => e.preventDefault(), onclick: () => this.undo() }, icon(this.app.sprites, 'undo')),
       SYMBOLS.map((sym) => h('button', { class: 'sym', type: 'button', onmousedown: (e) => e.preventDefault(), onclick: () => press(sym) }, sym)),
     );
   }
@@ -174,6 +176,13 @@ export class EditorPanel {
     this.endComposition();
     this.cm.display.input.blur();
     if (this.onRun) this.onRun();
+  }
+
+  undo() {
+    const typing = this.cm.hasFocus();
+    this.endComposition();
+    this.cm.undo();
+    if (typing) this.cm.focus(); // (the keyboard stays as it was)
   }
 
   // The word being composed goes into the text now (before a symbol or a name is added to it).

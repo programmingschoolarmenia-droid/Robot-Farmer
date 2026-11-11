@@ -363,6 +363,13 @@ To allow the name again, delete `deleted/username` in Firestore. (The Auth accou
 it in Authentication → Users only if you want the name to be free for a new registration.)
 Another teacher: add the username to `admins` and to the list in `isAdmin()`.
 
+**A forgotten password (teacher account):** there is no reset, so the farm moves to a new name.
+The student registers a new username and logs out. Logged in as admin, open the leaderboard →
+click the old name → **Տեղափոխել ֆերման** → type the new username. The farm, the points and the
+leaderboard row go to the new account; the old name is blocked like a delete (its online farm
+stays in `saves/oldname` as a backup) and its open market orders are removed. No rules change is
+needed. A player with 0 points is not on the leaderboard: use the "all time" list.
+
 You can also delete in the Firebase console: Authentication → Users → ⋮ → *Delete account*
 (or *Disable account*), then `players/username` and `saves/username` in Firestore. The game
 asks Firebase before every load and save whether the account still exists, so nothing comes back.

@@ -308,3 +308,70 @@ test('a teacher deletes a player from the leaderboard: the farm and row go, the 
     globalThis.fetch = realFetch;
   }
 });
+
+test('a forgotten password: the teacher moves the farm to the new account, the old name is blocked (here and on Firebase)', async () => {
+  const fb = createFakeFirebase({ admins: ['admin'] });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = fb.fetch;
+  try {
+    for (const cfg of [{ admins: ['admin'] }, { apiKey: 'test-key', projectId: 'test-project', admins: ['admin'] }]) {
+      const browser = memory(); // (local accounts: everyone on one computer)
+      const pc = () => (cfg.apiKey ? memory() : browser);
+      const old = new Accounts(pc(), cfg);
+      await old.register('Seroj', 'secret1');
+      const farm = { rev: 2, game: { time: 300 } };
+      old.saveLocal(farm);
+      await old.saveOnline(farm, stats({ points: 30 }));
+      const fresh = new Accounts(pc(), cfg);
+      await fresh.register('Seroj2', 'secret2');
+      fresh.saveLocal({ game: { time: 1 } });
+      await fresh.saveOnline({ game: { time: 1 } }, stats());
+
+      assert.equal(await codeOf(fresh.moveFarm('seroj', 'seroj2')), 'unknown', 'only teachers');
+      const teacher = new Accounts(pc(), cfg);
+      await teacher.register('admin', 'secret1');
+      assert.equal(await codeOf(teacher.moveFarm('seroj', 'nobody')), 'noPlayer');
+      assert.equal(await codeOf(teacher.moveFarm('seroj', 'seroj')), 'nameInvalid');
+      await teacher.moveFarm('seroj', 'Seroj2');
+      const rows = (await teacher.leaderboard('points', null, true)).rows;
+      assert.deepEqual(rows.map((r) => [r.id, r.name, r.points]), [['seroj2', 'Seroj2', 30]]);
+      if (!cfg.apiKey) {
+        assert.equal((await fresh.loadSave()).game.time, 300);
+        continue;
+      }
+      // The new account's open game can't write its fresh farm over the moved one; after logging in again it has the old farm.
+      assert.equal(await codeOf(fresh.saveOnline({ game: { time: 2 } }, stats())), 'stale');
+      assert.equal((await fresh.loadSave()).game.time, 300);
+      await old.login('seroj', 'secret1');
+      assert.equal(await codeOf(old.loadSave()), 'deleted');
+      assert.equal(fb.docs.has('saves/seroj'), true, 'kept as a backup');
+    }
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test('closing the page: the last save goes out at once, without the account check first', async () => {
+  const fb = createFakeFirebase();
+  const realFetch = globalThis.fetch;
+  const sent = [];
+  globalThis.fetch = (url, init = {}) => (sent.push({ url, keepalive: !!init.keepalive }), fb.fetch(url, init));
+  try {
+    const kid = new Accounts(memory(), { apiKey: 'test-key', projectId: 'test-project' });
+    await kid.register('Aram', 'secret1');
+    sent.length = 0;
+    await kid.saveOnline({ game: { time: 5 } }, stats({ points: 5 }), true);
+    assert.deepEqual(sent.map((r) => [r.url.split(/[/:]/).pop(), r.keepalive]), [['commit', true]]);
+    // A farm too big for keepalive (the browser's 64 KB) still goes, as a normal request.
+    sent.length = 0;
+    await kid.saveOnline({ game: { time: 6, big: 'x'.repeat(70000) } }, stats({ points: 6 }), true);
+    assert.deepEqual(sent.map((r) => r.keepalive), [false]);
+    assert.equal(JSON.parse(fb.docs.get('saves/aram').data.stringValue).game.time, 6);
+    // The normal path still checks the account first.
+    sent.length = 0;
+    await kid.saveOnline({ game: { time: 7 } }, stats({ points: 7 }));
+    assert.ok(sent.length > 1);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

@@ -103,7 +103,7 @@ export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-proj
     }
 
     const path = decodeURIComponent(u.pathname).replace(`/v1/${prefix}`, '');
-    if (path.startsWith('/deleted/') && !body) {
+    if ((path.startsWith('/deleted/') || path.startsWith('/players/')) && !body) { // (anyone may read these)
       const fields = docs.get(path.slice(1));
       return fields ? json(200, { name: `${prefix}${path}`, fields }) : fail(404, `Document "${prefix}${path}" not found.`, { status: 'NOT_FOUND' });
     }
