@@ -1,0 +1,15 @@
+# On every push and pull request: the unit tests (config check included), then a headless-Chrome
+# play-through at desktop and phone sizes. Firebase is never contacted (see tests/play.mjs).
+name: Tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm test
+      - run: npm run play

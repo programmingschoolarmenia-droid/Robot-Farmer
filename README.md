@@ -100,5 +100,6 @@ config/               all teacher-editable data (JSON)
 assets/               Bridgy, drone and crop pictures (see assets/CREDITS.md)
 vendor/               Acorn + CodeMirror 5 (bundled so the game works offline)
 tests/                automated tests:  npm test   (Node 18+)
+                      browser play-through:  npm run play   (Node 22+, Chrome; also runs on GitHub on every push)
 tools/sprites.html    preview of every sprite (open via the web server)
 ```
