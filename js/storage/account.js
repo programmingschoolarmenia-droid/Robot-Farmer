@@ -8,6 +8,9 @@ export const NAME_RE = /^[A-Za-z0-9_]{3,16}$/;
 export const MIN_PASSWORD = 6;
 const SESSION_KEY = 'session.v1';
 const saveKey = (id) => `save.v2.${id}`;
+// A guest plays without an account: one farm per browser, only in this browser, nothing online.
+// '~' can't be in a username, so no player's farm shares its key.
+const GUEST_ID = '~guest';
 
 // code: nameInvalid | passwordShort | nameTaken | badLogin | offline | tooMany | config | relogin | unknown
 //   | stale (an older tab after a trade) | gone (the order was just taken or removed) | hasOrders
@@ -110,6 +113,32 @@ export class Accounts {
     return this.session ? { id: this.session.id, name: this.session.name } : null;
   }
 
+  get isGuest() {
+    return !!this.session && this.session.guest === true;
+  }
+
+  // name: what the game shows for a guest («Հյուր»).
+  startGuest(name) {
+    return this.start({ id: GUEST_ID, name, guest: true });
+  }
+
+  hasGuestFarm() {
+    return this.adapter.get(saveKey(GUEST_ID)) !== null;
+  }
+
+  dropGuestFarm() {
+    this.adapter.remove(saveKey(GUEST_ID));
+  }
+
+  // The guest keeps the farm: a new account gets it (here at once, online at the next save), and
+  // the guest farm leaves this browser.
+  async keepGuestFarm(name, password, data) {
+    const user = await this.register(name, password);
+    this.adapter.set(saveKey(user.id), JSON.stringify(data));
+    this.dropGuestFarm();
+    return user;
+  }
+
   // Teachers (settings.json → online.admins) can delete any player from the leaderboard.
   get isAdmin() {
     return !!this.session && this.admins.includes(this.session.id);
@@ -203,6 +232,7 @@ export class Accounts {
   // never overwrites an online one).
   async loadSave() {
     const local = readJSON(this.adapter, saveKey(this.session.id));
+    if (this.isGuest) return local ? migrateSave(local) : null;
     let remote = null;
     try {
       remote = await this.backend.getSave(this.session);
@@ -226,7 +256,7 @@ export class Accounts {
   // stats: Game.leaderStats() for the leaderboard row.
   async saveOnline(data, stats, keepalive = false) {
     const session = this.session;
-    if (!session) return;
+    if (!session || session.guest) return;
     try {
       await this.backend.putSave(session, data, playerRow(session.name, stats), keepalive);
     } catch (e) {

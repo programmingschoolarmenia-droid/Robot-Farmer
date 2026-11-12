@@ -5,12 +5,22 @@ const worth = (settings, item) => ((settings.leaderboard || {}).points || {})[it
 
 export const tradable = (settings, item) => (cfgOf(settings).goods || []).includes(item) && worth(settings, item) > 0;
 
-// Lowest and highest amount of `want` that is a fair price for `giveN` of `give`.
+// Lowest and highest amount of `want` that is a fair price for `giveN` of `give` (never over maxAmount).
 export function allowedRange(settings, give, giveN, want) {
   const value = giveN * worth(settings, give);
   const w = worth(settings, want);
-  const band = cfgOf(settings).band ?? 3;
-  return { min: Math.max(1, Math.ceil(value / (w * band))), max: Math.floor((value * band) / w) };
+  const { band = 3, maxAmount = Infinity } = cfgOf(settings);
+  return { min: Math.max(1, Math.ceil(value / (w * band))), max: Math.min(maxAmount, Math.floor((value * band) / w)) };
+}
+
+// The amounts of `give` that have a fair price in `want`, up to what the player has (max < min: none).
+export function giveRange(settings, give, want, have) {
+  const wg = worth(settings, give);
+  const ww = worth(settings, want);
+  const { band = 3, maxAmount = Infinity } = cfgOf(settings);
+  let min = Math.max(1, Math.ceil(ww / (wg * band)));
+  if (allowedRange(settings, give, min, want).max < 1) min++; // rounding
+  return { min, max: Math.min(Math.floor(have), maxAmount, Math.floor((maxAmount * ww * band) / wg)) };
 }
 
 // The amount of `want` worth the same as `giveN` of `give` (inside the allowed range).

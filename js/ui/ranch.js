@@ -51,10 +51,10 @@ export class RanchScreen {
       : h(
           'nav',
           { class: 'side-nav' },
-          h('button', { class: 'btn btn-gold ranch-shop-button', title: t('ui.ranchShop'), onclick: () => this.openShop() }, icon(app.sprites, 'cart'), h('span', { class: 'btn-label' }, t('ui.ranchShop'))),
-          h('button', { class: 'btn ranch-market-button', title: t('ui.ranchMarket'), onclick: () => this.openMarket() }, icon(app.sprites, 'board'), h('span', { class: 'btn-label' }, t('ui.ranchMarket'))),
+          (this.shopBtn = h('button', { class: 'btn btn-gold ranch-shop-button', title: t('ui.ranchShop'), onclick: () => this.openShop() }, icon(app.sprites, 'cart'), h('span', { class: 'btn-label' }, t('ui.ranchShop')))),
+          (this.marketBtn = h('button', { class: 'btn ranch-market-button', title: t('ui.ranchMarket'), onclick: () => this.openMarket() }, icon(app.sprites, 'board'), h('span', { class: 'btn-label' }, t('ui.ranchMarket')))),
           this.loomBtn,
-          h('button', { class: 'btn ranch-back-button', title: t('ui.ranchBack'), onclick: () => this.close() }, icon(app.sprites, 'farm'), h('span', { class: 'btn-label' }, t('ui.ranchBack'))),
+          (this.backBtn = h('button', { class: 'btn ranch-back-button', title: t('ui.ranchBack'), onclick: () => this.close() }, icon(app.sprites, 'farm'), h('span', { class: 'btn-label' }, t('ui.ranchBack')))),
         );
     const topbar = challenge
       ? [h('div', { class: 'challenge-task' }, h('b', {}, icon(app.sprites, 'cap'), ` ${challenge.task.name}`), h('span', {}, challenge.task.about)), this.loomBtn, this.bestChip, this.timeChip, h('button', { class: 'btn', title: t('ui.challengeBack'), onclick: () => this.close() }, '⬅', h('span', { class: 'btn-label' }, t('ui.challengeBack')))]
@@ -160,6 +160,21 @@ export class RanchScreen {
     this.el.dataset.tab = tab;
     for (const b of this.tabButtons) b.classList.toggle('active', b.dataset.tab === tab);
     if (tab === 'code' && this.editor) setTimeout(() => this.editor.refresh(), 0);
+  }
+
+  // The buttons Bridgy can name here (see GameScreen.point).
+  glowTargets() {
+    const t = this.app.i18n.t;
+    const [mapTab, codeTab, storageTab] = this.tabButtons;
+    return [
+      [t('ui.ranchMap'), [mapTab]],
+      [t('ui.codeTab'), [codeTab]],
+      [t('ui.inventory'), [storageTab]],
+      [t('ui.ranchShop'), [this.shopBtn]],
+      [t('ui.ranchMarket'), [this.marketBtn]],
+      [t('ui.ranchLoom'), [this.loomBtn]],
+      [t('ui.ranchBack'), [this.backBtn]],
+    ];
   }
 
   // Phones: the map shows the selected area, or the whole ranch.

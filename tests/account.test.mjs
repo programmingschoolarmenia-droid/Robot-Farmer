@@ -275,6 +275,58 @@ test('rename: the farm and the row move to the new name, the old account is gone
   }
 });
 
+test('a guest plays in this browser only, then keeps the farm under a name (here and on Firebase)', async () => {
+  const fb = createFakeFirebase();
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = fb.fetch;
+  try {
+    for (const cfg of [{}, { apiKey: 'test-key', projectId: 'test-project' }]) {
+      const acc = new Accounts(memory(), cfg);
+      assert.equal(acc.hasGuestFarm(), false);
+      acc.startGuest('Հյուր');
+      assert.equal(acc.isGuest, true);
+      assert.equal(acc.isAdmin, false);
+      assert.equal(await acc.loadSave(), null); // a new farm
+      const farm = { game: { time: 7 } };
+      acc.saveLocal(farm);
+      const before = fb.requests.length;
+      await acc.saveOnline(farm, stats({ points: 50 }));
+      assert.equal(fb.requests.length, before, 'nothing goes online for a guest');
+      assert.equal(acc.hasGuestFarm(), true);
+
+      // a reload: the same guest farm comes back from this browser
+      const again = new Accounts(acc.adapter, cfg);
+      assert.equal(again.isGuest, true);
+      assert.equal((await again.loadSave()).game.time, 7);
+
+      // a student named "guest" on the same computer has their own farm
+      const named = new Accounts(acc.adapter, cfg);
+      await named.register('guest', 'secret1');
+      named.saveLocal({ game: { time: 99 } });
+      assert.equal((await again.loadSave()).game.time, 7);
+      assert.equal(await codeOf(again.keepGuestFarm('a b', 'secret1', farm)), 'nameInvalid');
+      assert.equal(await codeOf(again.keepGuestFarm('Nare', '123', farm)), 'passwordShort');
+      assert.equal(again.isGuest, true);
+      assert.deepEqual(await again.keepGuestFarm('Nare', 'secret1', farm), { id: 'nare', name: 'Nare' });
+      assert.equal(again.isGuest, false);
+      assert.equal(again.hasGuestFarm(), false);
+      assert.equal((await again.loadSave()).game.time, 7); // this browser's copy, before the first online save
+      await again.saveOnline(farm, stats({ points: 50 }));
+      assert.deepEqual((await again.leaderboard('points', null, true)).rows.map((r) => [r.name, r.points]), [['Nare', 50]]);
+      if (cfg.apiKey) assert.ok(fb.docs.has('saves/nare'));
+
+      // start over: the old guest farm goes
+      again.logout();
+      again.startGuest('Հյուր');
+      again.saveLocal({ game: { time: 1 } });
+      again.dropGuestFarm();
+      assert.equal(await again.loadSave(), null);
+    }
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
 test('a teacher deletes a player from the leaderboard: the farm and row go, the name is blocked at once', async () => {
   const fb = createFakeFirebase({ admins: ['admin'] });
   const realFetch = globalThis.fetch;

@@ -33,6 +33,7 @@ problem**; nothing breaks silently.
 | `speedOptions` | Speed buttons in the bottom bar. `[0.25, 0.5, 1]` lets students slow down; add `2, 5, 10` for a fast teacher demo | `[0.25, 0.5, 1]` |
 | `defaultSpeed` | Speed when the game opens | `1` |
 | `frameBudgetMs` | Max milliseconds per frame spent running code (lower = smoother on weak PCs) | `12` |
+| `popularWords` | On phones, the word strip above the symbol keys shows these names first, in this order (then the rest, shortest first). Only unlocked names show. Write the names students see (`havaqel`) or JS words (`while`) | most used commands |
 
 ### `time`
 | Field | Meaning |

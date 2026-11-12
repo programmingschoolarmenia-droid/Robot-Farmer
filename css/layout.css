@@ -189,10 +189,26 @@
 .password-row .input {
   flex: 1;
 }
-.login-submit {
+.login-submit,
+.login-guest {
   justify-self: start;
   padding: 10px 22px;
   font-size: 1.05rem;
+}
+/* ──── կամ ──── between the login and the guest button */
+.login-or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-faint);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.login-or::before,
+.login-or::after {
+  content: '';
+  flex: 1;
+  border-top: 2px solid var(--line);
 }
 .form-error {
   color: var(--red-dark);
@@ -211,6 +227,20 @@
 }
 .form-hint:empty {
   display: none;
+}
+/* the profile of a guest: the farm is only in this browser, keep it under a name */
+.guest-keep {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--gold-soft);
+}
+.guest-keep p {
+  flex: 1 1 220px;
+  margin: 0;
 }
 .link-quiet {
   display: block;
@@ -1130,8 +1160,9 @@
   color: var(--ink-soft);
 }
 .market-empty img {
-  width: 72px;
-  height: 72px;
+  width: 96px;
+  height: 66px;
+  object-fit: contain;
 }
 .market-form {
   display: grid;

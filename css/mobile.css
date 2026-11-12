@@ -62,6 +62,25 @@
   .player-pill {
     padding: 7px 10px;
   }
+  /* research sits at the right end of the top bar, not in the Storage tab */
+  .side-panel > .research-button {
+    display: none;
+  }
+  .research-top {
+    display: inline-flex;
+    width: auto;
+    margin-left: auto;
+    padding: 5px 8px;
+    gap: 3px;
+    font-size: 0.85rem;
+  }
+  .research-top img {
+    width: 24px;
+    height: 24px;
+  }
+  .research-top .badge {
+    right: -4px;
+  }
   .side-nav .btn-label {
     display: inline;
   }
@@ -186,13 +205,14 @@
     right: 6px;
     bottom: calc(122px + env(safe-area-inset-bottom));
   }
+  /* Bridgy stands beside the box, big enough to see */
   .bridgy-portrait {
-    width: 84px;
-    margin-right: -16px;
+    width: 128px;
+    margin-right: -4px;
   }
   .friend .bridgy-portrait {
-    width: 66px;
-    margin-right: -8px;
+    width: 96px;
+    margin-right: -4px;
   }
   .bridgy-box {
     flex: 1;
@@ -201,7 +221,7 @@
     min-height: 0;
     max-height: min(58vh, 520px);
     overflow: auto;
-    padding: 36px 12px 10px 24px;
+    padding: 36px 12px 10px 14px;
   }
   .bridgy-name {
     top: 6px; /* inside the scrolling box, so it is not clipped */
@@ -210,6 +230,10 @@
   }
   .bridgy-text {
     font-size: 1rem;
+  }
+  .bridgy-box .bridgy-code {
+    padding: 6px 8px;
+    font-size: 0.85rem; /* the box is narrow beside Bridgy */
   }
   .bridgy-toasts {
     top: 58px;
@@ -231,7 +255,9 @@
     width: calc(100vw - 12px);
     max-height: calc(var(--app-h, 100dvh) - 12px);
   }
+  /* one column as wide as the window: a long line wraps instead of pushing the window off screen */
   .modal-body {
+    grid-template-columns: minmax(0, 1fr);
     padding: 12px;
   }
   .modal.market-modal {
@@ -282,12 +308,45 @@
     grid-template-rows: auto auto minmax(0, 1fr);
     min-height: 0;
   }
+  .book-modal .login-tabs {
+    margin-bottom: 0;
+  }
+  /* four tabs in one row: the picture above a small word */
+  .book-modal .login-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 2px;
+    font-size: 0.75rem;
+    line-height: 1.15;
+  }
   .book-list {
+    grid-template-columns: minmax(0, 1fr);
     max-height: none;
     min-height: 0;
+    align-content: start; /* a few cards keep their height */
+  }
+  .book-facts {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .book-card[open] summary {
+    flex-wrap: wrap;
+  }
+  .book-card[open] .book-short {
+    flex: 1 1 100%; /* under the name, full width */
   }
   .setting-row input[type='range'] {
     width: 130px;
+  }
+  .board-head {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+  .board-head > span {
+    white-space: nowrap; /* the "?" stays with the title */
   }
   .board-row {
     grid-template-columns: 1.8em 28px minmax(0, 1fr) auto;

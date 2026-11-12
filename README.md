@@ -82,6 +82,9 @@ step is needed.
   To make this work online (school ↔ home ↔ phone), create a free Firebase project once —
   step by step in [`config/README.md`](config/README.md#accounts-and-the-leaderboard-firebase-free).
   Without it, accounts work only inside one browser.
+  **Guests** («Խաղալ որպես հյուր») play right away without an account: the farm stays only in
+  that browser, off the leaderboard, the market and the contests, until they keep it under a
+  name from the profile («Պահպանել ֆերման»).
 * In the browser console, `bridgysFarm.screen.game` gives access to the running game
   (e.g. `bridgysFarm.screen.game.inventory.add('Wood', 500)` for a demo).
 

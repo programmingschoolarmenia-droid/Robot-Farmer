@@ -10,7 +10,8 @@
     "speedOptions": [0.25, 0.5, 1],
     "defaultSpeed": 1,
     "frameBudgetMs": 12,
-    "maxFrameSeconds": 0.1
+    "maxFrameSeconds": 0.1,
+    "popularWords": ["havaqel", "gnal", "tnkel", "salto", "while", "if", "else", "hasunE", "Aj", "Verev", "Dzax", "Nerqev", "for", "let", "const", "karoxEmGnal", "herkel", "inchKa", "hoxiTesak", "function", "return", "true", "false", "tpel", "qanak", "fermayiChap", "dirqX", "dirqY", "ogtagorcel", "jriQanak", "Buyser", "Hoxer", "Irer", "vercnel", "lcnel", "datarkel", "kitel", "shoyel", "dzerqum"]
   },
 
   "time": {

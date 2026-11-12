@@ -523,7 +523,7 @@ export class EditorPanel {
     let items = [];
     if (cm.hasFocus() && !this.running) {
       const cur = cm.getCursor();
-      const found = this.completions(cm.getLine(cur.line).slice(0, cur.ch) + this.composed, true);
+      const found = this.completions(cm.getLine(cur.line).slice(0, cur.ch) + this.composed, true, true);
       if (found) items = found.items.slice(0, 24);
     }
     this.suggestBar.replaceChildren(
@@ -580,7 +580,8 @@ export class EditorPanel {
   }
 
   // The names that fit the text before the cursor: { items, prefix }, or null.
-  completions(before, explicit) {
+  // popularFirst (the phone strip): settings.json → game.popularWords first, in that order.
+  completions(before, explicit, popularFirst = false) {
     const api = this.game.api;
     const research = this.game.research;
     const memberMatch = before.match(/([\p{L}_$][\p{L}\p{N}_$]*)\.([\p{L}\p{N}_$]*)$/u);
@@ -621,7 +622,10 @@ export class EditorPanel {
       seen.add(it.text);
       return it.text.toLowerCase().startsWith(lower) && it.text !== prefix;
     });
-    items.sort((a, b) => Number(!a.text.startsWith(prefix)) - Number(!b.text.startsWith(prefix)) || a.text.length - b.text.length || a.text.localeCompare(b.text));
+    const order = new Map(); // canonical name -> place in the list
+    if (popularFirst) for (const w of this.game.config.settings.game.popularWords || []) if (!order.has(api.canonicalName(w))) order.set(api.canonicalName(w), order.size);
+    const rank = (it) => order.get(it.canon || it.text) ?? order.size;
+    items.sort((a, b) => Number(!a.text.startsWith(prefix)) - Number(!b.text.startsWith(prefix)) || rank(a) - rank(b) || a.text.length - b.text.length || a.text.localeCompare(b.text));
     if (!items.length) return null;
     return { items, prefix };
   }

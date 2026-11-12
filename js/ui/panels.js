@@ -187,7 +187,7 @@ export class QuestBar {
           chip.append(ico('scroll'), ` ${p.value}/${p.target}`);
           break;
         case 'code':
-          chip.append(`</> ${goal.feature ? i18n.feature(goal.feature).split(' ')[0] : `${goal.fn}()`} ${done ? '✓' : ''}`);
+          chip.append(`</> ${goal.feature ? i18n.feature(goal.feature).split(' ')[0] : `${this.game.api.displayName(goal.fn)}()`} ${done ? '✓' : ''}`);
           break;
         case 'visitAll':
           chip.append(ico('maze'), ` ${done ? '✓' : ''}`);

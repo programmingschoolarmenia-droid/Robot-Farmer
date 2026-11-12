@@ -75,6 +75,8 @@ export class LoginScreen {
       this.rule,
       this.error,
       this.submit,
+      h('div', { class: 'login-or' }, h('span', {}, t('ui.or'))),
+      h('button', { type: 'button', class: 'btn login-guest', onclick: () => this.guest() }, t('ui.guestPlay')),
     );
     this.board = h('div', { hidden: true });
     this.tabs = ['login', 'register', 'leaders'].map((tab) =>
@@ -110,7 +112,6 @@ export class LoginScreen {
           h('div', { class: 'login-tabs', role: 'tablist' }, this.tabs),
           this.form,
           this.board,
-          app.account.online ? null : h('p', { class: 'form-hint' }, t('ui.localMode')),
           adapter.available === false ? h('p', { class: 'form-error' }, t('ui.storageBlocked')) : null,
         ),
       ),
@@ -141,6 +142,40 @@ export class LoginScreen {
     this.pass.autocomplete = reg ? 'new-password' : 'current-password';
     this.submit.textContent = t(reg ? 'ui.registerButton' : 'ui.loginButton');
     if (matchMedia('(pointer: fine)').matches) setTimeout(() => this.name.focus(), 30);
+  }
+
+  // Play right away. With a guest farm in this browser already: continue it, or start over.
+  guest() {
+    const { account, i18n } = this.app;
+    const t = i18n.t;
+    const go = () => {
+      account.startGuest(t('ui.guestName'));
+      this.onLogin();
+    };
+    if (!account.hasGuestFarm()) return go();
+    openModal({
+      title: t('ui.guestFarm'),
+      body: h('p', { class: 'form-hint' }, t('ui.guestFarmText')),
+      buttons: [
+        {
+          label: t('ui.guestNew'),
+          onClick: async (close) => {
+            close();
+            if (!(await confirmModal(i18n, { title: t('ui.guestNew'), text: t('ui.guestNewAsk'), okLabel: t('ui.guestNew') }))) return;
+            account.dropGuestFarm();
+            go();
+          },
+        },
+        {
+          label: t('ui.guestContinue'),
+          class: 'btn-run',
+          onClick: (close) => {
+            close();
+            go();
+          },
+        },
+      ],
+    });
   }
 
   async send() {
@@ -463,17 +498,23 @@ function albumView(app, earned) {
   );
 }
 
-// stats = { ...Game.leaderStats(), breakdown, parts (Perfection), stickers (earned ids) };
-// sync = promise of the fresh online save.
 // A new username: the new name and the password (asked again, like any account change).
-function openRename(app, onRename, closeProfile) {
+const openRename = (app, onRename, closeProfile) =>
+  nameForm(app, { title: 'ui.renameTitle', hints: ['ui.renameHint'], label: 'ui.renameNew', save: 'ui.renameSave', done: 'ui.renameDone' }, onRename, closeProfile);
+
+// A guest keeps the farm: a new name and password (the registration rules).
+export const openKeepFarm = (app, onKeep, onDone = () => {}) =>
+  nameForm(app, { title: 'ui.guestKeep', hints: ['ui.guestKeepHint', 'ui.nameRule', 'ui.passwordRule'], label: 'ui.username', save: 'ui.guestKeep', done: 'ui.guestKept', fresh: true }, onKeep, onDone);
+
+// A name + password form. keys: ui text keys; fresh: a new password (for the browser's password keeper).
+function nameForm(app, keys, onSubmit, onDone) {
   const t = app.i18n.t;
   const name = h('input', { class: 'input', autocomplete: 'username', autocapitalize: 'none', spellcheck: 'false', maxlength: '16' });
-  const pass = h('input', { class: 'input', type: 'password', autocomplete: 'current-password' });
+  const pass = h('input', { class: 'input', type: 'password', autocomplete: keys.fresh ? 'new-password' : 'current-password' });
   const error = h('div', { class: 'form-error' });
-  const submit = h('button', { class: 'btn btn-primary', type: 'submit' }, t('ui.renameSave'));
+  const submit = h('button', { class: 'btn btn-primary', type: 'submit' }, t(keys.save));
   const { close } = openModal({
-    title: t('ui.renameTitle'),
+    title: t(keys.title),
     body: h(
       'form',
       {
@@ -483,18 +524,18 @@ function openRename(app, onRename, closeProfile) {
           submit.disabled = true;
           error.textContent = '';
           try {
-            const user = await onRename(name.value, pass.value);
+            const user = await onSubmit(name.value, pass.value);
             close();
-            closeProfile();
-            app.toast(t('ui.renameDone', { name: user.name }));
+            onDone();
+            app.toast(t(keys.done, { name: user.name }));
           } catch (err) {
             error.textContent = accountErrorText(app.i18n, err);
             submit.disabled = false;
           }
         },
       },
-      h('p', { class: 'form-hint' }, t('ui.renameHint')),
-      h('label', { class: 'field' }, h('span', {}, t('ui.renameNew')), name),
+      h('p', { class: 'form-hint' }, keys.hints.map((k) => t(k)).join(' ')),
+      h('label', { class: 'field' }, h('span', {}, t(keys.label)), name),
       h('label', { class: 'field' }, h('span', {}, t('ui.password')), pass),
       error,
       submit,
@@ -503,9 +544,12 @@ function openRename(app, onRename, closeProfile) {
   name.focus();
 }
 
-export function openProfile(app, { stats, sync, onLogout, onRename, ranch }) {
+// stats = { ...Game.leaderStats(), breakdown, parts (Perfection), stickers (earned ids) };
+// sync = promise of the fresh online save.
+export function openProfile(app, { stats, sync, onLogout, onRename, onKeep, ranch }) {
   const t = app.i18n.t;
   const user = app.account.user;
+  const guest = app.account.isGuest;
   const { tier, next } = tierOf(app.config.settings, stats.points);
   const from = tier ? tier.points : 0;
   const streak = streakOf({ streak: stats.streak, streakDay: stats.day.key }, todayKey(app));
@@ -546,9 +590,10 @@ export function openProfile(app, { stats, sync, onLogout, onRename, ranch }) {
       perfect,
       album,
       carpets,
-      leaderboardView(app, { id: user.id, ...stats }, sync),
+      guest ? h('div', { class: 'guest-keep' }, h('p', { class: 'form-hint' }, t('ui.guestNote')), h('button', { class: 'btn btn-gold', onclick: () => openKeepFarm(app, onKeep, profile.close) }, t('ui.guestKeep'))) : null,
+      leaderboardView(app, guest ? null : { id: user.id, ...stats }, sync),
       app.account.online ? null : h('p', { class: 'form-hint' }, t('ui.localMode')),
-      h('button', { class: 'link-quiet', onclick: () => openRename(app, onRename, profile.close) }, t('ui.renameTitle')),
+      guest ? null : h('button', { class: 'link-quiet', onclick: () => openRename(app, onRename, profile.close) }, t('ui.renameTitle')),
     ],
     buttons: [
       {

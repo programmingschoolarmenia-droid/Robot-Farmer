@@ -6,8 +6,10 @@ const TOAST_HURRY = 4000; // ms a message stays at most while others wait
 const TOAST_QUEUE = 5; // messages waiting at most (the oldest goes)
 
 export class Bridgy {
-  constructor({ app, codeKind, onShowLine, getHelpContext }) {
+  // onPoint(text): what Bridgy says now (his dialog and his toast, '' when silent), to light up the buttons he names.
+  constructor({ app, codeKind, onShowLine, getHelpContext, onPoint }) {
     this.app = app;
+    this.onPoint = onPoint || (() => {});
     this.i18n = app.i18n;
     this.cfg = app.config.bridgy;
     this.codeKind = codeKind || (() => null);
@@ -125,6 +127,12 @@ export class Bridgy {
     if (page.quiz) this.extraEl.append(this.quizNode(page.quiz));
     this.renderButtons(page);
     this.type(page.text || '');
+    this.point();
+  }
+
+  point() {
+    const page = this.conv && this.conv.pages[this.page];
+    this.onPoint([page && page.text, this.toastNow && this.toastNow.text].filter(Boolean).join('\n'));
   }
 
   // When the speaker changes in an open dialog, the old picture slides out and the new one
@@ -240,6 +248,7 @@ export class Bridgy {
     this.root.classList.remove('open', 'talking');
     if (conv && conv.onDone) conv.onDone();
     if (!this.conv && this.queue.length) this.start(this.queue.shift());
+    else if (!this.conv) this.point();
   }
 
   closeAll() {
@@ -259,6 +268,7 @@ export class Bridgy {
 
   nextToast() {
     const next = (this.toastNow = this.toastQueue.shift() || null);
+    this.point();
     if (!next) return;
     const avatar = document.querySelector('.help-button img');
     if (avatar) {

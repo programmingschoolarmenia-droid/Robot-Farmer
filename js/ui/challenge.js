@@ -20,16 +20,16 @@ export function schoolPanel(app, game, task, today, onStart) {
   const ch = game.challenge;
   const best = ch.week === task.week ? ch.best : 0;
   const field = `c${task.week}`;
-  const me = app.account.user.id;
+  const me = app.account.isGuest ? null : app.account.user.id; // a guest is not on the list
   const top = h('div', { class: 'board-note' }, t('ui.loading'));
   const winner = h('div');
-  app.account.leaderboard(field, best ? { id: me, value: best } : null).then(
+  app.account.leaderboard(field, best && me ? { id: me, value: best } : null).then(
     ({ rows, place }) =>
       top.replaceWith(
         rows.length
           ? h('ol', { class: 'challenge-top' }, rows.slice(0, 10).map((r, i) => h('li', { class: r.id === me ? 'me' : '' }, h('span', {}, MEDALS[i] ? icon(app.sprites, MEDALS[i]) : `${i + 1}.`), h('span', { class: 'board-name' }, r.name), h('b', {}, formatTenths(r[field])))))
           : h('div', { class: 'board-note' }, t('ui.leadersEmptyChallenge')),
-        place ? h('div', { class: 'board-place' }, t('ui.challengePlace', { place })) : '',
+        place ? h('div', { class: 'board-place' }, t('ui.challengePlace', { place })) : me ? '' : h('div', { class: 'board-note' }, t('ui.guestOnly')),
       ),
     () => (top.textContent = t('ui.challengeOffline')),
   );
@@ -292,10 +292,11 @@ export class ChallengeScreen {
       ),
       buttons: [{ label: t('ui.close'), class: 'btn-primary' }],
     });
+    const guest = app.account.isGuest;
     Promise.resolve(this.onResult())
-      .then((saved) => (saved === false ? null : app.account.place(`c${this.task.week}`, best)))
+      .then((saved) => (saved === false || guest ? null : app.account.place(`c${this.task.week}`, best)))
       .then(
-        (n) => (place.textContent = n ? t('ui.challengePlace', { place: n }) : t('ui.challengeOffline')),
+        (n) => (place.textContent = n ? t('ui.challengePlace', { place: n }) : t(guest ? 'ui.guestOnly' : 'ui.challengeOffline')),
         () => (place.textContent = t('ui.challengeOffline')),
       );
   }

@@ -114,14 +114,17 @@ export class LoomScreen {
 
   // ---------------------------------------------------------------- my carpets
 
+  // (A guest can't enter the contest: see buildContest.)
   buildGallery() {
     this.body.replaceChildren(
       carpetGallery(this.app, this.ranch, {
-        onEnter: async (cells) => {
-          await this.app.account.enterContest(this.week(), cells);
-          this.app.toast(this.app.i18n.t('ui.contestEntered'));
-          this.setTab('Contest');
-        },
+        onEnter: this.app.account.isGuest
+          ? null
+          : async (cells) => {
+              await this.app.account.enterContest(this.week(), cells);
+              this.app.toast(this.app.i18n.t('ui.contestEntered'));
+              this.setTab('Contest');
+            },
       }),
     );
   }
@@ -136,8 +139,9 @@ export class LoomScreen {
     const app = this.app;
     const t = app.i18n.t;
     const me = app.account.user && app.account.user.id;
+    const guest = app.account.isGuest; // looks, but can't enter or like
     const box = h('div', { class: 'board-note' }, t('ui.loading'));
-    this.body.replaceChildren(h('p', { class: 'form-hint' }, t('ui.contestHelp')), box);
+    this.body.replaceChildren(h('p', { class: 'form-hint' }, t(guest ? 'ui.guestOnly' : 'ui.contestHelp')), box);
     let entries;
     try {
       entries = await app.account.contest(this.week());
@@ -173,7 +177,9 @@ export class LoomScreen {
             h('div', {}, t('ui.contestLikes', { n: e.likes })),
             e.id === me
               ? h('div', { class: 'muted' }, t('ui.contestMine'))
-              : h('button', { class: 'btn btn-sm', disabled: e.liked, onclick: act(() => app.account.likeCarpet(this.week(), e.id)) }, t(e.liked ? 'ui.contestLiked' : 'ui.contestLike')),
+              : guest
+                ? null
+                : h('button', { class: 'btn btn-sm', disabled: e.liked, onclick: act(() => app.account.likeCarpet(this.week(), e.id)) }, t(e.liked ? 'ui.contestLiked' : 'ui.contestLike')),
             app.account.isAdmin
               ? h(
                   'button',

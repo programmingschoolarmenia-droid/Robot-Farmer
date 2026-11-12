@@ -4,7 +4,7 @@ import { h, icon, pixelImg, clear } from './dom.js';
 import { openModal, confirmModal } from './modal.js';
 import { accountErrorText, avatar } from './account.js';
 import { AccountError } from '../storage/account.js';
-import { allowedRange, equalAmount, orderExpired, orderProblem, placeProblem, takeProblem, tradable } from '../engine/market.js';
+import { allowedRange, equalAmount, giveRange, orderExpired, orderProblem, placeProblem, takeProblem, tradable } from '../engine/market.js';
 import { formatCount } from '../core/util.js';
 
 const TABS = ['All', 'Mine', 'New'];
@@ -222,44 +222,55 @@ export class MarketScreen {
       h('button', { class: 'market-pick', title: i18n.item(item), dataset: { item }, onclick: () => choose(side, item) }, pixelImg(sprites.url(`item:${item}`, 2)), i18n.item(item), side === 'give' ? h('b', {}, formatCount(have(item))) : null);
     const givePicks = giving.map((item) => pick(item, 'give'));
     const wantPicks = made.map((item) => pick(item, 'want'));
-    const giveN = h('input', { type: 'number', min: 1, step: 1, 'aria-label': t('ui.marketAmount'), oninput: () => setGive(Number(giveN.value), true) });
-    const wantN = h('input', { type: 'number', min: 1, step: 1, 'aria-label': t('ui.marketAmount'), oninput: () => setWant(Number(wantN.value), true) });
+    const giveN = h('input', { type: 'number', min: 1, step: 1, 'aria-label': t('ui.marketAmount'), oninput: () => setGive(Number(giveN.value), true), onchange: () => paint() });
+    const wantN = h('input', { type: 'number', min: 1, step: 1, 'aria-label': t('ui.marketAmount'), oninput: () => setWant(Number(wantN.value), true), onchange: () => paint() });
     const slider = h('input', { type: 'range', step: 1, 'aria-label': t('ui.marketAmount'), oninput: () => setWant(Number(slider.value)) });
     const low = h('span');
     const equal = h('span');
     const high = h('span');
     const range = h('div', { class: 'market-range' }, slider, h('div', {}, low, equal, high));
-    const none = h('div', { class: 'market-reason' }, t('ui.marketRangeNone'));
+    const none = h('div', { class: 'market-reason' });
     const line = h('p');
     const send = h('button', { class: 'btn btn-gold', onclick: () => place() }, t('ui.marketPlace'));
     const share = (label, f) => h('button', { class: 'btn btn-sm', onclick: () => setGive(Math.max(1, Math.floor(have(s.give) * f))) }, label);
 
+    // The boxes keep only amounts the market accepts: too much is cut at once, too little when the box
+    // is left (so «15» can be typed when the least is 7).
+    const limit = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
     const paint = (typing) => {
-      const fits = Number.isInteger(s.giveN) && s.giveN >= 1;
-      const r = fits && allowedRange(settings, s.give, s.giveN, s.want);
-      const fair = r && r.max >= r.min;
+      const g = giveRange(settings, s.give, s.want, have(s.give));
+      const can = g.max >= g.min; // has enough for a fair price at all
+      s.giveN = typing === 'give' ? Math.min(s.giveN, g.max) : limit(s.giveN, can ? g.min : 1, g.max);
+      const r = allowedRange(settings, s.give, s.giveN, s.want);
+      const fair = can && s.giveN >= g.min && r.max >= r.min;
       range.hidden = !fair;
-      none.hidden = !fits || fair;
+      none.hidden = can;
+      none.textContent = can ? '' : t('ui.marketRangeNone', { n: this.words(s.give, g.min) });
       if (fair) {
-        slider.min = r.min;
-        slider.max = r.max;
-        if (!chosen || (typing !== 'want' && (s.wantN < r.min || s.wantN > r.max))) s.wantN = equalAmount(settings, s.give, s.giveN, s.want);
+        slider.min = wantN.min = r.min;
+        slider.max = wantN.max = r.max;
+        if (!chosen) s.wantN = equalAmount(settings, s.give, s.giveN, s.want);
+        else s.wantN = typing === 'want' ? Math.min(s.wantN, r.max) : limit(s.wantN, r.min, r.max);
         slider.value = s.wantN;
         low.textContent = `${t('ui.marketFewer')} ${formatCount(r.min)}`;
         equal.textContent = t('ui.marketEqual', { n: formatCount(equalAmount(settings, s.give, s.giveN, s.want)) });
         high.textContent = `${t('ui.marketMore')} ${formatCount(r.max)}`;
       }
-      if (typing !== 'give') giveN.value = s.giveN || '';
-      if (typing !== 'want') wantN.value = s.wantN || '';
+      giveN.min = can ? g.min : 1;
+      giveN.max = g.max;
+      if (Number(giveN.value) !== s.giveN) giveN.value = s.giveN || '';
+      if (Number(wantN.value) !== s.wantN) wantN.value = s.wantN || '';
       for (const b of givePicks) b.classList.toggle('active', b.dataset.item === s.give);
       for (const b of wantPicks) {
         b.classList.toggle('active', b.dataset.item === s.want);
         b.disabled = b.dataset.item === s.give;
       }
+      const between = (lo, hi) => t('ui.marketAmountRange', { min: formatCount(lo), max: formatCount(hi) });
       const problem = placeProblem(game, s, open ?? 0);
-      line.classList.toggle('warn', !!problem);
-      line.textContent = problem ? this.problemText(problem, s.give) : t('ui.marketSummary', { give: this.words(s.give, s.giveN), want: this.words(s.want, s.wantN) });
-      send.disabled = !!problem || open === null;
+      const warn = !can ? this.problemText('have', s.give) : !fair ? between(g.min, g.max) : s.wantN < r.min ? between(r.min, r.max) : problem && this.problemText(problem, s.give);
+      line.classList.toggle('warn', !!warn);
+      line.textContent = warn || t('ui.marketSummary', { give: this.words(s.give, s.giveN), want: this.words(s.want, s.wantN) });
+      send.disabled = !!warn || open === null;
     };
     const choose = (side, item) => {
       s[side] = item;
@@ -271,11 +282,11 @@ export class MarketScreen {
       paint();
     };
     const setGive = (n, typing = false) => {
-      s.giveN = n;
+      s.giveN = Math.floor(n) || 0;
       paint(typing ? 'give' : null);
     };
     const setWant = (n, typing = false) => {
-      s.wantN = n;
+      s.wantN = Math.floor(n) || 0;
       chosen = true;
       paint(typing ? 'want' : null);
     };

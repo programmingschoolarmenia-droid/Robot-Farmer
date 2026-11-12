@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Accounts } from '../js/storage/account.js';
 import { Game } from '../js/engine/game.js';
 import { validateConfig } from '../js/core/config.js';
-import { allowedRange, equalAmount, orderExpired, orderProblem, placeProblem, takeProblem } from '../js/engine/market.js';
+import { allowedRange, equalAmount, giveRange, orderExpired, orderProblem, placeProblem, takeProblem } from '../js/engine/market.js';
 import { createFakeFirebase } from './fakeFirebase.mjs';
 import { loadConfig } from './helpers.mjs';
 
@@ -50,6 +50,24 @@ test('fair price: 500 Gold for 5000 Pumpkins passes, 100000 Gold for 1 Carrot ne
   assert.equal(orderProblem(settings, order('Gold', 500, 'Pumpkin', 7501)), 'price');
   assert.equal(orderProblem(settings, order('Gold', 100000, 'Carrot', 1)), 'price');
   assert.equal(orderProblem(settings, order('Carrot', 1, 'Gold', 100000)), 'price');
+});
+
+// The new-order form offers only these amounts, so it can't start with a refused one (it did with big stocks).
+test('the form\'s limits: a fair price exists, nothing over maxAmount, never more than you have', () => {
+  const max = settings.market.maxAmount;
+  assert.deepEqual(giveRange(settings, 'Hay', 'Gold', 8), { min: 7, max: 8 }); // 6 Hay has no fair price in Gold
+  assert.equal(allowedRange(settings, 'Hay', 6, 'Gold').max, 0);
+  assert.equal(allowedRange(settings, 'Hay', 7, 'Gold').max, 1);
+  assert.deepEqual(giveRange(settings, 'Hay', 'Gold', 5), { min: 7, max: 5 }); // not enough at all
+  assert.equal(giveRange(settings, 'Hay', 'Wood', 5e6).max, max);
+  assert.equal(allowedRange(settings, 'Gold', 100000, 'Hay').max, max);
+  for (const [give, want, have] of [['Gold', 'Hay', 4e5], ['Hay', 'Wood', 5e6], ['Hay', 'Gold', 8], ['Ghapama', 'Hay', 1e6], ['Hay', 'Ghapama', 1e6]]) {
+    const g = giveRange(settings, give, want, have);
+    for (const giveN of [g.min, g.max]) {
+      const r = allowedRange(settings, give, giveN, want);
+      for (const wantN of [r.min, r.max, equalAmount(settings, give, giveN, want)]) assert.equal(orderProblem(settings, order(give, giveN, want, wantN)), null, `${giveN} ${give} → ${wantN} ${want}`);
+    }
+  }
 });
 
 test('only listed goods in whole amounts: no rewards, no ranch goods, no fractions', () => {

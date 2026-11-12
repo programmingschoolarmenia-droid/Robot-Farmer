@@ -11,14 +11,14 @@ export function ranchSchoolPanel(app, game, task, today, onStart) {
   const t = app.i18n.t;
   const ch = game.ranch.challenge;
   const best = ch.week === task.week ? ch.best : 0;
-  const me = app.account.user.id;
+  const me = app.account.isGuest ? null : app.account.user.id; // a guest is not on the list
   const top = h('div', { class: 'board-note' }, t('ui.loading'));
   const winner = h('div');
-  app.account.leaderboard(`rc${task.week}`, best ? { id: me, value: best } : null).then(
+  app.account.leaderboard(`rc${task.week}`, best && me ? { id: me, value: best } : null).then(
     ({ rows, place }) =>
       top.replaceWith(
         rows.length ? h('ol', { class: 'challenge-top' }, rows.slice(0, 10).map((r) => h('li', { class: r.id === me ? 'me' : '' }, h('span', {}, r.name), h('b', {}, formatTenths(r[`rc${task.week}`]))))) : h('div', { class: 'board-note' }, t('ui.leadersEmptyChallenge')),
-        place ? h('div', { class: 'board-place' }, t('ui.challengePlace', { place })) : '',
+        place ? h('div', { class: 'board-place' }, t('ui.challengePlace', { place })) : me ? '' : h('div', { class: 'board-note' }, t('ui.guestOnly')),
       ),
     () => (top.textContent = t('ui.challengeOffline')),
   );
@@ -133,10 +133,11 @@ export class RanchChallengeScreen {
       ),
       buttons: [{ label: t('ui.close'), class: 'btn-primary' }],
     });
+    const guest = app.account.isGuest;
     Promise.resolve(this.onResult())
-      .then((saved) => (saved === false ? null : app.account.place(`rc${this.task.week}`, best)))
+      .then((saved) => (saved === false || guest ? null : app.account.place(`rc${this.task.week}`, best)))
       .then(
-        (n) => (place.textContent = n ? t('ui.challengePlace', { place: n }) : t('ui.challengeOffline')),
+        (n) => (place.textContent = n ? t('ui.challengePlace', { place: n }) : t(guest ? 'ui.guestOnly' : 'ui.challengeOffline')),
         () => (place.textContent = t('ui.challengeOffline')),
       );
   }

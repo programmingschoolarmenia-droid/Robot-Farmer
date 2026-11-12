@@ -10,7 +10,7 @@ import { DebugPanel } from './debugPanel.js';
 import { Bridgy } from './bridgy.js';
 import { openSettings } from './settingsModal.js';
 import { describeError, describeWarning } from './errorText.js';
-import { openProfile, accountErrorText, tierOf } from './account.js';
+import { openProfile, openKeepFarm, accountErrorText, tierOf } from './account.js';
 import { perfection } from '../engine/stickers.js';
 import { openBook } from './book.js';
 import { openModal } from './modal.js';
@@ -109,15 +109,21 @@ export class GameScreen {
       t('ui.researchButton'),
       this.researchBadge,
     );
-    // Phone tabs (hidden on wide screens by CSS); the storage tab repeats the research badge.
-    this.tabBadge = h('span', { class: 'badge', hidden: true });
+    // Phones show this one in the top bar instead (CSS), with a shorter word.
+    this.topBadge = h('span', { class: 'badge', hidden: true });
+    this.researchTop = h(
+      'button',
+      { class: 'btn btn-gold research-button research-top', onclick: () => this.openResearch() },
+      pixelImg(app.sprites.url('icon:debugger', 2)),
+      t('ui.researchShort'),
+      this.topBadge,
+    );
+    // Phone tabs (hidden on wide screens by CSS).
     this.tabButtons = [
       ['farm', icon(app.sprites, 'farm'), t('ui.farm')],
       ['code', '</>', t('ui.codeTab')],
       ['storage', icon(app.sprites, 'storage'), t('ui.inventory')],
-    ].map(([id, ico, label]) =>
-      h('button', { class: 'btn mobile-tab', dataset: { tab: id }, onclick: () => this.setTab(id) }, h('span', { class: 'ico' }, ico), label, id === 'storage' ? this.tabBadge : null),
-    );
+    ].map(([id, ico, label]) => h('button', { class: 'btn mobile-tab', dataset: { tab: id }, onclick: () => this.setTab(id) }, h('span', { class: 'ico' }, ico), label));
     this.farmSizeLabel = h('span', { class: 'muted' });
     this.calendarChip = h('button', { class: 'btn btn-sm calendar-chip', title: t('ui.tvButton'), hidden: true, onclick: () => this.openTv() });
     this.boostChips = h('span', { class: 'boost-chips' });
@@ -139,14 +145,15 @@ export class GameScreen {
         { class: 'topbar' },
         h('div', { class: 'logo' }, h('img', { src: app.config.bridgy.avatar || 'assets/bridgy/bridgy-head.png', alt: '' }), h('span', {}, t('ui.title'))),
         this.questSlot,
-        h(
+        (this.helpBtn = h(
           'button',
           { class: 'btn help-button', onclick: () => this.bridgy.helpMenu(), title: t('ui.helpButton') },
           h('img', { src: app.config.bridgy.avatar || 'assets/bridgy/bridgy-head.png', alt: '' }),
           h('span', { class: 'btn-label' }, t('ui.helpButton')),
-        ),
+        )),
         h('button', { class: 'btn btn-icon', title: t('ui.settingsButton'), onclick: () => this.openSettings() }, icon(app.sprites, 'gear')),
         h('button', { class: 'btn player-pill', title: t('ui.profileTitle'), onclick: () => this.openProfile() }, icon(app.sprites, 'player'), h('span', { class: 'btn-label' }, app.account.user.name), this.perfectLabel),
+        this.researchTop,
       ),
       h(
         'main',
@@ -156,7 +163,7 @@ export class GameScreen {
         (this.sidePanel = h(
           'aside',
           { class: 'side-panel' },
-          h('section', { class: 'panel grow' }, h('div', { class: 'panel-head' }, icon(app.sprites, 'storage'), ' ', t('ui.inventory')), this.inventoryList),
+          h('section', { class: 'panel grow' }, (this.inventoryHead = h('div', { class: 'panel-head' }, icon(app.sprites, 'storage'), ' ', t('ui.inventory'))), this.inventoryList),
           (this.sideRow = h('div', { class: 'side-row' }, this.villageBtn, this.ranchBtn, this.marketBtn)),
           this.researchBtn,
         )),
@@ -205,8 +212,10 @@ export class GameScreen {
     this.research = new ResearchTree({ app, game, onBuy: (id, card) => this.onResearchBought(id, card) });
     this.villageView = new VillageView({ app, game, onStory: (b) => this.bridgy.say(b.story, { key: `story:${b.id}`, interrupt: true }), extra: (b, state) => this.schoolPart(b, state) });
     // While the ranch is open, Bridgy helps with the ranch (its quests, commands and errors).
+    this.glowing = [];
     this.bridgy = new Bridgy({
       app,
+      onPoint: (text) => this.point(text),
       codeKind: (w) => (this.ranchScreen ? game.ranch : game).api.codeKind(w),
       onShowLine: (err) => {
         const screen = this.ranchScreen || this;
@@ -240,6 +249,37 @@ export class GameScreen {
     this.updateVillageButton();
     this.updateRanchButton();
     this.updatePerfection();
+  }
+
+  // Bridgy names a button in «…»: it glows while he says so. On phones a button of the side panel
+  // is in the Storage tab, so that tab glows too.
+  point(text) {
+    for (const el of this.glowing) el.classList.remove('glow');
+    const screen = this.ranchScreen || this;
+    const els = text ? screen.glowTargets().filter(([name]) => text.includes(`«${name}»`)).flatMap(([, list]) => list.filter(Boolean)) : [];
+    if (els.some((el) => screen.sidePanel.contains(el) && getComputedStyle(el).display !== 'none')) els.push(screen.tabButtons[2]);
+    this.glowing = els;
+    for (const el of els) el.classList.add('glow');
+  }
+
+  // [the button's name as Bridgy writes it, [elements]]
+  glowTargets() {
+    const t = this.app.i18n.t;
+    const [farmTab, codeTab, storageTab] = this.tabButtons;
+    const c = this.controls;
+    return [
+      [t('ui.farm'), [farmTab]],
+      [t('ui.codeTab'), [codeTab]],
+      [t('ui.inventory'), [storageTab, this.inventoryHead]],
+      [t('ui.researchButton'), [this.researchBtn, this.researchTop]],
+      [t('ui.villageButton'), [this.villageBtn]],
+      [t('ui.ranchButton'), [this.ranchBtn]],
+      [t('ui.marketButton'), [this.marketBtn]],
+      [t('ui.run'), [c.runBtn]],
+      [t('ui.stop'), [c.stopBtn]],
+      [t('ui.step'), [c.stepBtn]],
+      [t('ui.helpButton'), [this.helpBtn]],
+    ];
   }
 
   layoutSizes() {
@@ -466,8 +506,10 @@ export class GameScreen {
         this.layoutSizes();
         this.last = performance.now();
         this.raf = requestAnimationFrame((t) => this.tick(t));
+        this.bridgy.point();
       },
     });
+    this.bridgy.point();
   }
 
   // ------------------------------------------------------------------ player market
@@ -477,6 +519,7 @@ export class GameScreen {
   }
 
   openMarket() {
+    if (this.app.account.isGuest) return this.guestOnly();
     if (this.market) return;
     this.collectOrders();
     this.market = new MarketScreen({ screen: this, onClose: () => (this.market = null) });
@@ -527,7 +570,7 @@ export class GameScreen {
 
   // Sold, expired or removed orders of mine: the goods arrive and the order goes.
   async collectOrders() {
-    if (this.collecting || this.destroyed || !this.game.research.hasPanel('market')) return;
+    if (this.collecting || this.destroyed || this.app.account.isGuest || !this.game.research.hasPanel('market')) return;
     this.collecting = true;
     const t = this.app.i18n.t;
     try {
@@ -626,6 +669,7 @@ export class GameScreen {
   // On login: last week's challenge top 3 and the last festival's top 3 get their prizes (each
   // looked for once; without internet it is tried again next time).
   async claimPrizes() {
+    if (this.app.account.isGuest) return; // not on the lists
     const game = this.game;
     const me = this.app.account.user.id;
     const today = this.today();
@@ -897,6 +941,7 @@ export class GameScreen {
         },
       });
     } else setTimeout(() => this.greetCalendar(), 1500);
+    if (this.app.account.isGuest) this.remindGuest();
     this.quests.check();
   }
 
@@ -960,8 +1005,48 @@ export class GameScreen {
       sync: this.syncCloud({ now: true }),
       onLogout: () => this.exit(),
       onRename: (name, password) => this.rename(name, password),
+      onKeep: (name, password) => this.keepFarm(name, password),
       ranch: this.game.research.hasPanel('ranch') ? this.game.ranch : null,
     });
+  }
+
+  // A guest keeps the farm under a name: from now on it is saved online too.
+  async keepFarm(name, password) {
+    this.save();
+    const user = await this.app.account.keepGuestFarm(name, password, this.lastData);
+    this.el.querySelector('.player-pill .btn-label').textContent = user.name;
+    this.syncCloud({ now: true }).then(() => this.claimPrizes());
+    return user;
+  }
+
+  // The market, the contest and the challenge lists are for players with an account.
+  guestOnly() {
+    const t = this.app.i18n.t;
+    openModal({
+      title: t('ui.guestKeep'),
+      body: h('p', { class: 'form-hint' }, t('ui.guestOnly')),
+      buttons: [
+        { label: t('ui.guestLater') },
+        {
+          label: t('ui.guestKeep'),
+          class: 'btn-gold',
+          onClick: (close) => {
+            close();
+            openKeepFarm(this.app, (name, password) => this.keepFarm(name, password));
+          },
+        },
+      ],
+    });
+  }
+
+  // Each time a guest comes in, Bridgy says once that the farm lives only in this browser.
+  remindGuest() {
+    const t = this.app.i18n.t;
+    const keep = () => {
+      this.bridgy.end();
+      openKeepFarm(this.app, (name, password) => this.keepFarm(name, password));
+    };
+    this.bridgy.say([{ emotion: 'thinking', text: t('ui.guestRemind'), buttons: [{ label: t('ui.guestKeep'), class: 'btn-gold', onClick: keep }] }], { key: 'guest' });
   }
 
   // The farm moves to the new account (an online save still on its way finishes first).
@@ -1054,11 +1139,11 @@ export class GameScreen {
     const research = this.game.research;
     let n = 0;
     for (const node of research.nodes) if (research.state(node.id) === 'affordable') n++;
-    for (const badge of [this.researchBadge, this.tabBadge]) {
+    for (const badge of [this.researchBadge, this.topBadge]) {
       badge.hidden = n === 0;
       badge.textContent = String(n);
     }
-    this.researchBtn.classList.toggle('has-new', n > 0);
+    for (const btn of [this.researchBtn, this.researchTop]) btn.classList.toggle('has-new', n > 0);
   }
 
   markDirty() {
@@ -1114,6 +1199,7 @@ export class GameScreen {
   // Online copy + leaderboard row: every `online.cloudSaveSeconds` when something changed, at the
   // next autosave after a research, and right away when asked. Resolves to true when saved.
   syncCloud({ now = false, keepalive = false } = {}) {
+    if (this.app.account.isGuest) return Promise.resolve(true); // a guest's farm stays in this browser
     if (this.pushing) return this.pushing.then(() => this.syncCloud({ now, keepalive }));
     const every = ((this.app.config.settings.online || {}).cloudSaveSeconds || 60) * 1000;
     if (!this.cloudDirty || (!now && !this.cloudSoon && Date.now() - this.lastPush < every)) return Promise.resolve(true);

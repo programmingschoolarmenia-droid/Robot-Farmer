@@ -157,6 +157,9 @@ export function validateConfig(config) {
     if (g.speedOptions !== undefined && (!Array.isArray(g.speedOptions) || !g.speedOptions.length || !g.speedOptions.every((x) => isNum(x) && x > 0))) {
       err(S, 'game.speedOptions', 'Պետք է լինի դրական թվերի ցուցակ, օրինակ՝ [0.25, 0.5, 1]');
     }
+    if (g.popularWords !== undefined && (!Array.isArray(g.popularWords) || !g.popularWords.every((w) => typeof w === 'string'))) {
+      err(S, 'game.popularWords', 'Պետք է լինի բառերի ցուցակ, օրինակ՝ ["havaqel", "gnal", "while"]');
+    }
     if (g.startItems !== undefined) {
       if (!isObj(g.startItems)) err(S, 'game.startItems', 'Պետք է լինի օբյեկտ');
       else for (const k of Object.keys(g.startItems)) if (!ITEM_NAMES.includes(k)) err(S, `game.startItems.${k}`, `Անհայտ իր «${k}»`);
