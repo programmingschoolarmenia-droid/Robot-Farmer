@@ -1,10 +1,11 @@
 // Simple modal dialogs (confirm / ask for text / custom content).
-import { h } from './dom.js';
+import { h, onBack } from './dom.js';
 
 export function openModal({ title, body, buttons = [], onClose, width, className = '' }) {
   const close = () => {
     backdrop.remove();
     document.removeEventListener('keydown', onKey, true);
+    unback();
     if (onClose) onClose();
   };
   const onKey = (e) => {
@@ -32,6 +33,7 @@ export function openModal({ title, body, buttons = [], onClose, width, className
   const backdrop = h('div', { class: 'modal-backdrop', onmousedown: (e) => e.target === backdrop && close() }, modal);
   document.body.append(backdrop);
   document.addEventListener('keydown', onKey, true);
+  const unback = onBack(close); // the phone's Back key closes it
   return { close, modal };
 }
 

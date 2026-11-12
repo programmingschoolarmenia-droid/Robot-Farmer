@@ -1,7 +1,7 @@
 // The carpets' full-screen window: the loom (the sample next to the carpet growing, how alike they are,
 // the yarn on the loom), today's orders, my carpets and the weekly contest. The ranch keeps running
 // under it; RanchScreen calls update() a few times a second.
-import { h, icon, pixelImg, carpetCanvas, paintCarpet } from './dom.js';
+import { h, icon, pixelImg, carpetCanvas, paintCarpet, onBack } from './dom.js';
 import { confirmModal } from './modal.js';
 import { carpetGallery } from './account.js';
 import { alikeShare, sampleCells } from '../engine/carpet.js';
@@ -21,17 +21,13 @@ export class LoomScreen {
     this.el = h(
       'section',
       { class: 'loom-screen' },
-      h(
-        'header',
-        { class: 'loom-head' },
-        h('b', {}, icon(app.sprites, 'loom'), ` ${t('ui.loomTitle')}`),
-        h('div', { class: 'loom-tabs' }, this.tabs),
-        h('button', { class: 'btn', onclick: () => this.close() }, t('ui.loomClose')),
-      ),
+      h('header', { class: 'loom-head' }, h('b', {}, icon(app.sprites, 'loom'), ` ${t('ui.loomTitle')}`), h('button', { class: 'btn', onclick: () => this.close() }, t('ui.loomClose'))),
+      h('div', { class: 'login-tabs loom-tabs' }, this.tabs),
       this.body,
     );
     container.append(this.el);
     this.setTab('Loom');
+    this.unback = onBack(() => this.close()); // the phone's Back key closes it
   }
 
   get palette() {
@@ -200,6 +196,7 @@ export class LoomScreen {
 
   close() {
     this.el.remove();
+    this.unback();
     this.onClose();
   }
 }

@@ -285,6 +285,8 @@
   box-shadow: var(--shadow-sm);
   animation: pop 0.3s ease;
   position: relative;
+  pointer-events: auto; /* a tap sends it away (the space around it lets taps through) */
+  cursor: pointer;
 }
 .bridgy-toast::before {
   content: '';
@@ -608,6 +610,7 @@
 .modal-body {
   padding: 14px 18px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* a long line wraps instead of pushing the window wider */
   gap: 12px;
 }
 .modal-foot {

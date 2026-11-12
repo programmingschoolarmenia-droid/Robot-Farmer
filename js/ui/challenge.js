@@ -2,7 +2,7 @@
 // task, the top 10, my place and last week's best solution) and the challenge page, a clear full
 // screen like the game: the test farm, its own editor, console, storage and controls. The main
 // farm waits while it is open, and every ▶ starts a fresh test farm.
-import { h, icon, sizeFarm, mobileQuery, highlightCode, frameError } from './dom.js';
+import { h, icon, sizeFarm, mobileQuery, highlightCode, frameError, onBack } from './dom.js';
 import { FarmView } from './farmView.js';
 import { EditorPanel } from './editor.js';
 import { Controls, InventoryPanel } from './panels.js';
@@ -136,6 +136,7 @@ export class ChallengeScreen {
     this.last = performance.now();
     this.slowTimer = 0;
     this.raf = requestAnimationFrame((now) => this.tick(now));
+    this.unback = onBack(() => this.close()); // the phone's Back key: back to the village
   }
 
   makeFarm() {
@@ -309,6 +310,7 @@ export class ChallengeScreen {
   destroy() {
     if (this.closed) return;
     this.closed = true;
+    this.unback();
     this.game.runner.stop('exit', true);
     cancelAnimationFrame(this.raf);
     window.removeEventListener('resize', this.onResize);

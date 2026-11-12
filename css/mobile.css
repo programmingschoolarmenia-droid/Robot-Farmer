@@ -95,6 +95,10 @@
   }
   .side-panel {
     gap: 8px;
+    overflow-y: auto; /* short (landscape) screens: everything stays reachable */
+  }
+  .side-panel > .panel.grow {
+    min-height: 150px; /* the storage list never shrinks to its title */
   }
 
   .controlbar {
@@ -244,6 +248,15 @@
   .toast {
     max-width: 100%;
   }
+  .bridgy-toast {
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+  /* the Code tab: a message on show goes away (the next ones wait, Bridgy.coding) */
+  body:has(.screen-game:not([hidden])[data-tab='code']) .bridgy-toasts {
+    display: none;
+  }
   .toast-stack {
     left: 8px;
     right: 8px;
@@ -255,9 +268,7 @@
     width: calc(100vw - 12px);
     max-height: calc(var(--app-h, 100dvh) - 12px);
   }
-  /* one column as wide as the window: a long line wraps instead of pushing the window off screen */
   .modal-body {
-    grid-template-columns: minmax(0, 1fr);
     padding: 12px;
   }
   .modal.market-modal {
@@ -267,7 +278,18 @@
     border-radius: 0;
     border-width: 0;
   }
-  .market-tabs .login-tab {
+  .loom-head {
+    gap: 6px;
+  }
+  .loom-head b {
+    font-size: 0.95rem;
+  }
+  .loom-head .btn {
+    padding: 6px 8px;
+    font-size: 0.85rem;
+  }
+  .market-tabs .login-tab,
+  .loom-tabs .login-tab {
     flex: 1;
     padding: 8px 4px;
     font-size: 0.85rem;
@@ -431,10 +453,51 @@
   }
   .bridgy-toasts {
     top: 112px;
+    align-items: flex-start; /* under Bridgy's head (the help button, on the left here) */
+  }
+  .bridgy-toast::before {
+    right: auto;
+    left: 22px;
   }
   /* the map is small: only the chosen building shows its name (its panel is right below) */
   .village-spot:not(.selected) .village-name {
     display: none;
+  }
+}
+
+/* Narrow phones (360 and less): the control bar and the start screen's tabs fit without zooming out.
+   The weekly challenge has a 4th speed button, so its bar needs this too. */
+@media (max-width: 400px) {
+  .controlbar {
+    gap: 4px;
+    padding: 6px;
+  }
+  .controlbar .ctrl-group {
+    gap: 4px;
+  }
+  .controlbar .btn {
+    padding: 7px 8px;
+  }
+  .speed-group button {
+    padding: 6px 5px;
+  }
+  .seg button {
+    padding: 5px 7px; /* settings: the three font sizes fit next to their label */
+  }
+  .login-main .login-tab {
+    padding: 8px 6px;
+    font-size: 0.85rem;
+  }
+}
+@media (max-width: 359px) {
+  .controlbar .status-pill {
+    display: none; /* the ▶ / ⏸ buttons still show the state */
+  }
+  .research-top .research-word {
+    display: none; /* the magnifier and the number keep the top bar on two rows */
+  }
+  .login-main .login-tab {
+    font-size: 0.78rem;
   }
 }
 
@@ -485,5 +548,23 @@
     max-height: none;
     border-radius: var(--radius);
     padding-bottom: 14px;
+  }
+}
+
+/* Touch screens: a long press on a picture or a label opens no "Download image" menu and selects no
+   text. The code editor, its console and the input boxes still select. */
+@media (hover: none) and (pointer: coarse) {
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  input,
+  textarea,
+  .CodeMirror,
+  .console-body {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
   }
 }

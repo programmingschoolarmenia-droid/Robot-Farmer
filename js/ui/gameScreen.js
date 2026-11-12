@@ -115,7 +115,7 @@ export class GameScreen {
       'button',
       { class: 'btn btn-gold research-button research-top', onclick: () => this.openResearch() },
       pixelImg(app.sprites.url('icon:debugger', 2)),
-      t('ui.researchShort'),
+      h('span', { class: 'research-word' }, t('ui.researchShort')),
       this.topBadge,
     );
     // Phone tabs (hidden on wide screens by CSS).

@@ -8,6 +8,51 @@ window.addEventListener('pointerdown', () => (pressing = true), true);
 for (const type of ['pointerup', 'pointercancel', 'blur']) window.addEventListener(type, () => (pressing = false), true);
 export const isPressing = () => pressing;
 
+// Android's back key (and the browser's Back): each open window, view or Bridgy's dialog registers
+// with onBack(close), and Back closes the one on top instead of leaving the game. The game keeps one
+// history step per open thing (steps are all alike, so any order of closing works). A window closed
+// by its own button calls the returned function, and its step goes again. A step is never added
+// while our own history.go() is on its way (Chrome would land on the wrong step), only after it.
+const backStack = [];
+let steps = 0; // history steps the game has added
+let moving = false; // our history.go() hasn't landed yet
+function syncSteps() {
+  if (moving) return;
+  if (steps > backStack.length) {
+    moving = true;
+    history.go(backStack.length - steps);
+    steps = backStack.length;
+  }
+  for (; steps < backStack.length; steps++) {
+    try {
+      history.pushState(history.state, '');
+    } catch {
+      return; // (too many steps too fast: Back closes fewer things this time)
+    }
+  }
+}
+export function onBack(close) {
+  const entry = { close };
+  backStack.push(entry);
+  syncSteps();
+  return () => {
+    const i = backStack.indexOf(entry);
+    if (i < 0) return; // Back closed it
+    backStack.splice(i, 1);
+    syncSteps();
+  };
+}
+window.addEventListener('popstate', () => {
+  if (moving) moving = false; // our own step back landed
+  else if (!steps) return history.back(); // nothing open (a step left from before a reload): Back leaves
+  else {
+    steps--;
+    const top = backStack.pop();
+    if (top) top.close();
+  }
+  syncSteps();
+});
+
 // Phone / portrait-tablet layout (tabs instead of side-by-side panels). Keep in sync with css/mobile.css.
 export const mobileQuery = window.matchMedia('(max-width: 1023px), (max-height: 599px)');
 

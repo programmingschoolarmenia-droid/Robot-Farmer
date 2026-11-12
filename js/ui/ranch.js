@@ -3,7 +3,7 @@
 // the market board with the fair, the loom's window. The farm waits while it is open (GameScreen.openRanch);
 // the main game's autosave keeps saving the ranch with it. The ranch's weekly challenge shows a test ranch
 // on this screen too (`challenge`: js/ui/ranchChallenge.js), with only what a try needs.
-import { h, icon, pixelImg, mobileQuery, sizeFarm, CALENDAR_ICONS, frameError } from './dom.js';
+import { h, icon, pixelImg, mobileQuery, sizeFarm, CALENDAR_ICONS, frameError, onBack } from './dom.js';
 import { RanchView } from './ranchView.js';
 import { LoomScreen } from './loom.js';
 import { EditorPanel } from './editor.js';
@@ -144,6 +144,7 @@ export class RanchScreen {
     this.last = performance.now();
     this.slowTimer = 0;
     this.raf = requestAnimationFrame((now) => this.tick(now));
+    this.unback = onBack(() => this.close()); // the phone's Back key: back to the farm
     if (first('ranchIntro')) setTimeout(() => this.bridgy.say((ranch.cfg.story || {}).intro || [], { key: 'ranchIntro', interrupt: true }), 300);
   }
 
@@ -162,12 +163,12 @@ export class RanchScreen {
     if (tab === 'code' && this.editor) setTimeout(() => this.editor.refresh(), 0);
   }
 
-  // The buttons Bridgy can name here (see GameScreen.point).
+  // The buttons Bridgy can name here (see GameScreen.point). Not the map tab: «Ռանչո» in his words
+  // means the farm's button that opens the ranch.
   glowTargets() {
     const t = this.app.i18n.t;
-    const [mapTab, codeTab, storageTab] = this.tabButtons;
+    const [, codeTab, storageTab] = this.tabButtons;
     return [
-      [t('ui.ranchMap'), [mapTab]],
       [t('ui.codeTab'), [codeTab]],
       [t('ui.inventory'), [storageTab]],
       [t('ui.ranchShop'), [this.shopBtn]],
@@ -574,6 +575,8 @@ export class RanchScreen {
   destroy() {
     if (this.closed) return;
     this.closed = true;
+    if (this.loom) this.loom.close();
+    this.unback();
     cancelAnimationFrame(this.raf);
     window.removeEventListener('resize', this.onResize);
     this.offs.forEach((off) => off());

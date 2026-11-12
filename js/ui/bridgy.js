@@ -1,6 +1,6 @@
 // Bridgy: the mascot's dialogs (portrait bottom-left + text box), lessons, hints,
 // error explanations, the help menu and quick reaction bubbles.
-import { h, icon, highlightCode } from './dom.js';
+import { h, icon, highlightCode, mobileQuery, onBack } from './dom.js';
 
 const TOAST_HURRY = 4000; // ms a message stays at most while others wait
 const TOAST_QUEUE = 5; // messages waiting at most (the oldest goes)
@@ -18,6 +18,7 @@ export class Bridgy {
     this.queue = [];
     this.conv = null;
     this.page = 0;
+    this.unback = null; // (see start)
     this.timer = null;
     const t = this.i18n.t;
 
@@ -49,6 +50,8 @@ export class Bridgy {
     clearInterval(this.timer);
     clearTimeout(this.swapTimer);
     clearTimeout(this.toastTimer);
+    clearTimeout(this.waitTimer);
+    this.releaseBack();
     this.root.remove();
     this.toasts.remove();
   }
@@ -90,6 +93,8 @@ export class Bridgy {
 
   start(conv) {
     this.fresh = this.root.hidden; // just opening: no picture to swap out
+    // One Back step while the dialog is on screen (the next conversation in the queue keeps it).
+    if (!this.unback) this.unback = onBack(() => this.closeAll());
     this.conv = conv;
     this.page = conv.resumeAt || 0;
     this.root.hidden = false;
@@ -248,7 +253,15 @@ export class Bridgy {
     this.root.classList.remove('open', 'talking');
     if (conv && conv.onDone) conv.onDone();
     if (!this.conv && this.queue.length) this.start(this.queue.shift());
-    else if (!this.conv) this.point();
+    else if (!this.conv) {
+      this.releaseBack();
+      this.point();
+    }
+  }
+
+  releaseBack() {
+    if (this.unback) this.unback();
+    this.unback = null;
   }
 
   closeAll() {
@@ -266,9 +279,17 @@ export class Bridgy {
     else if (!showing.hiding) this.planToastEnd();
   }
 
+  // Phones: while the student codes (the Code tab is open), messages wait instead of covering the code.
+  coding() {
+    return mobileQuery.matches && !!document.querySelector('.screen-game:not([hidden])[data-tab="code"]');
+  }
+
   nextToast() {
-    const next = (this.toastNow = this.toastQueue.shift() || null);
+    clearTimeout(this.waitTimer);
+    const wait = this.toastQueue.length && this.coding();
+    const next = (this.toastNow = wait ? null : this.toastQueue.shift() || null);
     this.point();
+    if (wait) this.waitTimer = setTimeout(() => this.nextToast(), 1000);
     if (!next) return;
     const avatar = document.querySelector('.help-button img');
     if (avatar) {
@@ -276,7 +297,7 @@ export class Bridgy {
       void avatar.offsetWidth;
       avatar.classList.add('react');
     }
-    next.el = h('div', { class: 'bridgy-toast' }, next.text);
+    next.el = h('div', { class: 'bridgy-toast', onclick: () => this.hideToast(next) }, next.text); // a tap sends it away
     next.shownAt = Date.now();
     this.toasts.append(next.el);
     this.planToastEnd();
@@ -286,14 +307,18 @@ export class Bridgy {
     const now = this.toastNow;
     const ms = this.toastQueue.length ? Math.min(now.ms, TOAST_HURRY) : now.ms;
     clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => this.hideToast(now), Math.max(0, ms - (Date.now() - now.shownAt)));
+  }
+
+  hideToast(now) {
+    if (now.hiding) return;
+    clearTimeout(this.toastTimer);
+    now.hiding = true;
+    now.el.classList.add('hide');
     this.toastTimer = setTimeout(() => {
-      now.hiding = true;
-      now.el.classList.add('hide');
-      this.toastTimer = setTimeout(() => {
-        now.el.remove();
-        this.nextToast();
-      }, 450);
-    }, Math.max(0, ms - (Date.now() - now.shownAt)));
+      now.el.remove();
+      this.nextToast();
+    }, 450);
   }
 
   pick(key) {

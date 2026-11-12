@@ -1,5 +1,5 @@
 // Full-screen research tree (layout from config/research.json, shape like the user's photo).
-import { h, icon, pixelImg, itemChips, mobileQuery } from './dom.js';
+import { h, icon, pixelImg, itemChips, mobileQuery, onBack } from './dom.js';
 import { formatCount } from '../core/util.js';
 
 const CARD_W = 100;
@@ -127,12 +127,14 @@ export class ResearchTree {
     this.fit();
     this.refresh();
     if (selectId) this.select(selectId);
+    this.unback = onBack(() => this.close()); // the phone's Back key closes it
   }
 
   close() {
     if (!this.el) return;
     this.el.remove();
     this.el = null;
+    this.unback();
     this.cards.clear();
     document.removeEventListener('keydown', this.keyHandler);
     window.removeEventListener('pointermove', this.onMove);

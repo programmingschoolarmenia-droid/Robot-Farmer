@@ -1,7 +1,7 @@
 // The village screen: a map of the village across the river (each building is a picture in
 // assets/village, <icon>.png and its ruin <icon>-ruin.png), each building's needs, unlocks, recipes
 // and story, and the villagers' requests.
-import { h, icon, pixelImg, itemChips } from './dom.js';
+import { h, icon, pixelImg, itemChips, onBack } from './dom.js';
 import { formatCount } from '../core/util.js';
 
 const W = 480; // the background canvas (16:10, like the map)
@@ -62,12 +62,14 @@ export class VillageView {
     document.addEventListener('keydown', this.keyHandler);
     const open = this.village.buildings.find((b) => this.village.state(b.id) === 'open');
     this.select(this.village.requestsOpen ? 'board' : open ? open.id : this.village.buildings[0].id);
+    this.unback = onBack(() => this.close()); // the phone's Back key closes it
   }
 
   close() {
     if (!this.el) return;
     this.el.remove();
     this.el = null;
+    this.unback();
     document.removeEventListener('keydown', this.keyHandler);
   }
 
