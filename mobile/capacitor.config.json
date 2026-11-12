@@ -1,0 +1,13 @@
+{
+  "appId": "app.bridgysfarm.game",
+  "appName": "Բրիջիի ֆերման",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#eef6ff"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "native"
+    }
+  }
+}
