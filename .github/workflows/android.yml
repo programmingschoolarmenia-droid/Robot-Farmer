@@ -39,6 +39,8 @@ jobs:
           arch: x86_64
           profile: pixel_6
           disable-animations: true
+          cores: 4
+          ram-size: 4096M
           script: node mobile/android-test.mjs mobile/android/app/build/outputs/apk/debug/app-debug.apk mobile/android-report
       - if: always()
         run: cp mobile/android/app/build/outputs/apk/debug/app-debug.apk mobile/android-report/ || true

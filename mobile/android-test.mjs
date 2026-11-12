@@ -66,6 +66,7 @@ const start = async () => {
   return connect();
 };
 const loopFrames = (p) => p.evaluate(`new Promise((r) => { const a = bridgysFarm.screen.raf; setTimeout(() => r(bridgysFarm.screen.raf - a), 2000); })`);
+const fontsLoaded = `Promise.all([document.fonts.load('16px "Noto Sans Armenian"', 'Բ'), document.fonts.load('16px "JetBrains Mono"', 'a')]).then((f) => f.every((x) => x.length > 0))`;
 const rotate = (landscape) => {
   adb('shell', 'settings', 'put', 'system', 'accelerometer_rotation', '0');
   adb('shell', 'settings', 'put', 'system', 'user_rotation', landscape ? '1' : '0');
@@ -79,13 +80,17 @@ const step = async (name, fn) => {
 };
 
 let p;
+// A busy emulator often shows "Pixel Launcher isn't responding" (the home screen, not the game);
+// that window would cover the screenshots and take the keyboard, so Android is told not to show it.
+adb('shell', 'settings', 'put', 'secure', 'anr_show_background', '0');
+adb('shell', 'settings', 'put', 'global', 'hide_error_dialogs', '1');
 adb('install', '-r', '-g', APK);
 rotate(false);
 await step('start', async () => {
   p = await start();
   await p.waitFor(`!!document.querySelector('.login-tab')`, 'the login screen');
   notes.push(`screen: ${await p.evaluate(`JSON.stringify({ w: innerWidth, h: innerHeight, dpr: devicePixelRatio, ua: navigator.userAgent.match(/Chrome\\/[\\d.]+/)?.[0] })`)}`);
-  notes.push(`fonts inside the app: ${await p.evaluate(`document.fonts.ready.then(() => document.fonts.check('16px "Noto Sans Armenian"') && document.fonts.check('16px "JetBrains Mono"'))`)}`);
+  notes.push(`fonts inside the app: ${await p.evaluate(fontsLoaded)}`);
   shot('1-login');
 });
 
@@ -142,7 +147,9 @@ await step('keyboard', async () => {
 
 await step('landscape', async () => {
   rotate(true);
-  await sleep(2500);
+  await p.waitFor(`innerWidth > innerHeight`, 'the page to turn to landscape', 10000);
+  await sleep(1500);
+  notes.push(`landscape: page ${await p.evaluate(`innerWidth + '×' + innerHeight`)}, device ${adb('shell', 'wm', 'size').trim().split(': ').pop()}`);
   shot('5-landscape');
   if ((await loopFrames(p)) < 10) problems.push('landscape: game loop stopped');
   if (await p.evaluate(`document.documentElement.scrollWidth > innerWidth`)) problems.push('landscape: the page scrolls sideways');
@@ -158,7 +165,7 @@ await step('offline', async () => {
   await sleep(1500);
   p = await start();
   await p.waitFor(`!!document.querySelector('.login-submit, .login-tab')`, 'the start screen without internet');
-  notes.push(`fonts without internet: ${await p.evaluate(`document.fonts.ready.then(() => document.fonts.check('16px "Noto Sans Armenian"'))`)}`);
+  notes.push(`fonts without internet: ${await p.evaluate(fontsLoaded)}`);
   shot('6-offline');
 });
 adb('shell', 'svc', 'wifi', 'enable');
