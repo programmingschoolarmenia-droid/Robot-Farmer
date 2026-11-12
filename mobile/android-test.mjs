@@ -22,7 +22,11 @@ const shot = (name) => writeFileSync(join(OUT, `${name}.png`), execFileSync('adb
 // ---- the app's WebView over the DevTools protocol (debug builds allow it)
 async function connect() {
   let socket;
-  for (let i = 0; i < 60 && !socket; i++, await sleep(500)) socket = adb('shell', 'cat', '/proc/net/unix').match(/@(webview_devtools_remote_\d+)/)?.[1];
+  // The socket of this app process (a closed one can still be listed for a moment after a restart).
+  for (let i = 0; i < 60 && !socket; i++, await sleep(500)) {
+    const pid = adb('shell', `pidof ${APP} || true`).trim(); // (pidof fails while the app is still starting)
+    if (pid) socket = adb('shell', 'cat', '/proc/net/unix').match(new RegExp(`@(webview_devtools_remote_${pid})\\b`))?.[1];
+  }
   if (!socket) throw new Error('the app WebView did not start');
   adb('forward', `tcp:${PORT}`, `localabstract:${socket}`);
   let page;
