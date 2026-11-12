@@ -1,6 +1,6 @@
 // Plays the app on a real Android (emulator) and checks it, like tests/play.mjs does in Chrome:
 // installs the debug APK, registers a local account, runs a program, checks the game loop, the Code tab,
-// landscape, the on-screen keyboard and a start without internet. Screenshots and the log go to OUT.
+// that it stays portrait when the phone turns, the on-screen keyboard and a start without internet. Screenshots and the log go to OUT.
 // The APK must be a test build (npm run web:test): no live Firebase keys inside.
 // Run (with adb and a started emulator): node android-test.mjs <app-debug.apk> [OUT folder]
 import { execFileSync } from 'node:child_process';
@@ -145,14 +145,15 @@ await step('keyboard', async () => {
   await p.evaluate(`(document.activeElement && document.activeElement.blur(), bridgysFarm.screen.setTab('farm'))`);
 });
 
-await step('landscape', async () => {
+// The app is portrait only (AndroidManifest.xml): turning the phone must not turn the game.
+await step('turned phone', async () => {
   rotate(true);
-  await p.waitFor(`innerWidth > innerHeight`, 'the page to turn to landscape', 10000);
-  await sleep(1500);
-  notes.push(`landscape: page ${await p.evaluate(`innerWidth + '×' + innerHeight`)}, device ${adb('shell', 'wm', 'size').trim().split(': ').pop()}`);
-  shot('5-landscape');
-  if ((await loopFrames(p)) < 10) problems.push('landscape: game loop stopped');
-  if (await p.evaluate(`document.documentElement.scrollWidth > innerWidth`)) problems.push('landscape: the page scrolls sideways');
+  await sleep(3000);
+  shot('5-turned');
+  const size = await p.evaluate(`innerWidth + '×' + innerHeight`);
+  notes.push(`phone turned sideways: page ${size}`);
+  if (await p.evaluate(`innerWidth > innerHeight`)) problems.push(`the game turned to landscape (${size}), it must stay portrait`);
+  if ((await loopFrames(p)) < 10) problems.push('turned phone: game loop stopped');
   rotate(false);
   await sleep(1500);
 });
