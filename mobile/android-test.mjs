@@ -179,6 +179,10 @@ await step('back key', async () => {
   if (!front) throw new Error('Back closed the app instead of the settings window');
   if (await p.evaluate(`!!document.querySelector('.modal-backdrop')`)) problems.push('Back did not close the settings window');
   shot('6-back');
+  // Bridgy's welcome dialog is still open under it (Back would close that next); with nothing open, Back leaves.
+  await p.evaluate(`bridgysFarm.screen.bridgy.closeAll()`);
+  await sleep(1000);
+  if (await p.evaluate(`!!document.querySelector('.modal-backdrop') || bridgysFarm.screen.bridgy.isOpen`)) throw new Error('something is still open');
   adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
   await sleep(1500);
   notes.push(`Back with nothing open: app left ${!appInFront()}`);
