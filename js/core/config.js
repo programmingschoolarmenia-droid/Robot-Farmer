@@ -89,7 +89,7 @@ export function validateConfig(config) {
   let knownFunctions = new Set();
   try {
     const api = new GameApi({ config });
-    knownFunctions = new Set([...api.globals].filter(([, g]) => g.kind === 'function' || g.kind === 'lib').map(([k]) => k));
+    knownFunctions = new Set([...api.globals].filter(([, g]) => g.kind === 'function' || g.kind === 'lib' || g.kind === 'enum').map(([k]) => k)); // (a card can also open a word list, e.g. Notes)
   } catch (e) {
     err(R, '', `Չհաջողվեց ստուգել ֆունկցիաները (${e.message})`);
   }
@@ -168,6 +168,7 @@ export function validateConfig(config) {
   if (needObj('time', settings.time)) {
     needNum('time.ticksPerSecond', settings.time.ticksPerSecond, { min: 1 });
     needNum('time.speedPerTier', settings.time.speedPerTier, { min: 1 });
+    if (settings.time.noteBeatSeconds !== undefined) needNum('time.noteBeatSeconds', settings.time.noteBeatSeconds, { min: 0.05 });
     if (settings.time.speedResearch && !ids.has(settings.time.speedResearch)) err(S, 'time.speedResearch', `Անհայտ հետազոտություն «${settings.time.speedResearch}»`);
   }
   if (needObj('costs', settings.costs)) {

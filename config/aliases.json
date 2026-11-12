@@ -8,6 +8,7 @@
     "move": ["gnal", "գնալ"],
     "till": ["herkel", "հերկել"],
     "doAFlip": ["salto", "սալտո"],
+    "playNote": ["nvagel", "նվագել"],
     "print": ["tpel", "տպել"],
     "getEntityType": ["inchKa", "ինչկա"],
     "getGroundType": ["hoxiTesak", "հողիտեսակ"],
@@ -63,7 +64,8 @@
     "Fishes": ["Dzkner", "Ձկներ"],
     "Seasons": ["Sezonner", "Սեզոններ"],
     "Weathers": ["Exanakner", "Եղանակներ"],
-    "Machines": ["Sarqer", "Սարքեր"]
+    "Machines": ["Sarqer", "Սարքեր"],
+    "Notes": ["Notaner", "Նոտաներ"]
   },
 
   "members": {
@@ -130,6 +132,17 @@
       "Golden_Fish": ["Voske", "Ոսկե"],
       "Whitefish": ["Sig", "Սիգ"],
       "Catfish": ["Loqo", "Լոքո"]
+    },
+    "Notes": {
+      "C": ["Do", "Դո"],
+      "D": ["Re", "Ռե"],
+      "E": ["Mi", "Մի"],
+      "F": ["Fa", "Ֆա"],
+      "G": ["Sol", "Սոլ"],
+      "A": ["Lya", "Լյա", "La"],
+      "B": ["Si", "Սի"],
+      "HighC": ["Do2", "Դո2"],
+      "Rest": ["Dadar", "Դադար"]
     },
     "Seasons": {
       "Spring": ["Garun", "Գարուն"],
@@ -211,6 +224,7 @@
       "Variables": ["Popoxakanner", "Փոփոխականներ"],
       "Lists": ["Cucakner", "Ցուցակներ"],
       "Objects": ["Obyektner", "Օբյեկտներ"],
+      "Music": ["Erazhshtutyun", "Երաժշտություն"],
       "Costs": ["Gner", "Գներ"],
       "AutoUnlock": ["AvtomatBacum", "ԱվտոմատԲացում"],
       "Functions": ["Funkcianer", "Ֆունկցիաներ"],

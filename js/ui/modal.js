@@ -46,7 +46,7 @@ export function confirmModal(i18n, { title, text, okLabel, okClass = 'btn-danger
       buttons: [
         { label: i18n.t('ui.cancel'), onClick: (close) => close() },
         {
-          label: okLabel || 'OK',
+          label: okLabel || i18n.t('ui.ok'),
           class: okClass,
           onClick: (close) => {
             answered = true;
@@ -80,7 +80,7 @@ export function askText(i18n, { title, label, value = '', validate }) {
       body: [h('label', { style: { fontWeight: 700 } }, label), input, err],
       buttons: [
         { label: i18n.t('ui.cancel'), onClick: (c) => c() },
-        { label: 'OK', class: 'btn-primary', onClick: submit },
+        { label: i18n.t('ui.ok'), class: 'btn-primary', onClick: submit },
       ],
       onClose: () => resolve(result),
     });

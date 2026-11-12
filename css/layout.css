@@ -925,6 +925,7 @@
 .ranch-price b {
   font-family: var(--font-code);
   color: var(--navy);
+  white-space: nowrap; /* the price keeps its ֏ */
 }
 .ranch-price .muted {
   grid-column: 2 / 4;

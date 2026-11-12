@@ -8,6 +8,25 @@ window.addEventListener('pointerdown', () => (pressing = true), true);
 for (const type of ['pointerup', 'pointercancel', 'blur']) window.addEventListener(type, () => (pressing = false), true);
 export const isPressing = () => pressing;
 
+// Messages (Bridgy's bubbles, the game's toasts) let taps through to the buttons under them
+// (pointer-events: none); a tap on one still sends it away.
+const tapAways = new Map(); // element → close()
+window.addEventListener(
+  'pointerdown',
+  (e) => {
+    for (const [el, close] of tapAways) {
+      if (!el.isConnected) {
+        tapAways.delete(el);
+        continue;
+      }
+      const r = el.getBoundingClientRect();
+      if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) close();
+    }
+  },
+  true,
+);
+export const closeOnTap = (el, close) => tapAways.set(el, close);
+
 // Android's back key (and the browser's Back): each open window, view or Bridgy's dialog registers
 // with onBack(close), and Back closes the one on top instead of leaving the game. The game keeps one
 // history step per open thing (steps are all alike, so any order of closing works). A window closed
@@ -79,6 +98,13 @@ export function h(tag, props = {}, ...children) {
   }
   append(el, children);
   return el;
+}
+
+// A label with a shorter form for narrow phones (texts.json → ui.short.<key>; css/mobile.css shows it under 400 px).
+export function phoneText(t, key) {
+  const short = t(`ui.short.${key}`);
+  if (short === `ui.short.${key}`) return t(`ui.${key}`);
+  return [h('span', { class: 'text-long' }, t(`ui.${key}`)), h('span', { class: 'text-short' }, short)];
 }
 
 export function append(el, children) {

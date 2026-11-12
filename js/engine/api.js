@@ -18,6 +18,8 @@ export const ITEM_NAMES = [
 ];
 export const GROUND_NAMES = ['Grassland', 'Soil', 'Pond'];
 export const FISH_NAMES = ['Carp', 'Barbel', 'Trout', 'Golden_Fish', 'Whitefish', 'Catfish'];
+// playNote (nvagel): the notes' pitches in Hz (C4 … C5); Rest is a silent beat.
+export const NOTES = { C: 261.63, D: 293.66, E: 329.63, F: 349.23, G: 392.0, A: 440.0, B: 493.88, HighC: 523.25, Rest: 0 };
 export const MACHINE_NAMES = ['Mill', 'JamPot', 'Tonir']; // the village kitchen (config/village.json → machines)
 
 // Python habits → JavaScript (shown in "not defined" errors).
@@ -89,6 +91,7 @@ export class GameApi {
     mk('Machines', MACHINE_NAMES);
     mk('Hats', Object.keys(this.settings.hats || { Straw_Hat: {} }));
     mk('Unlocks', this.game.config.research.nodes.map((n) => n.id));
+    mk('Notes', Object.keys(NOTES));
     this.buildConstants(aliases);
   }
 
@@ -163,7 +166,7 @@ export class GameApi {
     const canon = this.canonicalName(name);
     const g = this.globals.get(canon);
     if (!g) return 'unknown';
-    if ((g.kind === 'function' || g.kind === 'lib') && !this.game.research.hasFunction(canon)) return 'locked';
+    if ((g.kind === 'function' || g.kind === 'lib' || g.kind === 'enum') && !this.game.research.hasFunction(canon)) return 'locked';
     return 'unlocked';
   }
 
@@ -172,7 +175,7 @@ export class GameApi {
     const out = [];
     for (const [name, g] of this.globals) {
       if (name === 'undefined' || name === 'NaN' || name === 'Infinity') continue;
-      if (!includeLocked && (g.kind === 'function' || g.kind === 'lib') && !this.game.research.hasFunction(name)) continue;
+      if (!includeLocked && (g.kind === 'function' || g.kind === 'lib' || g.kind === 'enum') && !this.game.research.hasFunction(name)) continue;
       out.push(this.displayName(name));
     }
     return out;
@@ -396,6 +399,23 @@ export class GameApi {
       d.anim.end = d.anim.start + seconds;
       I.action(ticks, true);
       game.events.emit('flip', { drone: d.id });
+    });
+
+    // --- research: Music. A note takes game time like a flip (the drone hops); Rest is a silent wait.
+    this.def('playNote', (I, args, node) => {
+      api.needArgs(args, 1, 'playNote', node);
+      const note = api.needEnum(args[0], 'Notes', 'playNote', 1, node);
+      const beats = args.length > 1 ? args[1] : 1;
+      if (typeof beats !== 'number' || !(beats >= 0.25 && beats <= 4)) throw new GameError('noteLength', { gotText: formatValue(beats, true) }, node);
+      const d = I.drone;
+      const seconds = beats * ((this.settings.time && this.settings.time.noteBeatSeconds) ?? 0.5);
+      if (NOTES[note]) {
+        d.startAnim('sing', d.x, d.y, d.x, d.y, 0, 0, seconds);
+        d.anim.start = api.now(I);
+        d.anim.end = d.anim.start + seconds;
+        game.events.emit('music', { drone: d.id, freq: NOTES[note], seconds });
+      }
+      I.action(Math.max(1, Math.round(seconds * d.tickRate())), true);
     });
 
     // --- research: Expand

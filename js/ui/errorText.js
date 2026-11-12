@@ -15,6 +15,7 @@ export function describeError(err, i18n, game) {
       p.name = api.displayName(canon);
       if (game.isRanch && game.shopItem(gate)) key = 'lockedFunctionRanch'; // sold in the ranch's shop
       else if (game.village.building(gate)) key = 'lockedFunctionVillage'; // unlocked by repairing a village building
+      else if ((api.globals.get(canon) || {}).kind === 'enum') key = 'lockedName'; // a word list (Notaner), not a function
       break;
     }
     case 'notFunction':

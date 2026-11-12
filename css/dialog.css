@@ -175,7 +175,17 @@
   font-weight: 800;
   color: #7a4f00;
 }
+.bridgy-where-row {
+  display: flex;
+  flex-wrap: wrap; /* on a narrow box the «show» button goes under the line number */
+  align-items: center;
+  gap: 6px 10px;
+}
 .bridgy-error-where {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap; /* «6-րդ տող» stays in one piece */
+  text-overflow: ellipsis;
   font-family: var(--font-code);
   font-size: 0.85rem;
   color: var(--red-dark);

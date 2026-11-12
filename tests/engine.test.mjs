@@ -302,3 +302,18 @@ test('save and load keep the farm', async () => {
   assert.equal(copy.world.width, 3);
   assert.equal(copy.world.tile(1, 1).ground, 'Soil');
 });
+
+test('nvagel(): locked until the Music card; a note lasts its beats, a rest is silent, a wrong length is explained', () => {
+  const before = makeGame({ levels: { Debug: 1 } });
+  assert.equal(runCode(before, 'nvagel(Notaner.Do, 1);').error.code, 'lockedFunction');
+  assert.equal(runCode(before, 'tpel(Notaner.Do);').error.params.canonical, 'Notes'); // the word list is locked too
+  const game = makeGame({ levels: { Music: 1 } });
+  const heard = [];
+  game.events.on('music', (e) => heard.push([e.freq, e.seconds]));
+  const r = runCode(game, 'nvagel(Notaner.Do, 2);\nnvagel(Notaner.Dadar);\nnvagel(Notaner.Lya, 0.5);', { step: 0.01 });
+  assert.equal(r.error, null);
+  assert.deepEqual(heard, [[261.63, 1], [440, 0.25]]);
+  assert.ok(Math.abs(r.seconds - 1.75) < 0.05, `${r.seconds} s`);
+  assert.equal(runCode(game, 'nvagel(Notaner.Mi, 9);').error.code, 'noteLength');
+  assert.equal(runCode(game, 'nvagel(1);').error.code, 'badArg');
+});

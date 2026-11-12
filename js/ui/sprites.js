@@ -1331,6 +1331,8 @@ function icons(book) {
   put('player', person());
   put('tv', tv());
   put('code', codeIcon());
+  put('console', consoleIcon());
+  put('note', musicNote());
   put('flame', flame());
   put('crown', crown());
   put('cap', gradCap());
@@ -1463,6 +1465,29 @@ function codeIcon() {
   p.line(5, 5, 3, 7, PAL.yellow).line(3, 7, 5, 9, PAL.yellow);
   p.line(9, 4, 7, 10, PAL.white);
   p.line(11, 5, 13, 7, PAL.yellow).line(13, 7, 11, 9, PAL.yellow);
+  p.outline(PAL.outline);
+  return p;
+}
+
+// nvagel(): a pair of eighth notes (the Music research card, and above a drone that plays).
+function musicNote() {
+  const p = new Pixels();
+  p.rect(5, 3, 2, 9, PAL.blue).rect(12, 2, 2, 9, PAL.blue);
+  p.rect(5, 2, 9, 2, PAL.blue).rect(7, 1, 7, 1, PAL.blue);
+  p.disc(4, 12.5, 2.2, PAL.blue).disc(11, 11.5, 2.2, PAL.blue);
+  p.set(3, 12, PAL.white).set(10, 11, PAL.white);
+  p.outline(PAL.outline);
+  return p;
+}
+
+// The console (phones open it with this): a dark window with a green prompt and a line of output.
+function consoleIcon() {
+  const p = new Pixels();
+  p.rect(1, 2, 14, 12, PAL.navy);
+  p.rect(1, 2, 14, 2, PAL.lightGrey);
+  p.set(3, 3, PAL.grey).set(5, 3, PAL.grey);
+  p.line(3, 6, 5, 8, PAL.lightGreen).line(5, 8, 3, 10, PAL.lightGreen);
+  p.rect(7, 10, 4, 1, PAL.white);
   p.outline(PAL.outline);
   return p;
 }

@@ -1,7 +1,7 @@
 // The carpets' full-screen window: the loom (the sample next to the carpet growing, how alike they are,
 // the yarn on the loom), today's orders, my carpets and the weekly contest. The ranch keeps running
 // under it; RanchScreen calls update() a few times a second.
-import { h, icon, pixelImg, carpetCanvas, paintCarpet, onBack } from './dom.js';
+import { h, icon, pixelImg, carpetCanvas, paintCarpet, onBack, phoneText } from './dom.js';
 import { confirmModal } from './modal.js';
 import { carpetGallery } from './account.js';
 import { alikeShare, sampleCells } from '../engine/carpet.js';
@@ -17,7 +17,7 @@ export class LoomScreen {
     this.onClose = onClose;
     const t = app.i18n.t;
     this.body = h('div', { class: 'loom-body' });
-    this.tabs = (test ? TABS.slice(0, 2) : TABS).map((id) => h('button', { class: 'login-tab', dataset: { tab: id }, onclick: () => this.setTab(id) }, t(`ui.loomTab${id}`)));
+    this.tabs = (test ? TABS.slice(0, 2) : TABS).map((id) => h('button', { class: 'login-tab', dataset: { tab: id }, onclick: () => this.setTab(id) }, phoneText(t, `loomTab${id}`)));
     this.el = h(
       'section',
       { class: 'loom-screen' },

@@ -1,6 +1,6 @@
 // Bridgy: the mascot's dialogs (portrait bottom-left + text box), lessons, hints,
 // error explanations, the help menu and quick reaction bubbles.
-import { h, icon, highlightCode, mobileQuery, onBack } from './dom.js';
+import { h, icon, highlightCode, mobileQuery, onBack, closeOnTap } from './dom.js';
 
 const TOAST_HURRY = 4000; // ms a message stays at most while others wait
 const TOAST_QUEUE = 5; // messages waiting at most (the oldest goes)
@@ -297,7 +297,8 @@ export class Bridgy {
       void avatar.offsetWidth;
       avatar.classList.add('react');
     }
-    next.el = h('div', { class: 'bridgy-toast', onclick: () => this.hideToast(next) }, next.text); // a tap sends it away
+    next.el = h('div', { class: 'bridgy-toast' }, next.text);
+    closeOnTap(next.el, () => this.hideToast(next));
     next.shownAt = Date.now();
     this.toasts.append(next.el);
     this.planToastEnd();
@@ -336,7 +337,7 @@ export class Bridgy {
       nodes.push(
         h(
           'div',
-          { style: { display: 'flex', gap: '10px', alignItems: 'center' } },
+          { class: 'bridgy-where-row' },
           h('span', { class: 'bridgy-error-where' }, described.where),
           err.loc && this.onShowLine ? h('button', { class: 'btn btn-sm', onclick: () => this.onShowLine(err) }, icon(this.app.sprites, 'eye'), ' ', t('ui.showLine')) : null,
         ),

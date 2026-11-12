@@ -39,6 +39,8 @@
     "guestRemind": "Դու խաղում ես որպես հյուր, և ֆերման պահվում է միայն այս զննարկչում։ Որ այն չկորցնես, պահպանիր այն քո անունով։",
     "guestLater": "Հետո",
     "cancel": "Չեղարկել",
+    "ok": "Լավ",
+    "short": { "marketTitle": "Առևտուր", "marketTabAll": "Բոլորը", "marketTabMine": "Իմը", "marketTabNew": "Նոր", "loomTabGallery": "Իմը", "readOnlyWhileRunning": "Կոդը աշխատում է։ Փոխելու համար՝ ⏹", "helpCommands": "Հրամաններ" },
     "delete": "Ջնջել",
 
     "leadersTitle": "Լավագույն ֆերմերները",
@@ -753,6 +755,7 @@
     "Items": "իր, օրինակ՝ Irer.Coren",
     "Grounds": "հող, օրինակ՝ Hoxer.Hox",
     "Hats": "գլխարկ, օրինակ՝ Glxarkner.Karmir",
+    "Notes": "նոտա, օրինակ՝ Notaner.Do",
     "Unlocks": "հետազոտություն, օրինակ՝ Hetazotutyunner.Aragutyun",
     "Direction": "ուղղություն՝ Verev, Nerqev, Aj կամ Dzax",
     "function": "ֆունկցիա",
@@ -792,6 +795,8 @@
 
     "lockedSyntax": "Դու դեռ չես բացել {featureName}։ Բացիր «{nodeName}» հետազոտությունը։",
     "lockedFunction": "{name}() ֆունկցիան դեռ բացված չէ։ Բացիր «{nodeName}» հետազոտությունը։",
+    "lockedName": "«{name}»-ը դեռ բացված չէ։ Բացիր «{nodeName}» հետազոտությունը։",
+    "noteLength": "nvagel()-ի երկրորդ թիվը նոտայի տևողությունն է զարկերով՝ 0.25-ից 4, իսկ գրված է՝ {gotText}։ Օրինակ՝ nvagel(Notaner.Do, 1)",
     "lockedFunctionVillage": "{name}() ֆունկցիան դեռ բացված չէ։ Վերանորոգիր «{nodeName}»-ը գյուղում («Գյուղ» կոճակ)։",
     "lockedFunctionRanch": "{name}() հրամանը դեռ չունես։ Գնիր այն ռանչոյի «Խանութ»-ից։",
     "unsupported": "«{what}» այս խաղում չի աշխատում։ Փորձիր լուծել ուրիշ ձևով։",

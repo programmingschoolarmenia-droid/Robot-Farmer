@@ -132,18 +132,23 @@ async function play(width, height) {
     if (await evaluate(`document.documentElement.scrollWidth > innerWidth`)) problems.push('the page scrolls sideways');
 
     if (phone) {
-      // Code tab: the symbol keys scroll to the last one, and the console's clear button shows.
+      // Code tab: the symbol keys scroll to the last one; the console's button opens it, and its clear button shows.
       await evaluate(`bridgysFarm.screen.setTab('code')`);
       await sleep(400);
       const code = await evaluate(`(() => {
         const inView = (r) => r.width > 0 && r.height > 0 && r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1;
         const bar = document.querySelector('.screen-game .symbol-bar');
+        const toggle = document.querySelector('.screen-game .console-toggle');
+        if (!bar || !toggle) return { missing: !bar ? 'symbol keys' : 'console button' };
+        if (!inView(toggle.getBoundingClientRect())) return { missing: 'console button on screen' };
+        toggle.click();
         const clear = document.querySelector('.screen-game .console-head button');
-        if (!bar || !clear) return { missing: !bar ? 'symbol keys' : 'console clear button' };
         bar.scrollLeft = bar.scrollWidth;
         const keys = bar.querySelectorAll('.sym');
         const last = keys[keys.length - 1].getBoundingClientRect();
-        return { barInView: inView(bar.getBoundingClientRect()), lastKey: inView(last) && last.right <= bar.getBoundingClientRect().right + 1, clear: inView(clear.getBoundingClientRect()) };
+        const shown = { barInView: inView(bar.getBoundingClientRect()), lastKey: inView(last) && last.right <= bar.getBoundingClientRect().right + 1, clear: inView(clear.getBoundingClientRect()) };
+        toggle.click();
+        return shown;
       })()`);
       if (code.missing) problems.push(`Code tab: no ${code.missing}`);
       else {

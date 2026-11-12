@@ -6,7 +6,7 @@
   "scripts": {
     "web": "node copy-web.mjs",
     "web:test": "node copy-web.mjs --test",
-    "sync": "npx cap sync android"
+    "sync": "node copy-web.mjs && npx cap sync android"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",

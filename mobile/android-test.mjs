@@ -1,6 +1,6 @@
 // Plays the app on a real Android (emulator) and checks it, like tests/play.mjs does in Chrome:
 // installs the debug APK, registers a local account, runs a program, checks the game loop, the Code tab,
-// that it stays portrait when the phone turns, the on-screen keyboard and a start without internet. Screenshots and the log go to OUT.
+// that it stays portrait when the phone turns, the on-screen keyboard, the Back key and a start without internet. Screenshots and the log go to OUT.
 // The APK must be a test build (npm run web:test): no live Firebase keys inside.
 // Run (with adb and a started emulator): node android-test.mjs <app-debug.apk> [OUT folder]
 import { execFileSync } from 'node:child_process';
@@ -126,9 +126,13 @@ await step('code tab', async () => {
   const code = await p.evaluate(`(() => {
     const inView = (r) => r.width > 0 && r.height > 0 && r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1;
     const bar = document.querySelector('.screen-game .symbol-bar');
+    const toggle = document.querySelector('.screen-game .console-toggle');
+    if (!bar || !toggle) return { missing: !bar ? 'symbol keys' : 'console button' };
+    toggle.click(); // (the console hides until its button opens it)
     const clear = document.querySelector('.screen-game .console-head button');
-    if (!bar || !clear) return { missing: !bar ? 'symbol keys' : 'console clear button' };
-    return { bar: inView(bar.getBoundingClientRect()), clear: inView(clear.getBoundingClientRect()) };
+    const shown = { bar: inView(bar.getBoundingClientRect()), clear: inView(clear.getBoundingClientRect()) && inView(toggle.getBoundingClientRect()) };
+    toggle.click();
+    return shown;
   })()`);
   if (code.missing) problems.push(`Code tab: no ${code.missing}`);
   else if (!code.bar || !code.clear) problems.push(`Code tab: ${!code.bar ? 'symbol keys' : "console's clear button"} off screen`);
@@ -162,6 +166,25 @@ await step('turned phone', async () => {
   await sleep(1500);
 });
 
+// Android's Back key closes the window on top (MainActivity goes back in the game's history steps,
+// js/ui/dom.js onBack) and keeps the app open; with nothing open it leaves the app.
+const appInFront = () => adb('shell', 'dumpsys', 'activity', 'activities').split('\n').some((l) => /ResumedActivity/.test(l) && l.includes(APP));
+await step('back key', async () => {
+  await p.evaluate(`bridgysFarm.screen.openSettings()`);
+  await sleep(800);
+  adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
+  await sleep(1500);
+  const front = appInFront();
+  notes.push(`Back with the settings open: app still open ${front}`);
+  if (!front) throw new Error('Back closed the app instead of the settings window');
+  if (await p.evaluate(`!!document.querySelector('.modal-backdrop')`)) problems.push('Back did not close the settings window');
+  shot('6-back');
+  adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
+  await sleep(1500);
+  notes.push(`Back with nothing open: app left ${!appInFront()}`);
+  if (appInFront()) problems.push('Back with nothing open did not leave the app');
+});
+
 // No internet at all: the app must still open (its files and fonts are inside) and continue the farm.
 await step('offline', async () => {
   p.close();
@@ -171,7 +194,7 @@ await step('offline', async () => {
   p = await start();
   await p.waitFor(`!!document.querySelector('.login-submit, .login-tab')`, 'the start screen without internet');
   notes.push(`fonts without internet: ${await p.evaluate(fontsLoaded)}`);
-  shot('6-offline');
+  shot('7-offline');
 });
 adb('shell', 'svc', 'wifi', 'enable');
 adb('shell', 'svc', 'data', 'enable');

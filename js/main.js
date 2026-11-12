@@ -8,7 +8,7 @@ import { LoginScreen, accountErrorText } from './ui/account.js';
 import { GameScreen } from './ui/gameScreen.js';
 import { GameAudio } from './audio.js';
 import { Confetti } from './ui/confetti.js';
-import { h } from './ui/dom.js';
+import { h, closeOnTap } from './ui/dom.js';
 
 // Phones: size the app to the visible area (on iPhone the keyboard only shrinks the visual viewport), and
 // know whether the keyboard is really open: it can be closed while the editor keeps the focus.
@@ -66,6 +66,7 @@ async function boot() {
     toast(text, kind = '') {
       const el = h('div', { class: `toast ${kind}` }, text);
       toastStack.append(el);
+      closeOnTap(el, () => el.remove());
       setTimeout(() => el.remove(), 3500);
     },
   };

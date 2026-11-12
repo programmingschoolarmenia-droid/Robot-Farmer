@@ -49,6 +49,11 @@
     }
   ],
   "lessons": {
+    "Music": [
+      { "emotion": "celebrating", "text": "Բիփ-բուփ, հիմա դրոնը կարող է նվագել։ nvagel() հրամանը նվագում է մեկ նոտա, իսկ դրոնը նվագելիս թռչկոտում է։" },
+      { "emotion": "happy", "text": "Առաջինը նոտան է, երկրորդը՝ քանի զարկ է այն հնչում (մեկ զարկը կես վայրկյան է)՝", "code": "nvagel(Notaner.Do, 1);\nnvagel(Notaner.Sol, 2);" },
+      { "emotion": "thinking", "text": "Նոտաներն են՝ Do, Re, Mi, Fa, Sol, Lya, Si և բարձր Do2։ Notaner.Dadar-ը լռություն է։ Եթե նոտաները դնես ցուցակի մեջ և նվագես ցիկլով, կստացվի երգ։ Փորձի՛ր նվագել քո սիրած մեղեդին։" }
+    ],
     "Loops": [
       {
         "emotion": "celebrating",

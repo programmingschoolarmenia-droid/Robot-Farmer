@@ -1,6 +1,6 @@
 // Code editor (CodeMirror 5) with file tabs, live error marks, the running-line highlight,
 // autocomplete limited to unlocked functions, and the console.
-import { h, clear, mobileQuery, icon } from './dom.js';
+import { h, clear, mobileQuery, icon, phoneText } from './dom.js';
 import { describeError } from './errorText.js';
 import { askText, confirmModal } from './modal.js';
 
@@ -52,6 +52,7 @@ export class ConsolePanel {
       line.addEventListener('click', () => this.onJump(opts.module, opts.loc.line));
     }
     this.body.append(line);
+    if (this.onLine) this.onLine();
     this.count++;
     while (this.count > 300) {
       this.body.firstChild.remove();
@@ -85,11 +86,15 @@ export class EditorPanel {
 
     this.tabsBar = h('div', { class: 'tabs-bar' });
     this.wrap = h('div', { class: 'editor-wrap' });
-    this.banner = h('div', { class: 'editor-banner', hidden: true }, this.i18n.t('ui.readOnlyWhileRunning'));
+    this.banner = h('div', { class: 'editor-banner', hidden: true }, phoneText(this.i18n.t, 'readOnlyWhileRunning'));
     this.wrap.append(this.banner);
     this.console = new ConsolePanel(this.i18n, (module, line) => this.jumpTo(module, line));
     this.suggestBar = h('div', { class: 'suggest-bar' });
-    container.append(this.tabsBar, this.wrap, h('div', { class: 'phone-keys' }, this.suggestBar, this.symbolBar()), this.console.el);
+    // Phones: the console hides until this button opens it; a dot on it means new lines came.
+    this.container = container;
+    this.consoleBtn = h('button', { class: 'btn btn-sm console-toggle', title: this.i18n.t('ui.console'), onclick: () => this.toggleConsole() }, icon(app.sprites, 'console'));
+    this.console.onLine = () => this.consoleBtn.classList.toggle('has-new', !container.classList.contains('console-open'));
+    container.append(this.tabsBar, this.wrap, h('div', { class: 'phone-keys' }, this.suggestBar, this.symbolBar()), this.console.el, this.consoleBtn);
 
     this.cm = CM(this.wrap, {
       value: '',
@@ -475,6 +480,13 @@ export class EditorPanel {
   }
 
   // The phone keyboard's word is only on the screen until CodeMirror reads it (a little after it ends).
+  toggleConsole() {
+    const open = this.container.classList.toggle('console-open');
+    this.consoleBtn.classList.toggle('active', open);
+    this.consoleBtn.classList.remove('has-new');
+    if (open) this.console.body.scrollTop = this.console.body.scrollHeight;
+  }
+
   wordOpen() {
     const input = this.cm.display.input;
     return !!input.composing || input.readDOMTimeout != null;

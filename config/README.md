@@ -42,6 +42,7 @@ problem**; nothing breaks silently.
 | `speedResearch` | Research id that makes the drone faster (`"Speed"`) |
 | `speedPerTier` | Speed multiplier per level of that research (`1.33592`: 7 levels end at ×7.59; the ranch's shop has its own in `ranch.json`) |
 | `doAFlipSeconds` | How long `salto()` takes |
+| `noteBeatSeconds` | How long one beat of `nvagel()` takes (0.5: `nvagel(Notaner.Do, 2)` lasts 1 s) |
 
 ### `costs`
 `actionSuccess` (200) — ticks for a successful drone action (move, harvest, plant, till…);

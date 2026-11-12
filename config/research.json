@@ -377,6 +377,15 @@
       "grants": { "syntax": ["objects"], "functions": ["Object"] }
     },
     {
+      "id": "Music",
+      "icon": "note",
+      "name": "Երաժշտություն",
+      "description": "Դրոնը նվագում է՝ nvagel(Notaner.Do, 1)։ Նոտաների ցուցակն ու ցիկլը դառնում են երգ։ Պարզապես ուրախության համար։",
+      "parents": ["Lists"],
+      "tiers": [{ "Carrot": 800 }],
+      "grants": { "functions": ["playNote", "Notes"] }
+    },
+    {
       "id": "Costs",
       "label": "arzheq()",
       "name": "Գներ",

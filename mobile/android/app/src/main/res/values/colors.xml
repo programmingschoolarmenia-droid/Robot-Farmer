@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The light sky of the game's start screen (css/theme.css: sky-1) -->
+    <color name="splash_background">#CFE5FF</color>
+</resources>

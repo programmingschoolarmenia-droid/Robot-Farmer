@@ -1,6 +1,6 @@
 // The player market's window: everybody's orders, my orders and a new order. The farm keeps
 // running under it; every change of goods goes through GameScreen.trade().
-import { h, icon, pixelImg, clear } from './dom.js';
+import { h, icon, pixelImg, clear, phoneText } from './dom.js';
 import { openModal, confirmModal } from './modal.js';
 import { accountErrorText, avatar } from './account.js';
 import { AccountError } from '../storage/account.js';
@@ -18,9 +18,9 @@ export class MarketScreen {
     const { t } = this.app.i18n;
     this.content = h('div', { class: 'market-content' });
     this.foot = h('div', { class: 'market-send', hidden: true });
-    this.tabs = TABS.map((id) => h('button', { class: 'login-tab', dataset: { tab: id }, onclick: () => this.setTab(id) }, t(`ui.marketTab${id}`)));
+    this.tabs = TABS.map((id) => h('button', { class: 'login-tab', dataset: { tab: id }, onclick: () => this.setTab(id) }, phoneText(t, `marketTab${id}`)));
     this.closeModal = openModal({
-      title: [icon(this.app.sprites, 'market'), ` ${t('ui.marketTitle')}`],
+      title: [icon(this.app.sprites, 'market'), ' ', phoneText(t, 'marketTitle')],
       className: 'market-modal',
       body: [h('div', { class: 'login-tabs market-tabs' }, this.tabs), this.content, this.foot],
       onClose: () => {

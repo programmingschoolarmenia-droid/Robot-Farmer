@@ -8,6 +8,7 @@ export class GameAudio {
     this.musicTimer = null;
     this.musicStep = 0;
     this.lastPlay = new Map();
+    this.voices = 0; // nvagel() notes sounding now
     const unlock = () => {
       this.ensure();
       if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
@@ -60,6 +61,29 @@ export class GameAudio {
     osc.connect(g).connect(this.master);
     osc.start(t0);
     osc.stop(t0 + dur + 0.02);
+  }
+
+  // nvagel(): one soft note (like a music box) on the sound effects' volume. At most 4 sound at once
+  // (many drones must not become a choir), and none while the tab is hidden.
+  note(freq, seconds) {
+    const ctx = this.ensure();
+    if (!ctx || this.sfxVolume <= 0 || ctx.state !== 'running' || document.hidden || this.voices >= 4) return;
+    const t0 = ctx.currentTime;
+    const dur = Math.min(8, Math.max(0.06, seconds));
+    const vol = 0.22 * this.sfxVolume;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.015);
+    g.gain.setValueAtTime(vol, t0 + dur * 0.7);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g).connect(this.master);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+    this.voices++;
+    osc.onended = () => this.voices--;
   }
 
   // Avoid machine-gun sounds when many things happen at once.

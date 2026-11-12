@@ -30,6 +30,14 @@ import { weekTask, givePrize, giveContestPrize } from '../engine/challenge.js';
 // Warnings Bridgy explains in a dialog the first time they happen.
 const TEACH_WARNINGS = new Set(['plant_wrongGround', 'plant_cost', 'plant_entityLocked', 'hatLocked', 'indexOutOfRange', 'notEnoughItem', 'harvestUnripe', 'fnNoCall', 'fnAsCondition', 'assignInCondition', 'enumVsText', 'pondResting', 'mushroomSide', 'mushroomHid']);
 
+// Bridgy's news (today's luck, a festival, the season and the weather, a new rank, «you moved up») wait
+// for the first minutes of a visit (the start is for the student, and soon for a tutorial), then come
+// one at a time, a minute apart, all by minute 10. What the student causes (a harvest, a research)
+// is still said right away.
+const NEWS_QUIET = 120000;
+const NEWS_GAP = 60000;
+const NEWS_END = 600000;
+
 export class GameScreen {
   // save: the player's saved farm (null for a new one); onExit: after logging out.
   constructor(app, save, onExit) {
@@ -55,6 +63,8 @@ export class GameScreen {
     this.tier = tierOf(app.config.settings, this.game.stats.points()).index;
     this.lastError = null;
     this.destroyed = false;
+    this.startedAt = Date.now(); // (see news)
+    this.newsQueue = [];
     this.offs = [];
     this.build();
     this.applyPrefs();
@@ -380,6 +390,7 @@ export class GameScreen {
       if (e.hat) setTimeout(() => !this.destroyed && this.bridgy.toast(t('ui.hatUnlocked', { hatName: app.i18n.hat(e.hat) }), 8000), 1200);
     });
     on('flip', () => app.audio.play('flip'));
+    on('music', (e) => app.audio.note(e.freq, e.seconds / (this.game.speed || 1))); // (game seconds → real ones)
     on('pumpkinDied', () => {
       app.audio.play('died');
       if (this.first('pumpkinDied')) this.bridgy.say([{ emotion: 'worried', text: this.bridgy.pick('pumpkinDied') }], { key: 'died' });
@@ -389,10 +400,12 @@ export class GameScreen {
       this.updateCalendarChip();
       if (!e.before) return;
       if (e.day !== e.before.day) {
-        this.showLuck();
-        this.greetFestival();
+        this.news(() => this.showLuck());
+        this.news(() => this.greetFestival());
       }
-      this.calendarToast(e.season !== e.before.season, e.weather !== e.before.weather);
+      const season = e.season !== e.before.season;
+      const weather = e.weather !== e.before.weather;
+      if (season || weather) this.news(() => this.calendarToast(season, weather));
     });
     on('festivalFound', () => app.audio.play('harvest'));
     on('note', () => this.bridgy.toast(t('ui.noteGiven', { name: this.lastVillager || '' }), 9000));
@@ -448,6 +461,27 @@ export class GameScreen {
     on('items', () => {
       this.itemsDirty = true;
     });
+  }
+
+  // show() returns true when it said something (else the next news goes at once).
+  news(show) {
+    this.newsQueue.push(show);
+    this.planNews();
+  }
+
+  planNews() {
+    if (this.newsTimer || !this.newsQueue.length) return;
+    const now = Date.now();
+    const end = this.startedAt + NEWS_END;
+    const gap = now >= end ? 0 : Math.min(NEWS_GAP, (end - now) / this.newsQueue.length);
+    const at = Math.max(this.startedAt + NEWS_QUIET, (this.newsAt || 0) + gap, now);
+    this.newsTimer = setTimeout(() => {
+      this.newsTimer = null;
+      if (this.destroyed) return;
+      this.newsAt = Date.now();
+      while (this.newsQueue.length && !this.newsQueue.shift()());
+      this.planNews();
+    }, at - now);
   }
 
   first(key) {
@@ -779,9 +813,10 @@ export class GameScreen {
   // Bridgy announces today's luck once a day.
   showLuck() {
     const s = this.game.calendar.state;
-    if (!s || !s.luck || this.ui.luckDay === s.day) return;
+    if (!s || !s.luck || this.ui.luckDay === s.day) return false;
     this.ui.luckDay = s.day;
     this.bridgy.toast(this.app.i18n.t('ui.luckToday', { text: s.luck.text }), 9000);
+    return true;
   }
 
   // One toast for a new season (every time) and a weather seen for the first time.
@@ -794,22 +829,24 @@ export class GameScreen {
     }
     if (newWeather && s.weather !== 'Sunny' && this.first(`weather_${s.weather}`)) parts.push(this.weatherText(s.weather));
     if (parts.length) this.bridgy.toast(parts.join(' '), 5000 + 2500 * parts.length);
+    return parts.length > 0;
   }
 
   // After the intro: today's luck, and what the season and the weather do (the first time).
   greetCalendar() {
     if (this.destroyed || !this.game.calendar.state) return;
-    this.showLuck();
-    this.greetFestival();
-    this.calendarToast(!this.ui.firsts.includes('season'), true);
+    this.news(() => this.showLuck());
+    this.news(() => this.greetFestival());
+    this.news(() => this.calendarToast(!this.ui.firsts.includes('season'), true));
   }
 
   // Bridgy's greeting, once per festival (without the Festival square: only its bonus works).
   greetFestival() {
     const f = this.game.festivals.today;
-    if (!f || !this.first(`festival:${f.key}`)) return;
+    if (!f || !this.first(`festival:${f.key}`)) return false;
     const extra = this.game.festivals.active ? '' : ` ${this.app.i18n.t('ui.festivalNeedSquare')}`;
     this.bridgy.say([{ emotion: 'celebrating', text: `${f.greeting}${extra}` }], { key: `festival:${f.key}` });
+    return true;
   }
 
   // Bridgy's TV: today's luck, the season and the weather with live countdowns.
@@ -1154,9 +1191,12 @@ export class GameScreen {
   checkTier() {
     const { index, tier } = tierOf(this.app.config.settings, this.game.stats.points());
     if (index > this.tier) {
-      this.app.audio.play('quest');
-      if (this.prefs.animations !== false && !this.prefs.lowGraphics) this.app.confetti.burst(window.innerWidth / 2, window.innerHeight / 3, 90);
-      this.bridgy.toast(this.app.i18n.t('ui.tierUp', { name: tier.name }), 6000);
+      this.news(() => {
+        this.app.audio.play('quest');
+        if (this.prefs.animations !== false && !this.prefs.lowGraphics) this.app.confetti.burst(window.innerWidth / 2, window.innerHeight / 3, 90);
+        this.bridgy.toast(this.app.i18n.t('ui.tierUp', { name: tier.name }), 6000);
+        return true;
+      });
     }
     this.tier = index;
   }
@@ -1172,7 +1212,11 @@ export class GameScreen {
       this.dayPlace = { today, place };
       if (last && last.today === today && place < last.place && !this.destroyed) {
         const t = this.app.i18n.t;
-        this.bridgy.toast(t('ui.movedUp', { place: place === 1 ? t('ui.ordinalFirst') : t('ui.ordinal', { n: place }) }), 6000);
+        const text = t('ui.movedUp', { place: place === 1 ? t('ui.ordinalFirst') : t('ui.ordinal', { n: place }) });
+        this.news(() => {
+          this.bridgy.toast(text, 6000);
+          return true;
+        });
       }
     } catch (e) {
       console.warn("Today's place not checked:", e); // the save itself worked; the next one tries again
@@ -1272,6 +1316,7 @@ export class GameScreen {
     cancelAnimationFrame(this.raf);
     clearInterval(this.saveTimer);
     clearInterval(this.marketTimer);
+    clearTimeout(this.newsTimer);
     document.removeEventListener('visibilitychange', this.onVisibility);
     window.removeEventListener('beforeunload', this.onUnload);
     window.removeEventListener('resize', this.onResize);

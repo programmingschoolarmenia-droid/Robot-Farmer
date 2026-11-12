@@ -284,10 +284,13 @@
   font-weight: 700;
   box-shadow: var(--shadow-sm);
   animation: pop 0.3s ease;
-  position: relative;
-  pointer-events: auto; /* a tap sends it away (the space around it lets taps through) */
-  cursor: pointer;
+  position: relative; /* taps go through to the button under it; a tap also sends it away (closeOnTap) */
 }
+/* a label's short form (phoneText in dom.js): only on narrow phones (css/mobile.css) */
+.text-short {
+  display: none;
+}
+
 .bridgy-toast::before {
   content: '';
   position: absolute;
@@ -703,6 +706,7 @@
   display: grid;
   gap: 8px;
   justify-items: end;
+  pointer-events: none; /* (as Bridgy's bubbles) */
 }
 .toast {
   background: var(--navy);

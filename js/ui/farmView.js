@@ -630,12 +630,15 @@ export class FarmView {
 
     let angle = 0;
     let scale = 1;
+    let sing = -1; // nvagel(): how far the note is (0…1), or -1
     const a = d.anim;
     if (a && a.kind === 'flip' && game.time >= a.start && game.time < a.end) {
       const p = (game.time - a.start) / (a.end - a.start);
       angle = p * Math.PI * 2;
       scale = 1 + Math.sin(p * Math.PI) * 0.25;
     }
+    if (a && a.kind === 'sing' && game.time >= a.start && game.time < a.end) sing = (game.time - a.start) / (a.end - a.start);
+    const hop = sing >= 0 ? Math.sin(sing * Math.PI) * tile * 0.12 : 0;
     if (game.dino && game.dino.drone === d) {
       const head = this.sprites.get('dinoHead');
       const s = tile * 1.05;
@@ -647,7 +650,7 @@ export class FarmView {
       return;
     }
     ctx.save();
-    ctx.translate(cx, cy - tile * 0.06 + bob);
+    ctx.translate(cx, cy - tile * 0.06 + bob - hop);
     ctx.rotate(angle);
     ctx.scale(scale, scale);
     ctx.imageSmoothingEnabled = true;
@@ -694,6 +697,13 @@ export class FarmView {
       ctx.fillText(String(d.id), dw * 0.42, -dh * 0.35);
     }
     ctx.restore();
+    if (sing >= 0) {
+      // a small note rises from the drone and fades
+      const s = Math.max(12 * this.dpr, tile * 0.4);
+      ctx.globalAlpha = 1 - sing * 0.7;
+      ctx.drawImage(this.sprites.get('icon:note'), cx + dw * 0.18, cy - dh * 0.55 - hop - sing * tile * 0.35 - s / 2, s, s);
+      ctx.globalAlpha = 1;
+    }
     if (a && a.kind === 'fish' && game.time >= a.start && game.time < a.end) {
       // fishing: a line from the drone down to a float bobbing on the water, below the drone
       const bx = cx + tile * 0.24;

@@ -1,6 +1,6 @@
 // Bridgy's book (config/guide.json): game commands, JavaScript topics and plants — only the
 // parts the player has unlocked. Plant numbers come live from settings.json.
-import { h, icon, pixelImg, highlightCode } from './dom.js';
+import { h, icon, pixelImg, highlightCode, phoneText } from './dom.js';
 import { openModal } from './modal.js';
 import { SYNTAX_FEATURES } from '../lang/gate.js';
 
@@ -18,7 +18,7 @@ export function openBook({ app, game, tab = 'commands' }) {
   const list = h('div', { class: 'book-list' });
   const search = h('input', { class: 'input book-search', type: 'search', placeholder: t('ui.bookSearch'), oninput: () => filter() });
   const tabs = TABS.filter(([id]) => !game.isRanch || id === 'commands' || id === 'js');
-  const tabButtons = tabs.map(([id, ico, label]) => h('button', { class: 'login-tab', dataset: { tab: id }, onclick: () => show(id) }, icon(app.sprites, ico), ` ${t(label)}`));
+  const tabButtons = tabs.map(([id, ico, label]) => h('button', { class: 'login-tab', dataset: { tab: id }, onclick: () => show(id) }, icon(app.sprites, ico), ' ', phoneText(t, label.slice(3))));
   const nothing = h('div', { class: 'board-note', hidden: true }, t('ui.bookNothing'));
   const show = (id) => {
     for (const b of tabButtons) b.classList.toggle('active', b.dataset.tab === id);

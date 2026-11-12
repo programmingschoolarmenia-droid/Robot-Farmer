@@ -18,7 +18,8 @@
     "ticksPerSecond": 400,
     "speedResearch": "Speed",
     "speedPerTier": 1.33592,
-    "doAFlipSeconds": 1
+    "doAFlipSeconds": 1,
+    "noteBeatSeconds": 0.5
   },
 
   "costs": {

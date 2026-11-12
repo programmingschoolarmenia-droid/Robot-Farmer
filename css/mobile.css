@@ -84,6 +84,14 @@
   .side-nav .btn-label {
     display: inline;
   }
+  /* the farm's head: a boost's timer takes the size label's place */
+  .farm-panel .panel-head {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  .farm-panel .panel-head:has(.boost-chip) > .muted {
+    display: none;
+  }
 
   .game-main {
     grid-template-columns: minmax(0, 1fr);
@@ -104,6 +112,8 @@
   .controlbar {
     gap: 6px;
     padding: 6px 8px;
+    min-width: 0;
+    overflow-x: clip; /* never wider than the screen, even with a phone's bigger text */
   }
   .controlbar .btn {
     padding: 7px 11px;
@@ -202,6 +212,41 @@
   .console {
     height: clamp(64px, 16vh, 120px);
   }
+  /* the console hides until its button (top right of the code panel) opens it */
+  .code-panel {
+    position: relative;
+  }
+  .code-panel:not(.console-open) > .console {
+    display: none;
+  }
+  .console-toggle {
+    display: inline-flex;
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    z-index: 6;
+    padding: 3px 5px;
+  }
+  .console-toggle.active {
+    background: var(--blue-soft);
+  }
+  .console-toggle.has-new::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 9px;
+    height: 9px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: var(--orange);
+  }
+  .tabs-bar {
+    padding-right: 50px; /* the tabs never go under the console button */
+  }
+  .screen-challenge .CodeMirror-lines {
+    padding-right: 40px; /* (no tabs there: the button sits on the code's first line) */
+  }
 
   /* ---------- Bridgy: small portrait + bottom sheet above the bars */
   .bridgy-dialog {
@@ -291,6 +336,7 @@
   .market-tabs .login-tab,
   .loom-tabs .login-tab {
     flex: 1;
+    min-width: 0;
     padding: 8px 4px;
     font-size: 0.85rem;
   }
@@ -316,6 +362,27 @@
   }
   .market-tile > img {
     grid-row: auto;
+  }
+  /* ranch prices: the name on its own row, the price (with its ֏) under it */
+  .ranch-price {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'img name name' 'img note price';
+    column-gap: 6px;
+    padding: 6px;
+  }
+  .ranch-price img {
+    grid-area: img;
+  }
+  .ranch-price > span:not(.muted) {
+    grid-area: name;
+    font-size: 0.9rem;
+    overflow-wrap: anywhere; /* (a very long name rather breaks than leaves its card) */
+  }
+  .ranch-price b {
+    grid-area: price;
+  }
+  .ranch-price .muted {
+    grid-area: note;
   }
   .book-modal {
     width: 100vw;
@@ -370,6 +437,14 @@
   .board-head > span {
     white-space: nowrap; /* the "?" stays with the title */
   }
+  /* the two dropdowns go one under the other when side by side would cut their words */
+  .board-selects {
+    flex-wrap: wrap;
+  }
+  .board-select {
+    flex: 1 1 170px;
+    min-width: 0;
+  }
   .board-row {
     grid-template-columns: 1.8em 28px minmax(0, 1fr) auto;
     gap: 6px;
@@ -415,6 +490,10 @@
     top: 12px;
     bottom: auto;
   }
+  .research-details .btn-run {
+    position: sticky; /* «Գնել» stays in sight while the sheet scrolls */
+    bottom: 0;
+  }
 
   /* ---------- village: the map above (as tall as the screen at most), the panel below; it scrolls */
   .village-body {
@@ -451,6 +530,9 @@
   .quest-slot {
     flex: 1 1 100% !important;
   }
+  .controlbar .status-pill {
+    display: none; /* the ▶ / ⏸ / ⏹ buttons show the state; on a real phone's bigger text it pushed the page sideways */
+  }
   .bridgy-toasts {
     top: 112px;
     align-items: flex-start; /* under Bridgy's head (the help button, on the left here) */
@@ -459,15 +541,59 @@
     right: auto;
     left: 22px;
   }
+  /* the weekly challenge: the task gets the whole first row, the time and «back» go under it */
+  .challenge-task {
+    flex: 1 1 100%;
+  }
+  .challenge-task span {
+    -webkit-line-clamp: 3;
+  }
+  .screen-challenge .topbar .challenge-chip:first-of-type {
+    margin-left: auto;
+  }
   /* the map is small: only the chosen building shows its name (its panel is right below) */
   .village-spot:not(.selected) .village-name {
     display: none;
   }
 }
 
-/* Narrow phones (360 and less): the control bar and the start screen's tabs fit without zooming out.
+/* Narrow phones (400 px and less): the control bar, the top bar and the tabs fit without zooming out.
    The weekly challenge has a 4th speed button, so its bar needs this too. */
 @media (max-width: 400px) {
+  .text-long {
+    display: none;
+  }
+  .text-short {
+    display: inline;
+  }
+  .loom-tabs .login-tab {
+    flex: 1 1 auto; /* a longer name gets a wider tab */
+  }
+  .farm-panel .panel-head {
+    gap: 5px;
+    padding: 7px 8px;
+  }
+  .calendar-chip {
+    padding: 2px 5px;
+  }
+  /* the top bar's second row (Bridgy, settings, profile, research) fits 360 px in two rows */
+  .topbar {
+    gap: 6px 4px;
+  }
+  .help-button {
+    padding: 2px 4px;
+  }
+  .player-pill {
+    padding: 7px 8px;
+  }
+  .research-top {
+    padding: 5px 6px;
+    font-size: 0.8rem;
+  }
+  .research-top img {
+    width: 22px;
+    height: 22px;
+  }
   .controlbar {
     gap: 4px;
     padding: 6px;
@@ -475,11 +601,36 @@
   .controlbar .ctrl-group {
     gap: 4px;
   }
+  /* the buttons tapped most are at least 40 px tall */
+  .controlbar .btn,
+  .speed-group button {
+    min-height: 40px;
+  }
   .controlbar .btn {
     padding: 7px 8px;
   }
   .speed-group button {
     padding: 6px 5px;
+  }
+  /* Bridgy stands above his box, so the text gets the whole width */
+  .bridgy-dialog {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .bridgy-portrait,
+  .friend .bridgy-portrait {
+    align-self: flex-start;
+    width: 88px;
+    margin: 0 0 -16px 10px;
+  }
+  .friend .bridgy-portrait {
+    width: 64px;
+  }
+  .bridgy-box {
+    flex: none;
+  }
+  .bridgy-name {
+    left: 108px; /* beside his picture */
   }
   .seg button {
     padding: 5px 7px; /* settings: the three font sizes fit next to their label */
@@ -488,16 +639,47 @@
     padding: 8px 6px;
     font-size: 0.85rem;
   }
+  /* the large font: the three font sizes go under their label (at 359 and less, every font) */
+  .font-large .setting-row:has(.seg) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  .font-large .seg button {
+    flex: 1;
+  }
 }
 @media (max-width: 359px) {
-  .controlbar .status-pill {
-    display: none; /* the ▶ / ⏸ buttons still show the state */
-  }
   .research-top .research-word {
     display: none; /* the magnifier and the number keep the top bar on two rows */
   }
   .login-main .login-tab {
     font-size: 0.78rem;
+  }
+  .book-modal .login-tabs {
+    gap: 0;
+  }
+  .book-modal .login-tab {
+    flex: 1 1 auto; /* a longer name gets a wider tab */
+    padding: 6px 0;
+    font-size: 0.7rem;
+  }
+  .market-tabs .login-tab,
+  .loom-tabs .login-tab {
+    padding: 8px 2px;
+    font-size: 0.8rem;
+  }
+  .mobile-tab {
+    gap: 4px;
+    padding: 9px 1px;
+    font-size: 0.85rem;
+  }
+  /* settings: the three font sizes go under their label */
+  .setting-row:has(.seg) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  .seg button {
+    flex: 1;
   }
 }
 
@@ -566,5 +748,18 @@
     -webkit-user-select: text;
     user-select: text;
     -webkit-touch-callout: default;
+  }
+  /* small ✕ and «Մաքրել» buttons: a bigger place to tap, the same look */
+  .modal-head .btn,
+  .console-head .btn {
+    position: relative;
+  }
+  .modal-head .btn::after,
+  .console-head .btn::after,
+  .bridgy-close::after,
+  .rd-close::after {
+    content: '';
+    position: absolute;
+    inset: -8px -6px;
   }
 }

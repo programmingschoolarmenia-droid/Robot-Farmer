@@ -284,6 +284,10 @@ li.CodeMirror-hint-active {
 }
 
 /* console */
+/* phones only (css/mobile.css): the button that opens the console */
+.console-toggle {
+  display: none;
+}
 .console {
   border-top: 2px solid var(--line);
   display: flex;
