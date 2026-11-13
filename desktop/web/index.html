@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="hy">
+<head>
+<meta charset="utf-8">
+<title>Բրիջիի ֆերման</title>
+<style>
+  html, body { height: 100%; margin: 0; }
+  body { display: grid; place-items: center; background: #173a7a; color: #fff;
+    font: 18px/1.5 system-ui, "Segoe UI", Sylfaen, sans-serif; text-align: center; }
+  img { width: 180px; image-rendering: pixelated; }
+  p { margin: 12px 24px; }
+  button { font: inherit; font-weight: 700; padding: 10px 26px; border: 3px solid #c98a12;
+    border-radius: 12px; background: #f4b63f; color: #1b2a4a; cursor: pointer; }
+  [hidden] { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <img src="icon.png" alt="">
+  <p id="wait">Բեռնվում է…</p>
+  <div id="off" hidden>
+    <p>Ինտերնետ չկա։ Միացրու ինտերնետը և սեղմիր «Կրկին փորձել»։</p>
+    <button id="retry">Կրկին փորձել</button>
+  </div>
+</main>
+<script>
+  // The desktop app is a window on the live website, so every update reaches it at once.
+  const SITE = 'https://robot-farmer.vercel.app/';
+  let timer;
+  async function go() {
+    clearTimeout(timer);
+    wait.hidden = false; off.hidden = true;
+    try {
+      await fetch(SITE, { method: 'HEAD', mode: 'no-cors', cache: 'no-store' }); // only "is it there", the page loads next
+      location.replace(SITE);
+    } catch {
+      wait.hidden = true; off.hidden = false;
+      timer = setTimeout(go, 5000);
+    }
+  }
+  retry.onclick = go;
+  const load = (src) => new Promise((ok, no) => document.head.append(Object.assign(document.createElement('script'), { src, onload: ok, onerror: no })));
+  const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+  (async () => {
+    // the light app serves this page itself: it turns on full screen once the window has drawn
+    // (full screen at launch leaves the Mac web view white). Electron opens full screen by itself.
+    if (location.protocol === 'http:') {
+      try {
+        await load('/__neutralino_globals.js'); // NL_PORT and the one-time NL_TOKEN
+        const ws = new WebSocket(`ws://127.0.0.1:${NL_PORT}?connectToken=${NL_TOKEN.split('.')[1]}`);
+        await Promise.race([new Promise((ok, no) => {
+          ws.onmessage = (e) => {
+            const m = JSON.parse(e.data);
+            // calls sent before the app says it is connected are dropped
+            if (m.event === 'appClientConnect') ws.send(JSON.stringify({ id: '1', method: 'window.setFullScreen', data: {}, accessToken: NL_TOKEN }));
+            if (m.id === '1') ok();
+          };
+          ws.onerror = no;
+        }), pause(3000)]);
+        await pause(800);
+      } catch {}
+    }
+    go();
+  })();
+</script>
+</body>
+</html>

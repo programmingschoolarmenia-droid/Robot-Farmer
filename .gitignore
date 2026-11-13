@@ -1,1 +1,4 @@
 .DS_Store
+test-reports/
+.claude/settings.local.json
+/marketing/

@@ -1,0 +1,29 @@
+{
+  "applicationId": "am.programmingschool.bridgysfarm",
+  "version": "1.0.0",
+  "defaultMode": "window",
+  "documentRoot": "/web/",
+  "url": "/",
+  "enableServer": true,
+  "enableNativeAPI": true,
+  "nativeAllowList": ["window.setFullScreen"],
+  "tokenSecurity": "one-time",
+  "logging": { "enabled": false, "writeToLogFile": false },
+  "modes": {
+    "window": {
+      "title": "Բրիջիի ֆերման",
+      "width": 1366, "height": 820, "minWidth": 900, "minHeight": 600,
+      "center": true, "resizable": true,
+      "icon": "/web/icon.png",
+      "enableInspector": false,
+      "exitProcessOnClose": true
+    }
+  },
+  "cli": {
+    "binaryName": "bridgys-farm",
+    "resourcesPath": "/web/",
+    "extensionsPath": "/extensions/",
+    "binaryVersion": "6.10.0",
+    "clientVersion": "6.10.0"
+  }
+}

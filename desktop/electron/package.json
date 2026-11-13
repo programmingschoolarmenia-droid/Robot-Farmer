@@ -1,0 +1,30 @@
+{
+  "name": "bridgys-farm-desktop",
+  "productName": "Bridgy's Farm",
+  "version": "1.0.0",
+  "description": "Բրիջիի ֆերման",
+  "author": "Programming School Armenia",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "mac": "electron-builder --mac",
+    "win": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "44.9.3",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "am.programmingschool.bridgysfarm",
+    "productName": "Bridgy's Farm",
+    "icon": "../web/icon.png",
+    "files": ["main.js", "package.json"],
+    "extraResources": [{ "from": "../web", "to": "web" }],
+    "directories": { "output": "../dist/electron" },
+    "mac": { "target": { "target": "dmg", "arch": "universal" }, "category": "public.app-category.education", "identity": null },
+    "win": { "target": [{ "target": "nsis", "arch": "x64" }, { "target": "portable", "arch": "x64" }] },
+    "nsis": { "oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true },
+    "portable": { "artifactName": "Bridgys-Farm-portable.exe" }
+  }
+}

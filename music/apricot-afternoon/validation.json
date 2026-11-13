@@ -1,0 +1,9 @@
+{
+  "score": {"title": "Apricot Afternoon", "bars": 64, "bpm": 84, "key": "D major", "durationSeconds": 182.85721088435375},
+  "master": {"format": "24-bit PCM stereo WAV", "sampleRate": 44100, "endpointSampleJump": 0},
+  "gameAssets": {"preferred": "Ogg/Vorbis", "fallback": "MP3", "oggBytes": 1668334, "mp3Bytes": 3658808},
+  "chromePlayback": {"loadsOnlyWhenEnabled": true, "plays": true, "loopsAtEnd": true, "mutePauses": true, "volumeRestoreResumes": true, "consoleErrors": []},
+  "browserLayoutsPassed": ["1366x768", "390x844", "844x390"],
+  "unitTests": {"total": 179, "passing": 158, "failing": 21, "comparison": "same pre-existing gameplay failures as the initial release-readiness audit"},
+  "limits": ["Physical Android lifecycle and Safari playback have not been tested.", "Headless Chrome kept the document visible when a second target opened, so that run could not verify real background visibility transitions. The visibility handler is implemented but that device behavior remains unverified."]
+}
