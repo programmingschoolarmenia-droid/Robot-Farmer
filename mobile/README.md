@@ -1,7 +1,8 @@
 # Android app (Capacitor)
 
 The app is the website game inside an Android window. `copy-web.mjs` copies the game into `www/`
-(with its fonts, so it works offline) and never changes the game files. `www/` is not in git.
+(with its fonts, so it works offline; without `assets/originals/` and the MP3 copy of the music, which
+the app never loads) and never changes the game files. `www/` is not in git.
 
 ## Test build (every push that changes `mobile/`)
 

@@ -1,6 +1,7 @@
 // Copies the game into www/ for the Android app. The game files themselves are never changed:
-// only the copy differs, in two ways:
+// only the copy differs, in three ways:
 //  - the Google Fonts are downloaded into www/fonts/ so the app also looks right without internet;
+//  - files the app never loads are left out (SKIP);
 //  - with --test, config/settings.json gets empty Firebase keys (local accounts, like npm run play).
 // Run: node copy-web.mjs [--test]
 import { cp, rm, mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -10,11 +11,14 @@ import { join } from 'node:path';
 const GAME = fileURLToPath(new URL('..', import.meta.url));
 const WWW = fileURLToPath(new URL('www/', import.meta.url));
 const PARTS = ['index.html', 'privacy.html', 'js', 'css', 'config', 'assets', 'vendor'];
+// The source pictures of Bridgy and the drone are not used by the game, and Android's WebView always
+// plays the Ogg music (js/audio.js picks MP3 only where Ogg can't play): 5.3 MB less to download.
+const SKIP = new Set(['assets/originals', 'assets/audio/apricot-afternoon.mp3'].map((p) => join(GAME, p)));
 // A current Chrome user agent makes Google Fonts answer with woff2 files.
 const UA = 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36';
 
 await rm(WWW, { recursive: true, force: true });
-for (const part of PARTS) await cp(join(GAME, part), join(WWW, part), { recursive: true });
+for (const part of PARTS) await cp(join(GAME, part), join(WWW, part), { recursive: true, filter: (src) => !SKIP.has(src) });
 
 // ---- fonts: the <link> to Google becomes a local fonts/fonts.css
 const indexFile = join(WWW, 'index.html');
