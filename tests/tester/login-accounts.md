@@ -10,3 +10,5 @@ Modes: blocked (local accounts) and fake (online).
 - [ ] Offline at login (`fake.offline = true`): a clear message, then it works once back online.
 - [ ] A deleted account (`deleted/<name>` doc exists): it can't write, and the student sees a clear message.
 - [ ] Double-click on «Մուտք» / register: there must be no double account and no error.
+- [ ] Self-delete (Profile → «Ջնջել հաշիվը», fake): a wrong password is refused; the right one removes saves/players/orders/carpets/likes/reports written and the login, the start screen shows no «Շարունակել որպես», and the name can register again.
+- [ ] Guests and start-screen visitors who open a player card or the carpet contest: note whether they can report or hide (Google Play UGC rules).

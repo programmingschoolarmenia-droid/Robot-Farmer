@@ -8,3 +8,4 @@ Code: `js/storage/*`, `js/engine/game.js` (save `v`, `Game.migrate`: `OLD_SPEED_
 - [ ] Two tabs: the old tab goes back to login and never overwrites (`rev`).
 - [ ] localStorage full or blocked: a clear message, no crash, no silent loss.
 - [ ] A hand-broken save (bad JSON, missing fields) doesn't white-screen and doesn't overwrite the cloud copy.
+- [ ] A guest with full storage (`Storage.prototype.setItem` throws `QuotaExceededError`): the student is told, and a reload doesn't silently lose the progress.

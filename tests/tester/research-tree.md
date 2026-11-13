@@ -8,3 +8,4 @@ Code: `js/engine/research.js`, `js/ui/researchTree.js`, `config/research.json`.
 - [ ] Pan and zoom at all 3 sizes. Every card is reachable, and names are not cut off.
 - [ ] `dev.unlockAll` opens everything (test on a COPY of config only).
 - [ ] The help book (`config/guide.json`) gains exactly the items the card unlocks.
+- [ ] Phones: when the tree opens during a «buy X» quest, card X is on screen or one short swipe away (Speed was 400 px off screen at 360).
