@@ -321,14 +321,14 @@ export class ResearchTree {
                 'span',
                 { class: `chip ${have >= need ? 'done' : 'missing'}`, title: t('ui.have', { n: formatCount(Math.floor(have)) }), dataset: { have: item } },
                 pixelImg(this.app.sprites.url(`item:${item}`, 2)),
-                `${formatCount(need)} ${i18n.item(item)}`,
+                i18n.amount(formatCount(need), item),
               );
             }),
           ),
         ),
       );
       if (state === 'locked') {
-        const names = (n.parents || []).filter((p) => research.level(p) === 0).map((p) => `«${research.node(p).name}»`);
+        const names = (n.parents || []).filter((p) => research.level(p) === 0).map((p) => t('ui.quote', { text: research.node(p).name }));
         if (names.length) parts.push(h('div', { class: 'rd-note' }, icon(this.app.sprites, 'lock'), ' ', t('ui.lockedNeed', { parents: names.join(', ') })));
         const have = research.totalLevels();
         if (have < (n.minLevels || 0)) parts.push(h('div', { class: 'rd-note' }, icon(this.app.sprites, 'lock'), ' ', t('ui.lockedLevels', { n: n.minLevels, have })));

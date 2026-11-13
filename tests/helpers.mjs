@@ -1,10 +1,20 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { Game } from '../js/engine/game.js';
+import { LANGS, TEXT_FILES, localize } from '../js/core/i18n.js';
 
 const base = new URL('../config/', import.meta.url);
 const read = (f) => JSON.parse(readFileSync(new URL(f, base), 'utf8'));
+const maybe = (f) => (existsSync(new URL(f, base)) ? read(f) : {});
 
-export function loadConfig() {
+// The config as the game loads it in `lang` (all languages' command names work, as in the browser).
+export function loadConfig(lang = 'hy') {
+  const packs = { aliases: Object.fromEntries(LANGS.filter((l) => l !== 'hy').map((l) => [l, maybe(`${l}/aliases.json`)])) };
+  if (lang !== 'hy') for (const f of TEXT_FILES) packs[f] = maybe(`${lang}/${f}.json`);
+  return localize(rawConfig(), lang, packs);
+}
+
+// The Armenian files exactly as they are on disk.
+export function rawConfig() {
   return {
     settings: read('settings.json'),
     research: read('research.json'),
@@ -19,10 +29,10 @@ export function loadConfig() {
 }
 
 // Creates a game. Options: unlockAll, items, seed, levels ({ id: level }), available (all nodes),
-// clock (real ms: seasons, weather, luck and the leaderboard day). Seasons follow the real clock,
-// so they are off unless a test passes `clock`.
+// clock (real ms: seasons, weather, luck and the leaderboard day), config (another config instead of
+// the shipped one; it is copied). Seasons follow the real clock, so they are off unless a test passes `clock`.
 export function makeGame(opts = {}) {
-  const config = loadConfig();
+  const config = opts.config ? structuredClone(opts.config) : loadConfig();
   if (opts.clock === undefined) delete config.settings.calendar;
   if (opts.available) for (const n of config.research.nodes) n.available = true;
   config.settings.dev.unlockAll = !!opts.unlockAll;

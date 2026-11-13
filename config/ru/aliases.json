@@ -1,0 +1,994 @@
+{
+  "_readme": "Это русские имена команд игры. Первое имя в списке показывается везде; остальные имена (и армянские) тоже работают. Меняй только правую часть.",
+  "functions": {
+    "harvest": [
+      "sobrat"
+    ],
+    "canHarvest": [
+      "sozrelo"
+    ],
+    "plant": [
+      "posadit"
+    ],
+    "move": [
+      "idti"
+    ],
+    "till": [
+      "vspakhat"
+    ],
+    "doAFlip": [
+      "salto"
+    ],
+    "playNote": [
+      "sygrat"
+    ],
+    "print": [
+      "vyvesti"
+    ],
+    "getEntityType": [
+      "chtoTut"
+    ],
+    "getGroundType": [
+      "pochva"
+    ],
+    "getPosX": [
+      "pozX"
+    ],
+    "getPosY": [
+      "pozY"
+    ],
+    "getWorldSize": [
+      "razmerFermy"
+    ],
+    "numItems": [
+      "skolko"
+    ],
+    "changeHat": [
+      "nadetShlyapu"
+    ],
+    "measure": [
+      "izmerit"
+    ],
+    "swap": [
+      "pomenyat"
+    ],
+    "useItem": [
+      "ispolzovat"
+    ],
+    "getWater": [
+      "skolkoVody"
+    ],
+    "getTime": [
+      "vremya"
+    ],
+    "getTickCount": [
+      "shagi"
+    ],
+    "unlock": [
+      "issledovat"
+    ],
+    "getCost": [
+      "stoimost"
+    ],
+    "numUnlocked": [
+      "uroven"
+    ],
+    "setSpeed": [
+      "skorost"
+    ],
+    "clear": [
+      "ochistit"
+    ],
+    "canMove": [
+      "mozhnoIdti"
+    ],
+    "drinkJuice": [
+      "vypit"
+    ],
+    "spawnDrone": [
+      "novyDron"
+    ],
+    "waitFor": [
+      "zhdat"
+    ],
+    "hasFinished": [
+      "gotovo"
+    ],
+    "numDrones": [
+      "skolkoDronov"
+    ],
+    "maxDrones": [
+      "maksDronov"
+    ],
+    "digPond": [
+      "kopat"
+    ],
+    "catchFish": [
+      "rybachit"
+    ],
+    "getSeason": [
+      "sezon"
+    ],
+    "getWeather": [
+      "pogoda"
+    ],
+    "getNextWeather": [
+      "pogodaPotom"
+    ],
+    "build": [
+      "postroit"
+    ],
+    "make": [
+      "prigotovit"
+    ],
+    "eat": [
+      "syest"
+    ],
+    "buildGreenhouse": [
+      "teplitsa"
+    ],
+    "festivalDistance": [
+      "nyukhat"
+    ],
+    "findTreasure": [
+      "nayti"
+    ]
+  },
+  "constants": {
+    "North": [
+      "Vverkh",
+      "Vverh"
+    ],
+    "South": [
+      "Vniz"
+    ],
+    "East": [
+      "Vpravo"
+    ],
+    "West": [
+      "Vlevo"
+    ]
+  },
+  "namespaces": {
+    "Entities": [
+      "Rasteniya"
+    ],
+    "Items": [
+      "Veshchi"
+    ],
+    "Grounds": [
+      "Pochvy"
+    ],
+    "Hats": [
+      "Shlyapy"
+    ],
+    "Unlocks": [
+      "Issledovaniya"
+    ],
+    "Fishes": [
+      "Ryby"
+    ],
+    "Seasons": [
+      "Sezony"
+    ],
+    "Weathers": [
+      "TipyPogody"
+    ],
+    "Machines": [
+      "Ustroystva"
+    ],
+    "Notes": [
+      "Noty"
+    ]
+  },
+  "members": {
+    "Entities": {
+      "Grass": [
+        "Pshenitsa"
+      ],
+      "Bush": [
+        "Shipovnik"
+      ],
+      "Tree": [
+        "Abrikos"
+      ],
+      "Carrot": [
+        "Baklazhan"
+      ],
+      "Pumpkin": [
+        "Arbuz"
+      ],
+      "Dead_Pumpkin": [
+        "GniloyArbuz"
+      ],
+      "Sunflower": [
+        "Granat"
+      ],
+      "Cactus": [
+        "Vinograd"
+      ],
+      "Hedge": [
+        "Izgorod"
+      ],
+      "Treasure": [
+        "Klad"
+      ],
+      "Apple": [
+        "Mysh"
+      ],
+      "Dinosaur": [
+        "Zmeya"
+      ],
+      "Mushroom": [
+        "Grib"
+      ],
+      "Maze": [
+        "Labirint"
+      ],
+      "Mulberry": [
+        "Shelkovitsa"
+      ],
+      "YellowMelon": [
+        "ZheltyArbuz"
+      ],
+      "SquareMelon": [
+        "KvadratnyArbuz"
+      ]
+    },
+    "Items": {
+      "Hay": [
+        "Pshenitsa"
+      ],
+      "Wood": [
+        "Drova"
+      ],
+      "Carrot": [
+        "Baklazhan"
+      ],
+      "Pumpkin": [
+        "Arbuz"
+      ],
+      "Power": [
+        "Sok"
+      ],
+      "Water": [
+        "Voda"
+      ],
+      "Fertilizer": [
+        "Peregnoy"
+      ],
+      "Weird_Substance": [
+        "VolshebnayaPyl"
+      ],
+      "Cactus": [
+        "Vinograd"
+      ],
+      "Bone": [
+        "ZmeinayaKozha"
+      ],
+      "Gold": [
+        "Zoloto"
+      ],
+      "Fish": [
+        "Ryba"
+      ],
+      "Flour": [
+        "Muka"
+      ],
+      "Jam": [
+        "Varenye"
+      ],
+      "Lavash": [
+        "Lavash"
+      ],
+      "Gata": [
+        "Gata"
+      ],
+      "Ghapama": [
+        "Khapama",
+        "Hapama"
+      ],
+      "Grilled_Fish": [
+        "RybaGril"
+      ],
+      "Star": [
+        "Zvezda"
+      ],
+      "Medal": [
+        "Medal"
+      ],
+      "Egg": [
+        "Yaytso"
+      ],
+      "Milk": [
+        "Moloko"
+      ],
+      "Cheese": [
+        "Syr"
+      ],
+      "Butter": [
+        "Maslo"
+      ],
+      "Nazook": [
+        "Nazuk"
+      ],
+      "Honey": [
+        "Med"
+      ],
+      "Candle": [
+        "Svecha"
+      ],
+      "Honey_Gata": [
+        "MedovayaGata"
+      ],
+      "Seeds": [
+        "Semena"
+      ],
+      "YellowMelon": [
+        "ZheltyArbuz"
+      ],
+      "SquareMelon": [
+        "KvadratnyArbuz"
+      ]
+    },
+    "Machines": {
+      "Mill": [
+        "Melnitsa"
+      ],
+      "JamPot": [
+        "Kazan"
+      ],
+      "Tonir": [
+        "Tonir"
+      ]
+    },
+    "Grounds": {
+      "Grassland": [
+        "Lug"
+      ],
+      "Soil": [
+        "Pashnya"
+      ],
+      "Pond": [
+        "Prud"
+      ]
+    },
+    "Fishes": {
+      "Carp": [
+        "Karas"
+      ],
+      "Barbel": [
+        "Usach"
+      ],
+      "Trout": [
+        "Ishkhan"
+      ],
+      "Golden_Fish": [
+        "Zolotaya"
+      ],
+      "Whitefish": [
+        "Sig"
+      ],
+      "Catfish": [
+        "Som"
+      ]
+    },
+    "Notes": {
+      "C": [
+        "Do"
+      ],
+      "D": [
+        "Re"
+      ],
+      "E": [
+        "Mi"
+      ],
+      "F": [
+        "Fa"
+      ],
+      "G": [
+        "Sol"
+      ],
+      "A": [
+        "Lya"
+      ],
+      "B": [
+        "Si"
+      ],
+      "HighC": [
+        "Do2"
+      ],
+      "Rest": [
+        "Pauza"
+      ]
+    },
+    "Seasons": {
+      "Spring": [
+        "Vesna"
+      ],
+      "Summer": [
+        "Leto"
+      ],
+      "Autumn": [
+        "Osen"
+      ],
+      "Winter": [
+        "Zima"
+      ]
+    },
+    "Weathers": {
+      "Sunny": [
+        "Solnechno"
+      ],
+      "Rain": [
+        "Dozhd"
+      ],
+      "Storm": [
+        "Groza"
+      ],
+      "Heat": [
+        "Zhara"
+      ],
+      "Snow": [
+        "Sneg"
+      ]
+    },
+    "Hats": {
+      "Straw_Hat": [
+        "Solomennaya"
+      ],
+      "Blue_Hat": [
+        "Sinyaya"
+      ],
+      "Green_Hat": [
+        "Zelenaya"
+      ],
+      "Red_Hat": [
+        "Krasnaya"
+      ],
+      "Purple_Hat": [
+        "Fioletovaya"
+      ],
+      "Gold_Hat": [
+        "Zolotaya"
+      ],
+      "Dinosaur_Hat": [
+        "Zmeinaya"
+      ],
+      "Secret_Hat": [
+        "Taynaya"
+      ],
+      "Fisher_Hat": [
+        "Rybaka"
+      ],
+      "Mayor_Hat": [
+        "Starosty"
+      ],
+      "Trndez_Hat": [
+        "Trndeza"
+      ],
+      "Trndez_Gold_Hat": [
+        "TrndezaZolotaya"
+      ],
+      "Easter_Hat": [
+        "Paskhi"
+      ],
+      "Easter_Gold_Hat": [
+        "PaskhiZolotaya"
+      ],
+      "Vardavar_Hat": [
+        "Vardavara"
+      ],
+      "Vardavar_Gold_Hat": [
+        "VardavaraZolotaya"
+      ],
+      "Navasard_Hat": [
+        "Navasarda"
+      ],
+      "Navasard_Gold_Hat": [
+        "NavasardaZolotaya"
+      ],
+      "Knowledge_Hat": [
+        "Znaniy"
+      ],
+      "Knowledge_Gold_Hat": [
+        "ZnaniyZolotaya"
+      ],
+      "Teacher_Hat": [
+        "Uchitelya"
+      ],
+      "Teacher_Gold_Hat": [
+        "UchitelyaZolotaya"
+      ],
+      "NewYear_Hat": [
+        "NovogoGoda"
+      ],
+      "NewYear_Gold_Hat": [
+        "NovogoGodaZolotaya"
+      ],
+      "Challenge_Gold_Hat": [
+        "KonkursaZolotaya"
+      ],
+      "Challenge_Silver_Hat": [
+        "KonkursaSerebryanaya"
+      ],
+      "Challenge_Bronze_Hat": [
+        "KonkursaBronzovaya"
+      ],
+      "Treasure_Hat": [
+        "Kladoiskatelya"
+      ],
+      "Legend_Hat": [
+        "Legendy"
+      ],
+      "Papakh_Hat": [
+        "Papakha"
+      ],
+      "Beekeeper_Hat": [
+        "Pasechnika"
+      ],
+      "Rancher_Hat": [
+        "Rancho"
+      ],
+      "Carpet_Hat": [
+        "Tkacha"
+      ]
+    },
+    "Unlocks": {
+      "Loops": [
+        "Tsikly"
+      ],
+      "Hats": [
+        "Shlyapy"
+      ],
+      "Speed": [
+        "Skorost"
+      ],
+      "Grass": [
+        "Pshenitsa"
+      ],
+      "Expand": [
+        "BolshayaFerma"
+      ],
+      "Plant": [
+        "Posadka"
+      ],
+      "Carrots": [
+        "Baklazhany"
+      ],
+      "Debug": [
+        "Vyvod"
+      ],
+      "Operators": [
+        "Operatory"
+      ],
+      "Watering": [
+        "Poliv"
+      ],
+      "Trees": [
+        "Abrikosy"
+      ],
+      "Fertilizer": [
+        "Peregnoy"
+      ],
+      "Sunflowers": [
+        "Granaty"
+      ],
+      "Fishing": [
+        "Rybalka"
+      ],
+      "Mazes": [
+        "SadovyyLabirint"
+      ],
+      "Megafarm": [
+        "KomandaDronov"
+      ],
+      "GoldenHat": [
+        "ZolotayaShlyapa"
+      ],
+      "Pumpkins": [
+        "Arbuzy"
+      ],
+      "Cactus": [
+        "Vinograd"
+      ],
+      "Mulberry": [
+        "Shelkovitsa"
+      ],
+      "YellowMelon": [
+        "ZheltyArbuz"
+      ],
+      "SquareMelon": [
+        "KvadratnyArbuz"
+      ],
+      "Dinosaurs": [
+        "Zmei"
+      ],
+      "Secret": [
+        "Sekret"
+      ],
+      "SetSpeed": [
+        "Zamedlenie"
+      ],
+      "Timing": [
+        "Chasy"
+      ],
+      "Debugger": [
+        "OknoPeremennykh",
+        "OknoPeremennyh"
+      ],
+      "Final": [
+        "ZolotayaFerma"
+      ],
+      "Senses": [
+        "Chuvstva"
+      ],
+      "Calendar": [
+        "Kalendar"
+      ],
+      "Variables": [
+        "Peremennye"
+      ],
+      "Lists": [
+        "Spiski"
+      ],
+      "Objects": [
+        "Obekty"
+      ],
+      "Music": [
+        "Muzyka"
+      ],
+      "Costs": [
+        "Tseny"
+      ],
+      "AutoUnlock": [
+        "Avtoissledovanie"
+      ],
+      "Functions": [
+        "Funktsii"
+      ],
+      "Import": [
+        "Import"
+      ],
+      "Utilities": [
+        "Pomoshchniki"
+      ],
+      "Ranch": [
+        "Rancho"
+      ],
+      "Market": [
+        "Torgovlya"
+      ],
+      "Mushrooms": [
+        "Griby"
+      ]
+    }
+  },
+  "ranch": {
+    "functions": {
+      "unload": [
+        "razgruzit"
+      ],
+      "take": [
+        "vzyat"
+      ],
+      "fill": [
+        "napolnit"
+      ],
+      "inHands": [
+        "vRukakh"
+      ],
+      "sell": [
+        "prodat"
+      ],
+      "price": [
+        "tsena"
+      ],
+      "buy": [
+        "kupit"
+      ],
+      "milk": [
+        "doit"
+      ],
+      "pet": [
+        "gladit"
+      ],
+      "dirt": [
+        "gryaz"
+      ],
+      "animals": [
+        "zhivotnye"
+      ],
+      "bring": [
+        "prinesti"
+      ],
+      "orders": [
+        "zakazy"
+      ],
+      "deliver": [
+        "sdat"
+      ],
+      "on": [
+        "kogda"
+      ],
+      "write": [
+        "zapisat"
+      ],
+      "read": [
+        "prochitat"
+      ],
+      "sellAnimal": [
+        "prodatZhivotnoe"
+      ],
+      "heal": [
+        "lechit"
+      ],
+      "repair": [
+        "pochinit"
+      ],
+      "rope": [
+        "privyazat"
+      ],
+      "ship": [
+        "otvezti"
+      ],
+      "shear": [
+        "strich"
+      ],
+      "bell": [
+        "zvonit"
+      ],
+      "moveDog": [
+        "gamprIdti"
+      ],
+      "carpet": [
+        "kover"
+      ],
+      "weave": [
+        "tkat"
+      ],
+      "carpetOrders": [
+        "zakazyKovrov"
+      ],
+      "sellCarpet": [
+        "prodatKover"
+      ],
+      "flowerKinds": [
+        "vidyTsvetov"
+      ],
+      "donkeyBring": [
+        "oslikPrivezti"
+      ],
+      "donkeyShip": [
+        "oslikOtvezti"
+      ],
+      "fair": [
+        "yarmarka"
+      ]
+    },
+    "namespaces": {
+      "Animals": [
+        "Vidy"
+      ],
+      "Colors": [
+        "Kraski"
+      ],
+      "Flowers": [
+        "Tsvety"
+      ]
+    },
+    "members": {
+      "Items": {
+        "Dram": [
+          "Dram"
+        ],
+        "Grain": [
+          "Zerno"
+        ],
+        "Bale": [
+          "Tyuk"
+        ],
+        "GoatMilk": [
+          "KozyeMoloko"
+        ],
+        "Matsun": [
+          "Matsun"
+        ],
+        "Omelet": [
+          "Omlet"
+        ],
+        "Manure": [
+          "Navoz"
+        ],
+        "Medicine": [
+          "Lekarstvo"
+        ],
+        "Plank": [
+          "Doska"
+        ],
+        "WoolWhite": [
+          "SherstBelaya"
+        ],
+        "WoolBrown": [
+          "SherstKorichnevaya"
+        ],
+        "WoolBlack": [
+          "SherstChernaya"
+        ],
+        "WoolGold": [
+          "SherstZolotaya"
+        ],
+        "YarnWhite": [
+          "PryazhaBelaya"
+        ],
+        "YarnBrown": [
+          "PryazhaKorichnevaya"
+        ],
+        "YarnBlack": [
+          "PryazhaChernaya"
+        ],
+        "YarnGold": [
+          "PryazhaZolotaya"
+        ],
+        "YarnRed": [
+          "PryazhaKrasnaya"
+        ],
+        "YarnOrange": [
+          "PryazhaOranzhevaya"
+        ],
+        "YarnYellow": [
+          "PryazhaZheltaya"
+        ],
+        "YarnGreen": [
+          "PryazhaZelenaya"
+        ],
+        "YarnBlue": [
+          "PryazhaSinyaya"
+        ],
+        "YarnSoft": [
+          "PryazhaMyagkaya"
+        ],
+        "Carpet": [
+          "Kover"
+        ],
+        "Down": [
+          "Pukh"
+        ],
+        "Seed": [
+          "Semechko"
+        ],
+        "Sunflower": [
+          "Podsolnukh"
+        ],
+        "Comb": [
+          "Soty"
+        ],
+        "Wax": [
+          "Vosk"
+        ],
+        "BuffaloMilk": [
+          "MolokoBuyvola"
+        ],
+        "LoriCheese": [
+          "LoriyskiySyr"
+        ],
+        "HoneyCake": [
+          "Medovik"
+        ]
+      },
+      "Animals": {
+        "Hen": [
+          "Kuritsa"
+        ],
+        "Cow": [
+          "Korova"
+        ],
+        "Goat": [
+          "Koza"
+        ],
+        "Sheep": [
+          "Ovtsa"
+        ],
+        "Buffalo": [
+          "Buyvol"
+        ],
+        "Rabbit": [
+          "Krolik"
+        ]
+      },
+      "Colors": {
+        "White": [
+          "Belaya"
+        ],
+        "Brown": [
+          "Korichnevaya"
+        ],
+        "Black": [
+          "Chernaya"
+        ],
+        "Gold": [
+          "Zolotaya"
+        ],
+        "Spotted": [
+          "Pyatnistaya"
+        ],
+        "Red": [
+          "Krasnaya"
+        ],
+        "Orange": [
+          "Oranzhevaya"
+        ],
+        "Yellow": [
+          "Zheltaya"
+        ],
+        "Green": [
+          "Zelenaya"
+        ],
+        "Blue": [
+          "Sinyaya"
+        ],
+        "Soft": [
+          "Myagkaya"
+        ]
+      },
+      "Flowers": {
+        "Poppy": [
+          "Mak"
+        ],
+        "Daisy": [
+          "Romashka"
+        ],
+        "Rose": [
+          "Roza"
+        ],
+        "Jasmine": [
+          "Zhasmin"
+        ],
+        "Sunflower": [
+          "Podsolnukh"
+        ]
+      },
+      "Machines": {
+        "FeedTrough": [
+          "Kormushka"
+        ],
+        "WaterTrough": [
+          "Poilka"
+        ],
+        "Well": [
+          "Kolodets"
+        ],
+        "Basket": [
+          "Korzina"
+        ],
+        "Stall": [
+          "Lavka"
+        ],
+        "Dairy": [
+          "Molochnaya"
+        ],
+        "Stove": [
+          "Pech"
+        ],
+        "Wheel": [
+          "Pryalka"
+        ],
+        "Loom": [
+          "Stanok"
+        ],
+        "DyePot": [
+          "Krasilnya"
+        ],
+        "HoneyHouse": [
+          "Medogonka"
+        ],
+        "Hive": [
+          "Ulye"
+        ],
+        "Pool": [
+          "Luzha"
+        ]
+      }
+    }
+  }
+}

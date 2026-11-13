@@ -2,8 +2,17 @@
 // and progress.
 import { walk } from '../lang/frontend-js.js';
 
-// Quests inserted after saves kept only the position (index) of the current quest.
-const ADDED_LATER = new Set(['buy_fishing', 'fill_pond', 'fish_20', 'golden_fish', 'buy_calendar', 'season_code', 'repair_bridge', 'first_request', 'repair_mill', 'make_flour', 'buy_utilities', 'buy_mushrooms', 'mushrooms_10']);
+// The oldest saves kept only the position of their quest in this list (the chain as it was then).
+// prettier-ignore
+const OLD_ORDER = [
+  'first_harvest', 'hay_5', 'buy_loops', 'use_while', 'buy_speed', 'buy_expand', 'use_move', 'buy_plant', 'wood_10', 'buy_carrots',
+  'carrots_10', 'buy_operators', 'buy_expand2', 'whole_farm', 'buy_senses', 'buy_variables', 'use_variables', 'buy_functions',
+  'use_functions', 'buy_trees', 'trees_10', 'buy_pumpkins', 'giant_pumpkin', 'big_pumpkin', 'buy_lists', 'buy_watering', 'water_5',
+  'buy_sunflowers', 'power_10', 'buy_fertilizer', 'weird_10', 'buy_polyculture', 'buy_cactus', 'cactus_chain', 'buy_dinosaurs',
+  'bones_100', 'buy_mazes', 'maze_gold', 'buy_megafarm', 'use_drones', 'final',
+];
+// Quests that are gone: a save standing on one goes on with the quest that took its place.
+const MOVED = { buy_polyculture: 'buy_cactus', weird_10: 'humus_5' };
 
 export class QuestTracker {
   constructor(game, saved = {}, quests = (game.config.bridgy && game.config.bridgy.quests) || []) {
@@ -280,14 +289,13 @@ export function codeInfo(api, scriptName) {
   return { features, calls, params, recursion };
 }
 
-// The current quest of a save: found by its id; older saves counted the list without ADDED_LATER.
+// The current quest of a save: found by its id (the oldest saves: by its place in OLD_ORDER).
 function startIndex(quests, saved) {
-  const byId = quests.findIndex((q) => q.id === saved.id);
-  if (byId >= 0) return byId;
-  if (saved.id !== undefined) return Math.min(saved.index ?? 0, quests.length);
-  const old = quests.filter((q) => !ADDED_LATER.has(q.id));
   const i = saved.index ?? 0;
-  return i < old.length ? quests.indexOf(old[i]) : quests.length;
+  if (saved.id === undefined && i >= OLD_ORDER.length) return quests.length;
+  const id = saved.id === undefined ? OLD_ORDER[i] : saved.id;
+  const byId = quests.findIndex((q) => q.id === (MOVED[id] || id));
+  return byId >= 0 ? byId : Math.min(i, quests.length);
 }
 
 function setTimeoutSafe(fn) {

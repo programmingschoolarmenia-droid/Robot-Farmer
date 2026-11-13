@@ -2,6 +2,7 @@
 // page. Every ▶ builds a fresh RanchScreen on a fresh test ranch; the code of each tab stays. The score
 // is the ranch time the goal was reached at, so watching faster changes nothing.
 import { h, icon, highlightCode } from './dom.js';
+import { isHidden } from './account.js';
 import { RanchScreen } from './ranch.js';
 import { openModal } from './modal.js';
 import { testRanch, watchRanchGoal, rollRanchWeek, recordRanchResult } from '../engine/challenge.js';
@@ -17,7 +18,7 @@ export function ranchSchoolPanel(app, game, task, today, onStart) {
   app.account.leaderboard(`rc${task.week}`, best && me ? { id: me, value: best } : null).then(
     ({ rows, place }) =>
       top.replaceWith(
-        rows.length ? h('ol', { class: 'challenge-top' }, rows.slice(0, 10).map((r) => h('li', { class: r.id === me ? 'me' : '' }, h('span', {}, r.name), h('b', {}, formatTenths(r[`rc${task.week}`]))))) : h('div', { class: 'board-note' }, t('ui.leadersEmptyChallenge')),
+        rows.length ? h('ol', { class: 'challenge-top' }, rows.slice(0, 10).map((r) => !isHidden(app, r.id) && h('li', { class: r.id === me ? 'me' : '' }, h('span', {}, r.name), h('b', {}, formatTenths(r[`rc${task.week}`])))).filter(Boolean)) : h('div', { class: 'board-note' }, t('ui.leadersEmptyChallenge')),
         place ? h('div', { class: 'board-place' }, t('ui.challengePlace', { place })) : me ? '' : h('div', { class: 'board-note' }, t('ui.guestOnly')),
       ),
     () => (top.textContent = t('ui.challengeOffline')),
@@ -25,7 +26,7 @@ export function ranchSchoolPanel(app, game, task, today, onStart) {
   const last = weekKey(keyOfDay(dayNumber(today) - 7));
   app.account.top(`rc${last}`, 1).then(
     ([w]) => {
-      if (w && w[`rcc${last}`]) winner.replaceChildren(h('h4', {}, t('ui.challengeWinner', { name: w.name, time: formatTenths(w[`rc${last}`]) })), h('pre', { class: 'bridgy-code challenge-code' }, highlightCode(w[`rcc${last}`], (word) => game.ranch.api.codeKind(word))));
+      if (w && w[`rcc${last}`] && !isHidden(app, w.id)) winner.replaceChildren(h('h4', {}, t('ui.challengeWinner', { name: w.name, time: formatTenths(w[`rc${last}`]) })), h('pre', { class: 'bridgy-code challenge-code' }, highlightCode(w[`rcc${last}`], (word) => game.ranch.api.codeKind(word))));
     },
     (e) => console.warn('Last week\'s ranch winner not loaded:', e),
   );

@@ -6,6 +6,7 @@ export class Drone {
     this.x = saved.x ?? 0;
     this.y = saved.y ?? 0;
     this.hat = saved.hat ?? 'Straw_Hat';
+    this.juice = saved.juice || 0; // actions left of the pomegranate juice it drank (xmel)
     this.time = 0; // local game time (seconds)
     this.interp = null;
     this.gen = null;
@@ -26,7 +27,7 @@ export class Drone {
     const base = time.ticksPerSecond ?? 400;
     const perTier = (g.isRanch && g.cfg.speedPerTier) || time.speedPerTier || 1.5; // (the ranch's shop has its own)
     let rate = base * Math.pow(perTier, g.research.level(time.speedResearch || 'Speed'));
-    if (g.inventory.get('Power') > 0) rate *= (s.power && s.power.speedMultiplier) || 2;
+    if (this.juice > 0) rate *= (s.power && s.power.speedMultiplier) || 2;
     rate *= g.boost('speed'); // gata (village kitchen)
     if (g.droneRate) rate *= g.droneRate(this); // the ranch: its dishes and the bees' stings
     if (this.execSpeed > 0) rate = Math.min(rate, base * this.execSpeed);
@@ -55,6 +56,6 @@ export class Drone {
   }
 
   toSave() {
-    return { x: this.x, y: this.y, hat: this.hat };
+    return { x: this.x, y: this.y, hat: this.hat, juice: this.juice };
   }
 }

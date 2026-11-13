@@ -1,5 +1,6 @@
 // Runtime value types used by the interpreter (besides plain JS numbers, strings, booleans,
 // null, undefined, arrays, null-prototype objects, Map and Set).
+import { WORDS } from '../core/util.js';
 
 // A function written by the player.
 export class Closure {
@@ -148,7 +149,7 @@ export function formatValue(v, nested = false, depth = 0) {
   if (v instanceof BuiltinFunction) return `${v.label || v.name}()`;
   if (v instanceof BoundMethod) return `${v.name}()`;
   if (v instanceof Namespace) return v.label;
-  if (v instanceof DroneHandle) return `Դրոն #${v.drone.id}`;
+  if (v instanceof DroneHandle) return `${WORDS.drone} #${v.drone.id}`;
   if (isUserObject(v)) {
     const keys = Object.keys(v);
     const parts = keys.slice(0, 30).map((k) => {

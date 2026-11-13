@@ -217,8 +217,8 @@ test('stickers: each one earned once, from code, the farm, the village and secre
   const ev = (name, e = {}, times = 1) => {
     for (let i = 0; i < times; i++) game.events.emit(name, e);
   };
-  ev('harvest', { chain: 29 });
-  ev('harvest', { giantSize: 6, chain: 30 });
+  ev('harvest', { chain: 11 });
+  ev('harvest', { giantSize: 6, chain: 12 });
   ev('dino', { end: true, length: 30 });
   game.stats.recordHarvest('Whitefish');
   ev('fish');
@@ -265,7 +265,7 @@ test('challenge: a new task every Monday for everyone; every try is the same fre
   assert.deepEqual(farm.settings.game.speedOptions, [1, 2, 4, 8]);
   assert.ok(main.calendar.state && main.config.settings.calendar, 'the main farm keeps its calendar');
   assert.deepEqual(main.config.settings.game.speedOptions, [0.25, 0.5, 1]);
-  const code = 'while (true) {\n  for (let i = 0; i < 3; i++) {\n    for (let j = 0; j < 3; j++) {\n      if (getGroundType() != Grounds.Soil) { till(); }\n      if (getEntityType() != Entities.Pumpkin) { plant(Entities.Pumpkin); }\n      if (i == 2 && j == 2 && canHarvest()) { harvest(); }\n      move(North);\n    }\n    move(East);\n  }\n}';
+  const code = 'while (true) {\n  for (let i = 0; i < 3; i++) {\n    for (let j = 0; j < 3; j++) {\n      if (getGroundType() != Grounds.Soil) { till(); }\n      if (getEntityType() != Entities.SquareMelon) { plant(Entities.SquareMelon); }\n      if (i == 2 && j == 2 && canHarvest()) { harvest(); }\n      move(North);\n    }\n    move(East);\n  }\n}';
   const time = (speed) => {
     const game = testGame(main.config, task, code);
     const goal = watchGoal(game, task.goal);

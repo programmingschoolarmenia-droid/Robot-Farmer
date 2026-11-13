@@ -5,30 +5,43 @@ import { RanchApi, RANCH_THINGS } from '../engine/ranchApi.js';
 import { carpetProblems } from '../engine/carpet.js';
 import { SYNTAX_FEATURES } from '../lang/gate.js';
 import { SEASON_NAMES, WEATHER_NAMES } from '../engine/calendar.js';
+import { LANGS, TEXT_FILES, localize } from './i18n.js';
 
 export const CONFIG_FILES = ['settings', 'research', 'texts', 'bridgy', 'aliases', 'guide', 'village', 'events', 'ranch'];
 
-export async function loadConfig(base = 'config/') {
+// lang: 'hy' (the files themselves), 'en' or 'ru' (config/<lang>/ on top, see i18n.js localize).
+export async function loadConfig(base = 'config/', lang = 'hy') {
   const config = {};
   const errors = [];
-  for (const name of CONFIG_FILES) {
-    const file = `${name}.json`;
+  const read = async (file, optional) => {
     let text;
     try {
       const res = await fetch(`${base}${file}`, { cache: 'no-store' });
+      if (optional && res.status === 404) return {};
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       text = await res.text();
     } catch (e) {
       errors.push({ file, path: '', message: `Ֆայլը չհաջողվեց բեռնել (${e.message})`, fatal: true });
-      continue;
+      return undefined;
     }
     try {
-      config[name] = JSON.parse(text);
+      return JSON.parse(text);
     } catch (e) {
       errors.push({ file, path: jsonErrorPosition(e, text), message: `JSON-ի սխալ. ստուգիր ստորակետները, չակերտները և փակագծերը (${e.message})` });
+      return undefined;
     }
+  };
+  const packs = { aliases: {} };
+  await Promise.all([
+    ...CONFIG_FILES.map(async (name) => (config[name] = await read(`${name}.json`))),
+    ...LANGS.filter((l) => l !== 'hy').map(async (l) => (packs.aliases[l] = await read(`${l}/aliases.json`, true))),
+    ...(lang === 'hy' ? [] : TEXT_FILES.map(async (name) => (packs[name] = await read(`${lang}/${name}.json`, true)))),
+  ]);
+  for (const name of CONFIG_FILES) if (config[name] === undefined) delete config[name];
+  if (!errors.length) {
+    localize(config, lang, packs);
+    errors.push(...validateConfig(config));
   }
-  if (!errors.length) errors.push(...validateConfig(config));
   return { config, errors };
 }
 
@@ -173,6 +186,7 @@ export function validateConfig(config) {
   }
   if (needObj('costs', settings.costs)) {
     needNum('costs.actionSuccess', settings.costs.actionSuccess, { min: 1 });
+    for (const [kind, n] of Object.entries(settings.costs.actionTicks || {})) needNum(`costs.actionTicks.${kind}`, n, { min: 1 });
     needNum('costs.actionFail', settings.costs.actionFail, { min: 0 });
     needNum('costs.getter', settings.costs.getter, { min: 0 });
   }
@@ -265,7 +279,7 @@ export function validateConfig(config) {
       }
     }
   }
-  if (isObj(settings.fertilizer) && settings.fertilizer.infectedWeird !== undefined) needNum('fertilizer.infectedWeird', settings.fertilizer.infectedWeird, { min: 0 });
+  if (isObj(settings.fertilizer)) for (const key of ['tiredStep', 'tiredMin']) needNum(`fertilizer.${key}`, settings.fertilizer[key], { min: 0, optional: true });
   if (settings.calendar !== undefined) {
     const c = settings.calendar;
     if (!isObj(c)) err(S, 'calendar', 'Պետք է լինի օբյեկտ');

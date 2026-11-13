@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="hy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bridgy's Farm: Privacy and rules</title>
+<!-- The privacy policy, the game's rules and how to delete an account, in Armenian, English and
+     Russian. Google Play links here (privacy.html, privacy.html#delete); the game shows it in a
+     window (⚙ Settings, the start screen) with ?lang=hy|en|ru. Without JavaScript all three show. -->
+<style>
+  :root {
+    --ink: #1b2a4a;
+    --ink-soft: #4b5b7c;
+    --navy: #173a7a;
+    --blue: #2d6be0;
+    --gold-soft: #fff1cc;
+    --line: #d3dcec;
+    --paper: #fffdf7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 16px;
+    background: var(--paper);
+    color: var(--ink);
+    font: 15px/1.6 'Noto Sans Armenian', 'Noto Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+  main { max-width: 720px; margin: 0 auto; }
+  nav { display: flex; gap: 6px; justify-content: flex-end; margin-bottom: 8px; }
+  nav button {
+    padding: 4px 12px;
+    border: 2px solid var(--navy);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--navy);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  nav button.active { background: var(--navy); color: #fff; }
+  h1 { margin: 0 0 4px; color: var(--navy); font-size: 1.4rem; line-height: 1.3; }
+  h1, h2 { overflow-wrap: break-word; hyphens: auto; }
+  @media (max-width: 400px) {
+    body { padding: 12px; }
+    h1 { font-size: 1.2rem; }
+  }
+  h2 { margin: 24px 0 6px; color: var(--navy); font-size: 1.1rem; }
+  p, ul { margin: 6px 0; }
+  ul { padding-left: 22px; }
+  li { margin: 3px 0; }
+  .date { color: var(--ink-soft); font-size: 0.85rem; }
+  .box { padding: 10px 14px; border: 2px solid var(--line); border-radius: 10px; background: var(--gold-soft); }
+  a { color: var(--blue); overflow-wrap: anywhere; }
+  section[lang] + section[lang] { margin-top: 40px; padding-top: 16px; border-top: 3px solid var(--line); }
+  .js section[lang] { display: none; }
+  .js section[lang].shown { display: block; margin-top: 0; padding-top: 0; border-top: 0; }
+</style>
+</head>
+<body>
+<main>
+<nav hidden>
+  <button type="button" data-lang="hy">Հայ</button>
+  <button type="button" data-lang="en">Eng</button>
+  <button type="button" data-lang="ru">Рус</button>
+</nav>
+
+<section lang="hy">
+  <h1>Բրիջիի ֆերման. գաղտնիություն և կանոններ</h1>
+  <p class="date">Թարմացվել է 2026 թ. նոյեմբերի 13-ին</p>
+
+  <h2>Ով ենք մենք</h2>
+  <p>«Բրիջիի ֆերման» անվճար ուսումնական խաղ է, որտեղ երեխաները սովորում են JavaScript։ Խաղը ստեղծել է <b>Programming School Armenia</b>-ն։ Հարցերի համար գրեք՝ <a href="mailto:vaghinak.papoyan@gmail.com">vaghinak.papoyan@gmail.com</a>։</p>
+
+  <h2>Ինչ ենք պահում</h2>
+  <p>Երբ գրանցվում ես, պահում ենք միայն այն, ինչ պետք է խաղի համար․</p>
+  <ul>
+    <li><b>Մուտքանունը</b>։ Մենք չենք հարցնում քո իսկական անունը, էլ. փոստը, հեռախոսը, հասցեն, լուսանկարը կամ գտնվելու վայրը։</li>
+    <li><b>Գաղտնաբառը</b>։ Այն պահում է Google Firebase-ը, մենք այն չենք տեսնում։</li>
+    <li><b>Քո ֆերման</b>՝ բույսերը, պաշարները, հետազոտությունները և քո գրած կոդը, որ կարողանաս խաղալ ցանկացած սարքից։</li>
+    <li><b>Ցուցակի թվերը</b>՝ միավորները, հետազոտությունները, խաղի ժամանակը, գլխարկը, օրերի շարքը։</li>
+    <li>Առևտրի <b>պատվերները</b>, մրցույթի <b>գորգերը</b> և <b>հավանումները</b>, քո ուղարկած <b>բողոքները</b>։</li>
+  </ul>
+  <p>Ֆերմայի պատճենը պահվում է նաև քո սարքում, որ խաղը աշխատի առանց համացանցի։ <b>Հյուրի</b> ֆերման մնում է միայն քո սարքում, ոչինչ չի ուղարկվում։</p>
+
+  <h2>Ինչ են տեսնում մյուս խաղացողները</h2>
+  <p>Մուտքանունը, գլխարկը, ցուցակի թվերը, սիրելի գորգը, մրցույթի գորգերը, առևտրի պատվերները։ Եթե հաղթես շաբաթվա մարտահրավերում, դպրոցում ցույց կտրվի քո լավագույն կոդը։</p>
+
+  <h2>Որտեղ է պահվում</h2>
+  <p>Տվյալները պահվում են Google Firebase-ում (Google Cloud)։ Կայքը գտնվում է Vercel-ում, որը, ինչպես ցանկացած կայք, տեխնիկական գրառումներում տեսնում է IP հասցեն։ Կայքը տառատեսակները բեռնում է Google Fonts-ից (Android հավելվածում դրանք ներսում են)։</p>
+
+  <h2>Ինչ չենք անում</h2>
+  <p>Գովազդ չկա, հետևում և վերլուծություն չկա, գնումներ չկան, զրուցարան չկա։ Մենք ոչ մեկին չենք վաճառում կամ փոխանցում քո տվյալները։</p>
+
+  <h2>Երեխաներ</h2>
+  <p>Խաղը ստեղծված է 9–17 տարեկան աշակերտների համար։ Մուտքանունում մի՛ գրիր քո իսկական անուն-ազգանունը։ Ծնողները կարող են գրել մեզ՝ երեխայի տվյալները տեսնելու կամ ջնջելու համար։</p>
+
+  <h2 id="rules-hy">Խաղի կանոններ</h2>
+  <div class="box">
+    <ul>
+      <li>Եղիր բարի։ Մուտքանունները և գորգերը պետք է լինեն քաղաքավարի՝ առանց վատ բառերի, վիրավորանքների, վախեցնող կամ մեծահասակների նկարների։</li>
+      <li>Մի՛ գրիր անձնական տվյալներ (իսկական անուն-ազգանուն, հեռախոս, հասցե) և մի՛ ձևացիր, թե ուրիշն ես։</li>
+      <li>Մի՛ խանգարիր ուրիշներին խաղալ։</li>
+    </ul>
+    <p>Եթե ինչ-որ բան քեզ դուր չի գալիս, սեղմիր <b>«Բողոքել»</b> խաղացողի քարտում կամ գորգի տակ։ Ուսուցիչը կտեսնի բողոքը, իսկ դու այլևս չես տեսնի այդ խաղացողին կամ գորգը։ Ուսուցիչը կարող է հեռացնել գորգեր և պատվերներ և ջնջել կանոնները խախտող հաշիվները։</p>
+  </div>
+
+  <h2 id="delete-hy">Ինչպես ջնջել հաշիվը</h2>
+  <p>Խաղում բացիր <b>Պրոֆիլը → «Ջնջել հաշիվը»</b> և գրիր գաղտնաբառդ։ Միանգամից կջնջվեն ֆերման, ռանչոն, միավորները և տեղը ցուցակում, պատվերները, գորգերը, հավանումները և քո ուղարկած բողոքները։ Դրանք հետ բերել հնարավոր չի լինի։</p>
+  <p>Եթե չես կարողանում մտնել խաղ, գրիր մեզ <a href="mailto:vaghinak.papoyan@gmail.com">vaghinak.papoyan@gmail.com</a> հասցեով՝ նշելով մուտքանունը, և մենք կջնջենք ամեն ինչ 30 օրվա ընթացքում։ Ուրիշների բողոքները քո մասին ուսուցիչը կարող է պահել, մինչև դրանք քննարկի։</p>
+
+  <h2>Փոփոխություններ</h2>
+  <p>Եթե փոխենք այս էջը, վերևի ամսաթիվը նույնպես կփոխվի։</p>
+</section>
+
+<section lang="en">
+  <h1>Bridgy's Farm: privacy and rules</h1>
+  <p class="date">Updated 13 November 2026</p>
+
+  <h2>Who we are</h2>
+  <p>Bridgy's Farm is a free educational game where children learn JavaScript. It is made by <b>Programming School Armenia</b>. Questions: <a href="mailto:vaghinak.papoyan@gmail.com">vaghinak.papoyan@gmail.com</a>.</p>
+
+  <h2>What we store</h2>
+  <p>When you sign up, we keep only what the game needs:</p>
+  <ul>
+    <li>Your <b>username</b>. We never ask for your real name, email, phone, address, photo or location.</li>
+    <li>Your <b>password</b>. Google Firebase keeps it; we never see it.</li>
+    <li>Your <b>farm</b>: plants, storage, research and the code you write, so you can play on any device.</li>
+    <li>Your <b>leaderboard numbers</b>: points, research, play time, hat, day streak.</li>
+    <li>Your market <b>orders</b>, contest <b>carpets</b> and <b>likes</b>, and the <b>reports</b> you send.</li>
+  </ul>
+  <p>A copy of your farm is also kept on your device so the game works without internet. A <b>guest</b> farm stays only on your device; nothing is sent.</p>
+
+  <h2>What other players see</h2>
+  <p>Your username, hat, leaderboard numbers, favourite carpet, contest carpets and market orders. If you win the weekly challenge, your best code is shown in the School.</p>
+
+  <h2>Where it is stored</h2>
+  <p>The data is stored in Google Firebase (Google Cloud). The website is hosted by Vercel, which, like any website, sees your IP address in its technical logs. The website loads its fonts from Google Fonts (the Android app has them built in).</p>
+
+  <h2>What we don't do</h2>
+  <p>No ads, no tracking or analytics, no purchases, no chat. We never sell or share your data with anyone.</p>
+
+  <h2>Children</h2>
+  <p>The game is made for students aged 9–17. Please don't use your real full name as your username. Parents can write to us to see or delete their child's data.</p>
+
+  <h2 id="rules-en">Rules of the game</h2>
+  <div class="box">
+    <ul>
+      <li>Be kind. Usernames and carpets must be polite: no bad words, insults, scary or adult pictures.</li>
+      <li>Don't share personal details (real full name, phone, address), and don't pretend to be someone else.</li>
+      <li>Don't spoil the game for others.</li>
+    </ul>
+    <p>If something bothers you, press <b>Report</b> on the player's card or under the carpet. Your teacher will see the report, and you won't see that player or carpet anymore. Teachers can remove carpets and orders and delete accounts that break the rules.</p>
+  </div>
+
+  <h2 id="delete-en">How to delete your account</h2>
+  <p>In the game, open <b>Profile → Delete account</b> and type your password. Your farm, ranch, points and leaderboard place, orders, carpets, likes and the reports you sent are deleted at once. They can't be brought back.</p>
+  <p>If you can't log in, write to <a href="mailto:vaghinak.papoyan@gmail.com">vaghinak.papoyan@gmail.com</a> with your username, and we will delete everything within 30 days. Reports other players made about you may be kept by the teacher until they are handled.</p>
+
+  <h2>Changes</h2>
+  <p>If we change this page, the date at the top changes too.</p>
+</section>
+
+<section lang="ru">
+  <h1>Ферма Бриджи: конфиденциальность и правила</h1>
+  <p class="date">Обновлено 13 ноября 2026 г.</p>
+
+  <h2>Кто мы</h2>
+  <p>«Ферма Бриджи» — бесплатная обучающая игра, в которой дети изучают JavaScript. Её создала <b>Programming School Armenia</b>. Вопросы: <a href="mailto:vaghinak.papoyan@gmail.com">vaghinak.papoyan@gmail.com</a>.</p>
+
+  <h2>Что мы храним</h2>
+  <p>Когда ты регистрируешься, мы храним только то, что нужно игре:</p>
+  <ul>
+    <li><b>Логин</b>. Мы не спрашиваем настоящее имя, почту, телефон, адрес, фото или местоположение.</li>
+    <li><b>Пароль</b>. Его хранит Google Firebase, мы его не видим.</li>
+    <li><b>Твою ферму</b>: растения, склад, исследования и код, который ты пишешь, чтобы играть с любого устройства.</li>
+    <li><b>Числа в таблице лидеров</b>: очки, исследования, время игры, шляпу, серию дней.</li>
+    <li>Твои <b>заказы</b> на рынке, <b>ковры</b> на конкурсе, <b>лайки</b> и <b>жалобы</b>.</li>
+  </ul>
+  <p>Копия фермы хранится и на твоём устройстве, чтобы игра работала без интернета. Ферма <b>гостя</b> остаётся только на устройстве, ничего не отправляется.</p>
+
+  <h2>Что видят другие игроки</h2>
+  <p>Логин, шляпу, числа в таблице лидеров, любимый ковёр, ковры на конкурсе и заказы на рынке. Если ты победишь в задании недели, в школе покажут твой лучший код.</p>
+
+  <h2>Где это хранится</h2>
+  <p>Данные хранятся в Google Firebase (Google Cloud). Сайт размещён на Vercel, который, как и любой сайт, видит IP-адрес в технических журналах. Сайт загружает шрифты из Google Fonts (в Android-приложении они встроены).</p>
+
+  <h2>Чего мы не делаем</h2>
+  <p>Нет рекламы, нет слежки и аналитики, нет покупок, нет чата. Мы никому не продаём и не передаём твои данные.</p>
+
+  <h2>Дети</h2>
+  <p>Игра создана для учеников 9–17 лет. Не используй своё настоящее имя и фамилию как логин. Родители могут написать нам, чтобы посмотреть или удалить данные ребёнка.</p>
+
+  <h2 id="rules-ru">Правила игры</h2>
+  <div class="box">
+    <ul>
+      <li>Будь добрым. Логины и ковры должны быть вежливыми: без плохих слов, оскорблений, страшных или взрослых картинок.</li>
+      <li>Не пиши личные данные (настоящее имя и фамилию, телефон, адрес) и не выдавай себя за другого.</li>
+      <li>Не мешай другим играть.</li>
+    </ul>
+    <p>Если тебе что-то не нравится, нажми <b>«Пожаловаться»</b> в карточке игрока или под ковром. Учитель увидит жалобу, а ты больше не будешь видеть этого игрока или ковёр. Учитель может убирать ковры и заказы и удалять аккаунты, нарушающие правила.</p>
+  </div>
+
+  <h2 id="delete-ru">Как удалить аккаунт</h2>
+  <p>В игре открой <b>Профиль → «Удалить аккаунт»</b> и введи пароль. Сразу удалятся ферма, ранчо, очки и место в таблице, заказы, ковры, лайки и твои жалобы. Вернуть их будет нельзя.</p>
+  <p>Если не получается войти, напиши на <a href="mailto:vaghinak.papoyan@gmail.com">vaghinak.papoyan@gmail.com</a> и укажи логин — мы удалим всё в течение 30 дней. Жалобы других игроков на тебя учитель может хранить, пока не разберётся с ними.</p>
+
+  <h2>Изменения</h2>
+  <p>Если мы изменим эту страницу, дата вверху тоже изменится.</p>
+</section>
+</main>
+<script>
+  // One language at a time: ?lang=, else the browser's; #rules / #delete scroll to that part.
+  (function () {
+    var langs = ['hy', 'en', 'ru'];
+    var asked = (location.search.match(/lang=(\w+)/) || [])[1];
+    var browser = (navigator.language || '').slice(0, 2);
+    var lang = langs.indexOf(asked) >= 0 ? asked : browser === 'hy' ? 'hy' : browser === 'ru' ? 'ru' : 'en';
+    var nav = document.querySelector('nav');
+    function show(l) {
+      lang = l;
+      document.documentElement.lang = l;
+      document.querySelectorAll('section[lang]').forEach(function (s) { s.classList.toggle('shown', s.lang === l); });
+      nav.querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.dataset.lang === l); });
+    }
+    document.documentElement.classList.add('js');
+    nav.hidden = false;
+    nav.addEventListener('click', function (e) { if (e.target.dataset.lang) show(e.target.dataset.lang); });
+    show(lang);
+    var part = location.hash.slice(1);
+    var target = part && document.getElementById(part + '-' + lang);
+    if (target) target.scrollIntoView();
+  })();
+</script>
+</body>
+</html>

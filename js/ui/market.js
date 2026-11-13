@@ -2,7 +2,7 @@
 // running under it; every change of goods goes through GameScreen.trade().
 import { h, icon, pixelImg, clear, phoneText } from './dom.js';
 import { openModal, confirmModal } from './modal.js';
-import { accountErrorText, avatar } from './account.js';
+import { accountErrorText, avatar, isHidden } from './account.js';
 import { AccountError } from '../storage/account.js';
 import { allowedRange, equalAmount, giveRange, orderExpired, orderProblem, placeProblem, takeProblem, tradable } from '../engine/market.js';
 import { formatCount } from '../core/util.js';
@@ -51,7 +51,7 @@ export class MarketScreen {
   }
 
   words(item, n) {
-    return `${formatCount(n)} ${this.app.i18n.item(item)}`;
+    return this.app.i18n.amount(formatCount(n), item);
   }
 
   problemText(code, item) {
@@ -119,11 +119,11 @@ export class MarketScreen {
     this.content.replaceChildren(...(id === 'All' ? this.allOrders(rows) : this.myOrders(rows)));
   }
 
-  // Open, not too old and fair (a forged order never reaches the list).
+  // Open, not too old and fair (a forged order never reaches the list), and not from a player I reported.
   async openOrders() {
     const now = Date.now();
     const rows = await this.app.account.orders(now - (this.cfg.days ?? 3) * 86400000);
-    return rows.filter((o) => o.status === 'open' && !orderExpired(this.settings, o, now) && !orderProblem(this.settings, o));
+    return rows.filter((o) => o.status === 'open' && !orderExpired(this.settings, o, now) && !orderProblem(this.settings, o) && !isHidden(this.app, o.owner));
   }
 
   allOrders(rows) {

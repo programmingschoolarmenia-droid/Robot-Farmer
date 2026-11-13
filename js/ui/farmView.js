@@ -4,7 +4,7 @@ import { formatCount } from '../core/util.js';
 
 const MAX_TILE_CSS = 80;
 const MEADOW_TILE_CSS = 48;
-const SWAY = new Set(['Grass', 'Bush', 'Tree', 'Carrot', 'Sunflower', 'Mushroom']);
+const SWAY = new Set(['Grass', 'Bush', 'Tree', 'Mulberry', 'Carrot', 'Sunflower', 'Mushroom']);
 // Colour laid over the meadow and the ground in each season (spring keeps the plain colours).
 export const SEASON_TINT = { Summer: 'rgba(255, 210, 90, 0.10)', Autumn: 'rgba(205, 110, 35, 0.20)', Winter: 'rgba(236, 244, 255, 0.62)' };
 const PARTICLE_COLORS = {
@@ -12,7 +12,10 @@ const PARTICLE_COLORS = {
   Bush: ['#59c135', '#14a02e', '#df3e23'],
   Tree: ['#59c135', '#1a7a3e', '#bb7547'],
   Carrot: ['#fa6a0a', '#f9a31b', '#59c135'],
-  Pumpkin: ['#fa6a0a', '#f9a31b', '#ffd541'],
+  Mulberry: ['#793a80', '#bc4a9b', '#1a7a3e'],
+  Pumpkin: ['#df3e23', '#14a02e', '#9cdb43'],
+  YellowMelon: ['#ffd541', '#fffc40', '#f9a31b'],
+  SquareMelon: ['#df3e23', '#14a02e', '#9cdb43'],
   Sunflower: ['#ffd541', '#fffc40', '#59c135'],
   Cactus: ['#14a02e', '#59c135', '#d6f264'],
   Mushroom: ['#bc4a9b', '#f4d29c', '#793a80'],
@@ -253,12 +256,18 @@ export class FarmView {
         return `grass${stage}`;
       case 'Bush':
         return p >= 1 ? 'bush2' : p < 0.5 ? 'bush0' : 'bush1';
-      case 'Tree':
-        return p >= 1 ? 'tree3' : `tree${Math.min(2, Math.floor(p * 3))}`;
+      case 'Tree': // (after its first fruit the tree stays grown and blossoms again)
+        return p >= 1 ? 'tree3' : e.data.fruits ? 'tree2' : `tree${Math.min(2, Math.floor(p * 3))}`;
+      case 'Mulberry':
+        return `mulberry${stage}`;
       case 'Carrot':
         return `carrot${stage}`;
       case 'Pumpkin':
         return p >= 1 ? 'pumpkinIcon' : `pumpkin${stage}`;
+      case 'YellowMelon':
+        return p >= 1 ? 'yellowMelon' : `pumpkin${stage}`;
+      case 'SquareMelon':
+        return p >= 1 ? 'squareMelon' : `pumpkin${stage}`;
       case 'Dead_Pumpkin':
         return 'deadPumpkin';
       case 'Sunflower':
@@ -272,7 +281,7 @@ export class FarmView {
       case 'Treasure':
         return 'treasure';
       case 'Apple':
-        return 'apple';
+        return 'mouse';
       case 'Dinosaur':
         return 'dinoTail';
       case 'Mill':
@@ -347,6 +356,14 @@ export class FarmView {
       ctx.strokeRect(r.x + inset / 2, r.y + inset / 2, r.s - inset, r.s - inset);
     }
 
+    // tired soil is paler (the same crop again and again; humus mends it)
+    for (const tl of world.tiles) {
+      if (!(tl.s < 1)) continue;
+      const r = this.tileRect(tl.x, tl.y);
+      ctx.fillStyle = `rgba(236, 226, 200, ${(1 - tl.s) * 0.9})`;
+      ctx.fillRect(r.x, r.y, r.s, r.s);
+    }
+
     // plants
     const fx = this.fx;
     const giants = new Set();
@@ -370,10 +387,11 @@ export class FarmView {
       } else {
         ctx.drawImage(sprite, r.x, r.y, r.s, r.s);
       }
-      if (e.data.infected) this.drawInfection(ctx, r, t);
       if (e.data.charged) this.drawCharge(ctx, r, t);
       if (e.data.making) this.drawMachine(ctx, r, e, t);
-      if (fx && e.progress >= 1 && e.type !== 'Dead_Pumpkin') this.drawSparkle(ctx, r, t, hash(tl.x, tl.y));
+      // (a watermelon sparkles only when it is sweet enough to harvest)
+      const ready = e.progress >= 1 && e.type !== 'Dead_Pumpkin' && (e.type !== 'Pumpkin' || world.ripeness(e) >= (world.entityConfig('Pumpkin').ripeFrom ?? 80));
+      if (fx && ready) this.drawSparkle(ctx, r, t, hash(tl.x, tl.y));
     }
     for (const g of giants) this.drawGiant(ctx, g, now);
     for (const tl of world.tiles) if (tl.glass) this.drawGlass(ctx, this.tileRect(tl.x, tl.y));
@@ -445,7 +463,7 @@ export class FarmView {
     }
     const pad = size * 0.04;
     const w = (size - pad * 2) * s;
-    ctx.drawImage(this.sprites.get('pumpkinIcon'), x + size / 2 - w / 2, y + size / 2 - w / 2, w, w);
+    ctx.drawImage(this.sprites.get('squareMelon'), x + size / 2 - w / 2, y + size / 2 - w / 2, w, w);
   }
 
   drawPondWater(ctx, tl, t) {
@@ -462,18 +480,6 @@ export class FarmView {
       const px = Math.max(2, r.s / 16);
       ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
       ctx.fillRect(r.x + r.s * (0.25 + 0.4 * k), r.y + r.s * (0.62 - 0.2 * k), px * 2, px);
-    }
-  }
-
-  drawInfection(ctx, r, t) {
-    const n = 3;
-    for (let i = 0; i < n; i++) {
-      const a = t * 2 + i * 2.1;
-      const px = r.x + r.s * (0.5 + Math.cos(a) * 0.3);
-      const py = r.y + r.s * (0.4 + Math.sin(a * 1.3) * 0.25);
-      ctx.fillStyle = i % 2 ? '#bc4a9b' : '#e07cc4';
-      const s = Math.max(2, r.s / 12);
-      ctx.fillRect(px, py, s, s);
     }
   }
 
@@ -836,6 +842,8 @@ export class FarmView {
       let name = i18n.entity(e.type);
       if (e.type === 'Sunflower') name += ` · ${i18n.t('ui.petals', { n: e.data.petals })}`;
       if (e.type === 'Cactus') name += ` · ${e.data.size}`;
+      if (e.type === 'Pumpkin' && e.progress >= 1) name += ` · ${i18n.t('ui.sweetness', { n: this.game.world.ripeness(e) })}`;
+      if (e.type === 'Tree') name += ` · ${i18n.t('ui.fruitsLeft', { n: this.game.measure(null, tile) })}`;
       if (e.data.giant) name += ` · ${e.data.giant.size}×${e.data.giant.size}`;
       lines.push(h('div', {}, name, e.progress < 1 ? ` · ${Math.floor(e.progress * 100)}%` : ' ✓'));
       if (e.type !== 'Dead_Pumpkin') lines.push(h('div', { class: 'bar' }, h('span', { style: { width: `${Math.floor(e.progress * 100)}%` } })));
@@ -843,11 +851,7 @@ export class FarmView {
     if (tile.water > 0.01) lines.push(h('div', {}, icon(this.sprites, 'water'), ` ${Math.round(tile.water * 100)}%`));
     if (tile.ground === 'Pond' && tile.fishAt > this.game.time) lines.push(h('div', {}, i18n.t('ui.pondResting', { n: Math.ceil(tile.fishAt - this.game.time) })));
     if (tile.glass) lines.push(h('div', {}, i18n.t('ui.glassTip')));
-    const world = this.game.world;
-    if (e && world.polycultureLevel() > 0) {
-      const c = world.companionOf(tile);
-      if (c) lines.push(h('div', {}, icon(this.sprites, 'polyculture'), ` ${i18n.entity(c.type)} (${c.x}, ${c.y})`));
-    }
+    if (tile.s < 1) lines.push(h('div', {}, i18n.t('ui.tiredSoil', { n: Math.round(tile.s * 100) })));
     this.tip.replaceChildren(...lines);
     this.tip.hidden = false;
     const sw = this.stage.clientWidth;

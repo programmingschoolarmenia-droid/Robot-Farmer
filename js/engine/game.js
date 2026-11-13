@@ -17,9 +17,16 @@ import { Ranch } from './ranch.js';
 import { locOf } from '../lang/errors.js';
 import { DIR_BITS } from './maze.js';
 
-export const SAVE_VERSION = 2;
+// 2: Speed has 7 levels. 3: the cards hang in the school's code order (bought levels stay as they
+// are, also when a new parent card isn't owned yet, so nothing is converted). 4: our own crop rules
+// (new farm sizes, eggplant seeds; see `migrate`).
+export const SAVE_VERSION = 4;
 // Saves from when Speed had 5 levels: the 7-level one at least as fast (the top speed is the same).
 const OLD_SPEED_LEVEL = [0, 2, 3, 5, 6, 7];
+// Saves from before version 4: the farm was 1, 3×1, 3, 4, 6, 8, 12, 16, 22 and 32 squares wide. Each
+// level moves to the new one at least as big; a 22 or 32 farm keeps its size (flags.farmSize).
+const OLD_EXPAND_LEVEL = [0, 2, 2, 3, 5, 6, 8, 9, 9, 9];
+const OLD_BIG_FARM = { 8: 22, 9: 32 };
 
 export class Game {
   constructor(config, save = {}) {
@@ -35,11 +42,11 @@ export class Game {
     this.notes = new Notes(this, save.notes);
     this.stickers = new Stickers(this, save.stickers);
     this.boosts = { ...(save.boosts || {}) }; // eaten dishes: { speed: { item, multiplier, until } }
+    this.flags = { ...(save.flags || {}) };
     this.inventory = new Inventory(this, save.inventory ?? (this.settings.game && this.settings.game.startItems) ?? {});
     const extra = this.settings.dev && this.settings.dev.extraItems;
     if (extra && !save.inventory) for (const [k, v] of Object.entries(extra)) this.inventory.items.set(k, v);
-    const oldSpeed = save.v === 1 && save.research && save.research.Speed;
-    this.research = new Research(this, oldSpeed ? { ...save.research, Speed: OLD_SPEED_LEVEL[oldSpeed] } : save.research);
+    this.research = new Research(this, this.migrate(save));
     const [w, h] = this.worldSizeForLevel(this.research.level(this.sizeResearch));
     if (save.world && save.world.w && save.world.h) {
       this.world = World.fromSave(this, save.world, this.time);
@@ -58,12 +65,10 @@ export class Game {
     this.speed = (this.settings.game && this.settings.game.defaultSpeed) || 1;
     this.warned = new Set();
     this.production = { Water: 0, Fertilizer: 0, ...(save.production || {}) };
-    this.flags = { ...(save.flags || {}) };
     this.challenge = { week: '', code: '', best: 0, bestCode: '', prev: null, prizeWeek: '', ...(save.challenge || {}) }; // the weekly challenge (js/engine/challenge.js)
-    this.powerUse = save.powerUse || 0;
     this.dino = null;
     if (save.dino && this.mainDrone.hat === 'Dinosaur_Hat') {
-      this.dino = { drone: this.mainDrone, tail: save.dino.tail || [], apple: save.dino.apple || null, eaten: save.dino.eaten || 0 };
+      this.dino = { drone: this.mainDrone, tail: save.dino.tail || [], apple: save.dino.apple || null, eaten: save.dino.eaten || 0, moves: save.dino.moves || 0 };
     } else if (this.mainDrone.hat === 'Dinosaur_Hat') this.mainDrone.hat = 'Straw_Hat';
     this.ranch = new Ranch(this, save.ranch); // the second world (js/engine/ranch.js); it runs only while open
     this.events.on('research', (e) => this.onResearch(e));
@@ -81,7 +86,22 @@ export class Game {
   worldSizeForLevel(level) {
     const sizes = (this.settings.world && this.settings.world.sizes) || [[1, 1]];
     const s = sizes[Math.min(level, sizes.length - 1)];
-    return [s[0], s[1]];
+    const least = this.flags.farmSize || 0; // (a farm from before the new sizes never shrinks)
+    return [Math.max(s[0], least), Math.max(s[1], least)];
+  }
+
+  // The research levels of a save in today's form. Older saves are moved up; a new game has no `v`.
+  migrate(save) {
+    const research = { ...(save.research || {}) };
+    if (save.v === 1 && research.Speed) research.Speed = OLD_SPEED_LEVEL[research.Speed];
+    if (save.v < 4) {
+      const old = research.Expand || 0;
+      if (old) research.Expand = OLD_EXPAND_LEVEL[old];
+      if (OLD_BIG_FARM[old]) this.flags.farmSize = OLD_BIG_FARM[old];
+      if (research.Carrots && !this.inventory.get('Seeds')) this.inventory.items.set('Seeds', 10); // eggplants need seeds now
+      if (this.inventory.get('Power') > 0) this.flags.juiceNote = true; // Bridgy says once that juice is drunk with xmel()
+    }
+    return research;
   }
 
   onResearch({ id }) {
@@ -195,7 +215,7 @@ export class Game {
     if (this.dino && this.dino.drone !== drone) return false;
     // A hedge maze would trap the dinosaur: it disappears when the hat goes on.
     if (this.world.maze) this.world.removeMaze(t);
-    this.dino = { drone, tail: [], apple: null, eaten: 0 };
+    this.dino = { drone, tail: [], apple: null, eaten: 0, moves: 0 };
     this.spawnApple(t);
     this.events.emit('dino', { start: true });
     return true;
@@ -205,7 +225,7 @@ export class Game {
     const dino = this.dino;
     if (!dino) return;
     const length = dino.eaten + 1;
-    const bones = length * length * Math.pow(2, Math.max(0, this.dinoLevel() - 1)) * this.calendar.yieldOf('Bone');
+    const bones = dino.eaten * length * Math.pow(2, Math.max(0, this.dinoLevel() - 1)) * this.calendar.yieldOf('Bone'); // mice × length
     for (const p of dino.tail) {
       const tl = this.world.tileNoWrap(p.x, p.y);
       if (tl && tl.entity && tl.entity.type === 'Dinosaur') {
@@ -225,34 +245,41 @@ export class Game {
     this.events.emit('dino', { end: true, bones: dino.eaten > 0 ? bones : 0, length });
   }
 
-  appleCost() {
-    const cfg = this.settings.dinosaur || {};
-    const mult = Math.pow(2, Math.max(0, this.dinoLevel() - 1));
-    const out = {};
-    for (const [k, v] of Object.entries(cfg.appleCost || {})) out[k] = v * mult;
-    return out;
-  }
-
+  // The mouse the snake hunts (inside the game it is still the Apple of old saves): a random free square.
   spawnApple(t) {
     const dino = this.dino;
     const w = this.world;
     dino.apple = null;
-    const cost = this.appleCost();
-    if (!this.inventory.canAfford(cost)) {
-      this.warn('appleCost', { cost }, null, dino.drone);
-      return;
-    }
     const free = w.tiles.filter(
       (tl) => !(tl.x === dino.drone.x && tl.y === dino.drone.y) && !dino.tail.some((p) => p.x === tl.x && p.y === tl.y) && !(w.maze && w.maze.contains(tl.x, tl.y)),
     );
-    if (!free.length) return;
-    const tl = free[Math.floor(this.rng.next() * free.length)];
-    this.inventory.pay(cost, 'apple');
+    if (free.length) this.putMouse(free[Math.floor(this.rng.next() * free.length)], t);
+  }
+
+  putMouse(tl, t) {
+    const old = this.dino.apple && this.world.tileNoWrap(this.dino.apple.x, this.dino.apple.y);
+    if (old && old.entity && old.entity.type === 'Apple') {
+      old.entity = null;
+      this.world.spawnGrass(old, t);
+    }
     const g = tl.entity && tl.entity.data.giant;
-    if (g) w.breakGiant(g);
+    if (g) this.world.breakGiant(g);
     tl.entity = { type: 'Apple', progress: 1, growTime: 1, data: {} };
-    dino.apple = { x: tl.x, y: tl.y };
-    void t;
+    this.dino.apple = { x: tl.x, y: tl.y };
+  }
+
+  // The mouse runs one square: to the free square next to it that is farthest from the snake's head,
+  // and only when that is farther than where it sits (in a corner it stays).
+  runMouse(t) {
+    const { apple, drone, tail } = this.dino;
+    const far = (x, y) => Math.abs(x - drone.x) + Math.abs(y - drone.y);
+    let best = null;
+    for (const [dx, dy] of Object.values(DIRECTIONS)) {
+      const tl = this.world.tileNoWrap(apple.x + dx, apple.y + dy);
+      if (!tl || (tl.x === drone.x && tl.y === drone.y) || tail.some((p) => p.x === tl.x && p.y === tl.y)) continue;
+      if (far(tl.x, tl.y) > far(apple.x, apple.y) && (!best || far(tl.x, tl.y) > far(best.x, best.y))) best = tl;
+    }
+    if (best) this.putMouse(best, t);
   }
 
   moveDino(d, dx, dy, t) {
@@ -283,9 +310,10 @@ export class Game {
     d.y = ny;
     const target = w.tileNoWrap(nx, ny);
     if (target.entity && (target.entity.type === 'Grass' || target.entity.type === 'Dinosaur')) target.entity = null;
-    if (eating) this.spawnApple(t);
-    this.events.emit('move', { drone: d.id, fromX, fromY, x: d.x, y: d.y, t });
     const cfg = this.settings.dinosaur || {};
+    if (eating) this.spawnApple(t);
+    else if (dino.apple && ++dino.moves % (cfg.mouseEvery ?? 2) === 0) this.runMouse(t);
+    this.events.emit('move', { drone: d.id, fromX, fromY, x: d.x, y: d.y, t });
     const cost = Math.max(1, Math.floor((cfg.moveTicks ?? 400) * Math.pow(1 - (cfg.speedupPerApple ?? 0.03), dino.eaten)));
     return { ok: true, fromX, fromY, dx, dy, cost };
   }
@@ -299,17 +327,17 @@ export class Game {
     this.events.emit('harvest', { ...r, x: tile.x, y: tile.y, drone: drone.id, node });
   }
 
-  // Power drains a little with every action while you have some.
+  // Every action uses up a little of the juice the drone drank (Drone.tickRate).
   afterAction(drone) {
     drone.actions++;
-    if (this.inventory.get('Power') <= 0) return;
-    const per = (this.settings.power && this.settings.power.actionsPerPower) || 30;
-    this.powerUse += 1 / per;
-    if (this.powerUse >= 1) {
-      const n = Math.floor(this.powerUse);
-      this.powerUse -= n;
-      this.inventory.add('Power', -Math.min(n, this.inventory.get('Power')), 'power');
-    }
+    if (drone.juice > 0) drone.juice--;
+  }
+
+  // xmel(): one pomegranate juice makes this drone faster for its next actions (settings.json → power).
+  drinkJuice(drone) {
+    this.inventory.add('Power', -1, 'use');
+    drone.juice = (this.settings.power && this.settings.power.actions) || 50;
+    this.events.emit('useItem', { item: 'Power', x: drone.x, y: drone.y, drone: drone.id });
   }
 
   warn(code, params, node, drone) {
@@ -380,8 +408,7 @@ export class Game {
     return r;
   }
 
-  // Weird substance: makes a maze from a grown bush (after Mazes research), moves a maze's
-  // treasure, or toggles infection on a plant and its neighbours.
+  // Weird substance: makes a maze from a grown bush (after Mazes research) or moves a maze's treasure.
   useWeirdSubstance(drone, tile, count, t, node) {
     const w = this.world;
     if (w.maze && w.maze.contains(tile.x, tile.y)) {
@@ -403,22 +430,8 @@ export class Game {
       }
       return true;
     }
-    const tiles = [tile];
-    for (const [dx, dy] of Object.values(DIRECTIONS)) {
-      const nb = this.world.neighbor(tile, dx, dy);
-      if (nb) tiles.push(nb);
-    }
-    let any = false;
-    for (const tl of tiles) {
-      this.world.sync(tl, t);
-      if (tl.entity && !this.world.machineConfig(tl.entity.type)) {
-        tl.entity.data.infected = !tl.entity.data.infected;
-        any = true;
-      }
-    }
-    void count;
-    if (any) this.events.emit('useItem', { item: 'Weird_Substance', x: tile.x, y: tile.y, drone: drone.id });
-    return any;
+    this.warn('cannotUseItem', { item: 'Weird_Substance' }, node, drone);
+    return false;
   }
 
   // Why the drone can't fish here: 'pondNeeded' | 'pondNotFull' | 'pondResting' | null.
@@ -500,7 +513,9 @@ export class Game {
     if (!e) return null;
     if (e.type === 'Sunflower') return e.data.petals;
     if (e.type === 'Cactus') return e.data.size;
-    return null;
+    if (e.type === 'Pumpkin') return w.ripeness(e);
+    const fruits = w.entityConfig(e.type).fruits; // an apricot tree: how many fruits it still gives
+    return fruits ? (e.data.fruits ?? fruits) : null;
   }
 
   clearFarm(t) {
@@ -508,20 +523,12 @@ export class Game {
     this.world.maze = null;
     for (const tile of this.world.tiles) {
       tile.ground = 'Grassland';
+      this.world.freshSoil(tile);
       tile.water = 0;
       tile.lastSync = t;
       this.world.spawnGrass(tile, t);
     }
     this.events.emit('farmCleared', {});
-  }
-
-  // [Entities.X, [x, y]] or null
-  getCompanion(tile, t) {
-    if (this.world.polycultureLevel() <= 0) return null;
-    this.world.sync(tile, t);
-    const c = this.world.companionOf(tile);
-    if (!c) return null;
-    return [this.api.enums.Entities.get(c.type), [c.x, c.y]];
   }
 
   maxDrones() {
@@ -584,7 +591,6 @@ export class Game {
       activeScript: this.activeScript,
       stats: this.stats.toSave(),
       production: this.production,
-      powerUse: this.powerUse,
       flags: this.flags,
       village: this.village.toSave(),
       festivals: this.festivals.toSave(),
@@ -593,7 +599,7 @@ export class Game {
       challenge: this.challenge,
       ranch: this.ranch.toSave(),
       boosts: this.boosts,
-      dino: this.dino ? { tail: this.dino.tail, apple: this.dino.apple, eaten: this.dino.eaten } : null,
+      dino: this.dino ? { tail: this.dino.tail, apple: this.dino.apple, eaten: this.dino.eaten, moves: this.dino.moves } : null,
     };
   }
 }

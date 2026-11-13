@@ -136,7 +136,7 @@ test('machines: clear warnings', () => {
 });
 
 test('dishes: gata speeds the drone, ghapama the plants (exactly), grilled fish the golden fish', () => {
-  const game = makeGame({ levels: { Plant: 1, Carrots: 1 }, items: { Gata: 2, Ghapama: 1, Grilled_Fish: 1, Hay: 5, Wood: 5 } });
+  const game = makeGame({ levels: { Plant: 1, Carrots: 1 }, items: { Gata: 2, Ghapama: 1, Grilled_Fish: 1, Seeds: 5 } });
   const d = game.mainDrone;
   const rate = d.tickRate();
   assert.deepEqual(game.eat('Gata', game.time), { ok: true });
@@ -171,7 +171,7 @@ test('dishes: gata speeds the drone, ghapama the plants (exactly), grilled fish 
 });
 
 test('greenhouse glass: always in season, no rain, ice or lightning; saved', () => {
-  const game = seasonGame(START + 50 * MIN, { levels: { Plant: 1, Carrots: 1, Debug: 1 }, items: { Hay: 10, Wood: 1010, Cactus: 400 } });
+  const game = seasonGame(START + 50 * MIN, { levels: { Plant: 1, Carrots: 1, Debug: 1 }, items: { Seeds: 10, Wood: 1010, Cactus: 400 } });
   for (const b of game.village.buildings) if (b.available !== false) game.village.repair(b.id);
   const tile = game.world.tile(0, 0);
   assert.equal(runCode(game, 'herkel();\napakepatel();\ntpel(apakepatel());').out[0], 'false');
@@ -186,7 +186,7 @@ test('greenhouse glass: always in season, no rain, ice or lightning; saved', () 
   assert.ok(Math.abs(tile.entity.progress - (2 * effective) / tile.entity.growTime) < 1e-9, 'winter: ×2 and the water works');
   assert.equal(reload(game).world.tile(0, 0).glass, true);
 
-  const storm = seasonGame(START, { levels: { Plant: 1, Carrots: 1 }, items: { Wood: 600, Cactus: 400, Hay: 5 } });
+  const storm = seasonGame(START, { levels: { Plant: 1, Carrots: 1 }, items: { Wood: 600, Cactus: 400, Seeds: 5 } });
   let at = START;
   while (storm.calendar.at(at).weather !== 'Storm') at += 5 * MIN;
   storm.stats.clock = () => at;

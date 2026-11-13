@@ -29,14 +29,16 @@ function featuresOf(node, parent, key) {
   switch (node.type) {
     case 'WhileStatement':
     case 'DoWhileStatement':
-    case 'ForStatement':
     case 'BreakStatement':
     case 'ContinueStatement':
       return ['loops'];
+    // The first card teaches only while; a for loop counts with a variable, so it waits for Variables.
+    case 'ForStatement':
+      return ['loops', 'variables'];
     case 'ForOfStatement':
-      return ['loops', 'lists'];
+      return ['loops', 'variables', 'lists'];
     case 'ForInStatement':
-      return ['loops', 'objects'];
+      return ['loops', 'variables', 'objects'];
     case 'IfStatement':
     case 'ConditionalExpression':
     case 'SwitchStatement':

@@ -9,7 +9,7 @@ import { join } from 'node:path';
 
 const GAME = fileURLToPath(new URL('..', import.meta.url));
 const WWW = fileURLToPath(new URL('www/', import.meta.url));
-const PARTS = ['index.html', 'js', 'css', 'config', 'assets', 'vendor'];
+const PARTS = ['index.html', 'privacy.html', 'js', 'css', 'config', 'assets', 'vendor'];
 // A current Chrome user agent makes Google Fonts answer with woff2 files.
 const UA = 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36';
 

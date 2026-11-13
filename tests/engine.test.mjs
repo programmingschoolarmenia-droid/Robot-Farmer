@@ -35,19 +35,6 @@ test('other plants harvested unripe are still lost, and the student is told once
   assert.equal(game.world.tile(0, 0).entity.type, 'Grass', 'the bush is gone');
 });
 
-test('fertilizer: an infected plant gives the same small weird substance, however big its harvest', () => {
-  const weirdFrom = (carrots) => {
-    const game = makeGame({ levels: { Loops: 1, Plant: 1, Operators: 1, Carrots: carrots, Watering: 1, Fertilizer: 1 }, items: { Hay: 1e6, Wood: 1e6, Fertilizer: 1 } });
-    const r = runCode(game, 'till();\nplant(Entities.Carrot);\nuseItem(Items.Fertilizer);\nwhile (!canHarvest()) {\n  doAFlip();\n}\nharvest();');
-    assert.equal(r.error, null);
-    return [game.stats.total('Carrot'), game.inventory.get('Weird_Substance')];
-  };
-  const [small, weirdSmall] = weirdFrom(1);
-  const [big, weirdBig] = weirdFrom(8);
-  assert.ok(big >= 100 * small, `${small} and ${big} carrots`);
-  assert.deepEqual([weirdSmall, weirdBig], [1, 1]);
-});
-
 test('silent mistakes get a message; correct code gets none', () => {
   const lv = { Loops: 1, Plant: 1, Operators: 1, Variables: 1, Functions: 1, Debug: 1 };
   const warns = (code) => runCode(makeGame({ levels: lv }), code, { maxSeconds: 1 }).warnings;
@@ -89,22 +76,20 @@ test('obvious JavaScript: Number(), toString(), and no internal errors from inhe
 test('Expand resizes the farm and move wraps around', () => {
   const game = makeGame({ items: { Hay: 1000, Wood: 1000 }, levels: { Loops: 1, Speed: 1 } });
   assert.equal(game.research.buy('Expand').ok, true);
-  assert.equal(game.world.width, 3);
-  assert.equal(game.world.height, 1);
-  const r = runCode(game, 'move(East); move(East); move(East);');
+  assert.deepEqual([game.world.width, game.world.height], [2, 2]);
+  const r = runCode(game, 'move(East); move(East);', { step: 0.01 });
   assert.equal(r.error, null);
   assert.equal(game.mainDrone.x, 0);
-  // Speed level 1: 534 ticks/s, a move costs 200 ticks → 0.37 s each.
-  assert.ok(r.seconds >= 1.1 && r.seconds < 1.23, `took ${r.seconds}`);
+  // Speed level 1: 534 ticks/s, a move costs 150 ticks → 0.28 s each.
+  assert.ok(Math.abs(r.seconds - 2 * (150 / 534)) < 0.03, `took ${r.seconds}`);
   assert.equal(game.research.buy('Expand').ok, true);
-  assert.equal(game.world.width, 3);
-  assert.equal(game.world.height, 3);
+  assert.deepEqual([game.world.width, game.world.height], [3, 3]);
 });
 
 test('speed research: 7 levels, the same top speed as the old 5 levels of ×1.5', () => {
   const game = makeGame({ items: { Hay: 1000, Wood: 1000 }, levels: { Loops: 1, Speed: 1, Expand: 1 } });
-  const r = runCode(game, 'move(East); move(East);');
-  assert.ok(Math.abs(r.seconds - 2 * (200 / 534)) < 0.11, `took ${r.seconds}`);
+  const r = runCode(game, 'move(East); move(East);', { step: 0.01 });
+  assert.ok(Math.abs(r.seconds - 2 * (150 / 534)) < 0.03, `took ${r.seconds}`);
   assert.equal(game.research.maxLevel('Speed'), 7);
   game.research.levels.set('Speed', 7);
   assert.ok(Math.abs(game.mainDrone.tickRate() / 400 - Math.pow(1.5, 5)) < 0.01, 'top speed');
@@ -120,6 +105,16 @@ test('saves from before: Speed moves to the level at least as fast, and only onc
   for (const n of [1, 2, 3, 4, 5]) assert.ok(rate(old(n)) >= Math.pow(1.5, n) - 0.01, `old level ${n} is not slower`);
   const again = new Game(old(3).config, JSON.parse(JSON.stringify(old(3).toSave())));
   assert.equal(again.research.level('Speed'), 5);
+});
+
+test('saves from before the new code order keep every bought card, also without its new parent cards', () => {
+  const config = makeGame().config;
+  const game = new Game(config, { v: 2, research: { Loops: 1, Speed: 1, Expand: 2, Plant: 1, Carrots: 2, Watering: 1, Sunflowers: 1 }, inventory: { Hay: 500, Wood: 50 } });
+  assert.deepEqual(['Plant', 'Carrots', 'Watering', 'Sunflowers'].map((id) => game.research.level(id)), [1, 2, 1, 1]);
+  assert.equal(runCode(game, 'herkel();\nif (hasunE()) {\n  havaqel();\n}\ntnkel(Buyser.Badrjan);').error, null, 'what they bought still works');
+  assert.deepEqual([game.research.parentsDone('Variables'), game.research.parentsDone('Debug'), game.research.parentsDone('Lists')], [true, false, true]);
+  assert.equal(game.research.buy('Variables').ok, true, 'and the cards they skipped can be bought in the new order');
+  assert.equal(new Game(config, JSON.parse(JSON.stringify(game.toSave()))).research.level('Carrots'), 2);
 });
 
 test('mushroom: needs a side, any habit loses, only random choices win', () => {
@@ -184,86 +179,15 @@ test('bushes: plant, grow, harvest wood', () => {
   assert.ok(game2.inventory.get('Wood') >= 5, `wood=${game2.inventory.get('Wood')}`);
 });
 
-test('carrots need soil and cost hay + wood', () => {
-  const game = makeGame({ items: { Hay: 10, Wood: 10 }, levels: { Loops: 1, Speed: 1, Plant: 1, Carrots: 1 } });
+test('eggplants need soil and a seed', () => {
+  const game = makeGame({ items: { Seeds: 2 }, levels: { Loops: 1, Speed: 1, Plant: 1, Carrots: 1 } });
   const r = runCode(game, 'plant(Entities.Carrot);');
   assert.equal(r.error, null);
   assert.ok(r.warnings.includes('plant_wrongGround'));
   const r2 = runCode(game, 'till();\nplant(Entities.Carrot);');
   assert.equal(r2.error, null);
-  assert.equal(game.inventory.get('Hay'), 9);
-  assert.equal(game.inventory.get('Wood'), 9);
+  assert.equal(game.inventory.get('Seeds'), 1);
   assert.equal(game.world.tile(0, 0).entity.type, 'Carrot');
-});
-
-test('trees grow slower next to other trees', () => {
-  const game = makeGame({ levels: { Loops: 1, Speed: 1, Expand: 2, Plant: 1, Carrots: 1, Trees: 1 }, unlockAll: false });
-  const w = game.world;
-  const a = w.tile(0, 0);
-  const b = w.tile(1, 0);
-  a.entity = w.makeEntity('Tree');
-  b.entity = w.makeEntity('Tree');
-  assert.equal(w.growthSlowdown(a, a.entity), 2);
-  const c = w.tile(1, 1);
-  c.entity = w.makeEntity('Tree');
-  assert.equal(w.growthSlowdown(b, b.entity), 4);
-});
-
-test('pumpkins merge into giant pumpkins and yield n^3', () => {
-  const game = makeGame({ seed: 7, levels: { Expand: 3, Pumpkins: 1 } });
-  const w = game.world;
-  // Make death impossible for this test.
-  game.config.settings.entities.Pumpkin.deathChance = 0;
-  for (let y = 0; y < 3; y++) {
-    for (let x = 0; x < 3; x++) {
-      const t = w.tile(x, y);
-      t.ground = 'Soil';
-      t.entity = w.makeEntity('Pumpkin');
-      t.lastSync = game.time;
-    }
-  }
-  w.syncAll(game.time + 10);
-  const g = w.tile(1, 1).entity.data.giant;
-  assert.ok(g, 'giant formed');
-  assert.equal(g.size, 3);
-  const r = w.harvest(w.tile(2, 2), game.time + 10);
-  assert.equal(r.ok, true);
-  assert.equal(r.items.Pumpkin, 27);
-  assert.equal(r.tiles.length, 9);
-});
-
-test('pumpkins sometimes die and dead pumpkins block merging', () => {
-  const game = makeGame({ seed: 3, levels: { Expand: 3, Pumpkins: 1 } });
-  game.config.settings.entities.Pumpkin.deathChance = 1;
-  const w = game.world;
-  const t = w.tile(0, 0);
-  t.ground = 'Soil';
-  t.entity = w.makeEntity('Pumpkin');
-  t.lastSync = game.time;
-  w.sync(t, game.time + 10);
-  assert.equal(t.entity.type, 'Dead_Pumpkin');
-  assert.equal(w.isRipe(t), false);
-});
-
-test('cactus chain harvest yields n^2 when sorted', () => {
-  const game = makeGame({ levels: { Expand: 2, Pumpkins: 1, Cactus: 1 }, available: true });
-  const w = game.world;
-  const sizes = [
-    [1, 2, 3],
-    [2, 3, 4],
-    [3, 4, 5],
-  ];
-  for (let y = 0; y < 3; y++) {
-    for (let x = 0; x < 3; x++) {
-      const t = w.tile(x, y);
-      t.ground = 'Soil';
-      t.entity = w.makeEntity('Cactus');
-      t.entity.data.size = sizes[y][x];
-      t.entity.progress = 1;
-    }
-  }
-  const r = w.harvest(w.tile(0, 0), game.time);
-  assert.equal(r.items.Cactus, 81);
 });
 
 test('research costs are paid and states update', () => {

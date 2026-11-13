@@ -30,6 +30,9 @@ export function describeError(err, i18n, game) {
     case 'missingArg':
       p.fn = api.displayName(p.fn);
       break;
+    case 'notDefined':
+      if (p.removed) key = 'removedCommand'; // a command of an older version of the game
+      break;
     default:
       break;
   }
@@ -43,7 +46,7 @@ export function describeError(err, i18n, game) {
 
 export function whereText(err, i18n) {
   if (!err.loc) return '';
-  return `«${err.module || 'main'}» · ${i18n.t('ui.atLine', { line: err.loc.line })}`;
+  return `${i18n.t('ui.quote', { text: err.module || 'main' })} · ${i18n.t('ui.atLine', { line: err.loc.line })}`;
 }
 
 export function describeWarning(w, i18n, game) {

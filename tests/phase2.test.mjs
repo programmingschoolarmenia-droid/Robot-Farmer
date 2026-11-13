@@ -50,40 +50,6 @@ test('water tanks are produced over time after Watering', () => {
   assert.equal(game.inventory.get('Water'), 2);
 });
 
-test('power doubles drone speed and drains with actions', () => {
-  const game = makeGame({ items: { Power: 1 }, levels: { Expand: 1 } });
-  const r = runCode(game, 'move(East);\nmove(East);');
-  assert.ok(Math.abs(r.seconds - 0.5) < 0.11, `took ${r.seconds}`);
-  const game2 = makeGame({ items: { Power: 1 }, levels: { Expand: 1, Loops: 1 } });
-  runCode(game2, 'while (true) { move(East); }', { maxSeconds: 20 });
-  assert.equal(game2.inventory.get('Power'), 0);
-});
-
-test('sunflower with most petals gives the bonus when there are 10+', () => {
-  const game = makeGame({ levels: { Expand: 4, Sunflowers: 1 }, available: true });
-  const w = game.world;
-  let i = 0;
-  for (const tl of w.tiles.slice(0, 12)) {
-    tl.ground = 'Soil';
-    tl.entity = w.makeEntity('Sunflower');
-    tl.entity.progress = 1;
-    tl.entity.data.petals = 7 + (i++ % 5);
-  }
-  const best = w.tiles.find((t) => t.entity && t.entity.data.petals === 11);
-  const other = w.tiles.find((t) => t.entity && t.entity.data.petals === 7);
-  assert.equal(w.harvest(other, game.time).items.Power, 1);
-  assert.equal(w.harvest(best, game.time).items.Power, 8);
-});
-
-test('fertilizer speeds growth and infection gives weird substance', () => {
-  const game = makeGame({ items: { Fertilizer: 3 }, levels: { Plant: 1, Watering: 1, Fertilizer: 1 } });
-  const r = runCode(game, 'plant(Entities.Bush);\nuseItem(Items.Fertilizer);\nuseItem(Items.Fertilizer);\nharvest();');
-  assert.equal(r.error, null);
-  assert.equal(game.inventory.get('Fertilizer'), 1);
-  assert.ok(game.inventory.get('Weird_Substance') >= 1);
-  assert.ok(game.inventory.get('Wood') >= 1);
-});
-
 test('measure and swap sort cacti', () => {
   const game = makeGame({ items: { Pumpkin: 100 }, levels: { Expand: 2, Plant: 1, Carrots: 1, Pumpkins: 1, Cactus: 1, Loops: 1, Operators: 1, Variables: 1, Senses: 1 }, available: true });
   const w = game.world;

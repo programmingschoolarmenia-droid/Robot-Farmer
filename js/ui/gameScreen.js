@@ -28,7 +28,7 @@ import { weekTask, givePrize, giveContestPrize } from '../engine/challenge.js';
 
 
 // Warnings Bridgy explains in a dialog the first time they happen.
-const TEACH_WARNINGS = new Set(['plant_wrongGround', 'plant_cost', 'plant_entityLocked', 'hatLocked', 'indexOutOfRange', 'notEnoughItem', 'harvestUnripe', 'fnNoCall', 'fnAsCondition', 'assignInCondition', 'enumVsText', 'pondResting', 'mushroomSide', 'mushroomHid']);
+const TEACH_WARNINGS = new Set(['plant_wrongGround', 'plant_cost', 'plant_entityLocked', 'hatLocked', 'indexOutOfRange', 'notEnoughItem', 'harvestUnripe', 'fnNoCall', 'fnAsCondition', 'assignInCondition', 'enumVsText', 'pondResting', 'mushroomSide', 'mushroomHid', 'harvest_green', 'harvest_odd', 'harvest_tired', 'swapSideways']);
 
 // Bridgy's news (today's luck, a festival, the season and the weather, a new rank, «you moved up») wait
 // for the first minutes of a visit (the start is for the student, and soon for a tutorial), then come
@@ -69,6 +69,7 @@ export class GameScreen {
     this.build();
     this.applyPrefs();
     this.wire();
+    if (this.game.research.hasFunction('playNote')) app.audio.prepareNotes();
     this.last = performance.now();
     this.slowTimer = 0;
     this.frame = 0;
@@ -261,12 +262,13 @@ export class GameScreen {
     this.updatePerfection();
   }
 
-  // Bridgy names a button in «…»: it glows while he says so. On phones a button of the side panel
+  // Bridgy names a button in quotes (ui.quote: «…», in English "…"): it glows while he says so. On phones a button of the side panel
   // is in the Storage tab, so that tab glows too.
   point(text) {
     for (const el of this.glowing) el.classList.remove('glow');
     const screen = this.ranchScreen || this;
-    const els = text ? screen.glowTargets().filter(([name]) => text.includes(`«${name}»`)).flatMap(([, list]) => list.filter(Boolean)) : [];
+    const quote = (name) => this.app.i18n.t('ui.quote', { text: name });
+    const els = text ? screen.glowTargets().filter(([name]) => text.includes(quote(name))).flatMap(([, list]) => list.filter(Boolean)) : [];
     if (els.some((el) => screen.sidePanel.contains(el) && getComputedStyle(el).display !== 'none')) els.push(screen.tabButtons[2]);
     this.glowing = els;
     for (const el of els) el.classList.add('glow');
@@ -323,6 +325,7 @@ export class GameScreen {
     const on = (name, fn) => this.offs.push(ev.on(name, fn));
 
     on('runStart', (e) => {
+      app.audio.stopNotes();
       this.editor.setRunning(true);
       this.editor.clearRunError();
       this.lastError = null;
@@ -331,6 +334,7 @@ export class GameScreen {
       app.audio.play('run');
     });
     on('runEnd', (e) => {
+      if (e.reason !== 'done') app.audio.stopNotes();
       this.editor.setRunning(false);
       con.log(e.reason === 'done' ? t('ui.runFinished') : t('ui.runStopped'), e.reason === 'done' ? 'ok' : 'info');
       if (e.code > 0) con.log(t('ui.codeWordsEarned', { n: e.code, total: this.game.stats.codeWords }), 'ok');
@@ -338,6 +342,7 @@ export class GameScreen {
       this.save();
     });
     on('runError', (e) => {
+      app.audio.stopNotes();
       this.editor.setRunning(false);
       const err = e.error;
       this.lastError = err;
@@ -348,8 +353,32 @@ export class GameScreen {
       app.audio.play('error');
       this.explainError(err);
     });
-    on('runPause', () => {});
+    on('runPause', () => app.audio.stopNotes());
     on('print', (e) => con.log(e.text, 'print', { drone: e.drone || null }));
+    // alert(): the program waits until its window is closed («Լավ», ✕, Escape, the Back key) or stopped.
+    // Several drones can open several windows: the program goes on when the last one is closed.
+    on('alert', (e) => {
+      const r = this.game.runner;
+      if (r.state === 'running') {
+        r.pause();
+        this.alertPaused = true;
+      }
+      this.alerts = (this.alerts || 0) + 1;
+      openModal({
+        title: t('ui.bridgyName'),
+        className: 'alert-modal',
+        body: h('div', { class: 'alert-body' }, h('img', { class: 'pixel', src: this.bridgy.portraitFor('happy'), alt: '' }), h('p', {}, e.text)),
+        buttons: [
+          { label: `⏹ ${t('ui.stop')}`, class: 'btn-ghost', onClick: (close) => (r.stop('user'), close()) },
+          { label: t('ui.ok'), class: 'btn-primary' },
+        ],
+        onClose: () => {
+          if (--this.alerts || !this.alertPaused) return;
+          this.alertPaused = false;
+          r.resume();
+        },
+      });
+    });
     on('warning', (w) => {
       const text = describeWarning(w, app.i18n, this.game);
       con.log(`${w.loc ? `${t('ui.warningLine', { line: w.loc.line })}: ` : '⚠ '}${text}`, 'warn', { loc: w.loc, module: w.module });
@@ -390,11 +419,18 @@ export class GameScreen {
       if (e.hat) setTimeout(() => !this.destroyed && this.bridgy.toast(t('ui.hatUnlocked', { hatName: app.i18n.hat(e.hat) }), 8000), 1200);
     });
     on('flip', () => app.audio.play('flip'));
-    on('music', (e) => app.audio.note(e.freq, e.seconds / (this.game.speed || 1))); // (game seconds → real ones)
+    on('music', (e) => {
+      const speed = this.game.speed || 1;
+      app.audio.note(e.frequencies, e.seconds / speed, { at: e.at, now: this.game.time, speed });
+    });
+    on('research', () => {
+      if (this.game.research.hasFunction('playNote')) app.audio.prepareNotes();
+    });
     on('pumpkinDied', () => {
       app.audio.play('died');
-      if (this.first('pumpkinDied')) this.bridgy.say([{ emotion: 'worried', text: this.bridgy.pick('pumpkinDied') }], { key: 'died' });
+      if (this.first('melonRot')) this.bridgy.say([{ emotion: 'worried', text: this.bridgy.pick('pumpkinDied') }], { key: 'died' });
     });
+    on('appleEaten', () => this.first('mouse') && this.bridgy.toast(this.bridgy.pick('mouseCaught')));
     on('worldResized', () => this.updateFarmLabel());
     on('calendar', (e) => {
       this.updateCalendarChip();
@@ -613,7 +649,7 @@ export class GameScreen {
         const back = sold ? [o.want, o.wantN] : o.status === 'removed' || orderExpired(this.app.config.settings, o, Date.now()) ? [o.give, o.giveN] : null;
         if (!back) continue;
         await this.trade({ get: back, op: { order: o } });
-        const words = `${formatCount(back[1])} ${this.app.i18n.item(back[0])}`;
+        const words = this.app.i18n.amount(formatCount(back[1]), back[0]);
         this.app.toast(sold ? t('ui.marketSold', { name: o.taker, get: words }) : t('ui.marketBack', { get: words }));
       }
     } catch (e) {
@@ -838,6 +874,15 @@ export class GameScreen {
     this.news(() => this.showLuck());
     this.news(() => this.greetFestival());
     this.news(() => this.calendarToast(!this.ui.firsts.includes('season'), true));
+    this.news(() => this.juiceNote());
+  }
+
+  // A farm from before xmel(): its juice no longer speeds the drone by itself. Said once.
+  juiceNote() {
+    if (!this.game.flags.juiceNote) return false;
+    delete this.game.flags.juiceNote;
+    this.bridgy.say([{ emotion: 'thinking', text: this.bridgy.pick('juiceNote') }], { key: 'juice' });
+    return true;
   }
 
   // Bridgy's greeting, once per festival (without the Festival square: only its bonus works).
@@ -890,7 +935,7 @@ export class GameScreen {
           next(s.weatherEnds, t(`weathers.${s.next}`)),
           h('div', {}, this.weatherInfo(s.weather)),
         ),
-        recipe ? h('div', { class: 'tv-row' }, h('b', {}, t('ui.tvRecipe')), h('div', {}, `${t(`machines.${recipe.machine}`)}՝ ${recipeText(this.app.i18n, recipe.item, recipe)}`)) : '',
+        recipe ? h('div', { class: 'tv-row' }, h('b', {}, t('ui.tvRecipe')), h('div', {}, t('ui.recipeLine', { machine: t(`machines.${recipe.machine}`), recipe: recipeText(this.app.i18n, recipe.item, recipe) }))) : '',
         coming ? h('div', { class: 'muted' }, t('ui.festivalNext', { name: coming.name, n: coming.inDays })) : '',
         h('p', { class: 'muted tv-note' }, t('ui.tvSame')),
       );
@@ -961,7 +1006,7 @@ export class GameScreen {
     this.questBar.render();
     this.questBar.flash();
     const pages = [{ emotion: 'celebrating', text: quest.done || this.bridgy.pick('questDone') }];
-    if (next) pages.push({ emotion: 'happy', text: `${app.i18n.t('ui.quest')}՝ ${next.title}։ ${next.text}` });
+    if (next) pages.push({ emotion: 'happy', text: app.i18n.t('ui.questLine', { title: next.title, text: next.text }) });
     this.bridgy.say(pages, { key: `quest:${quest.id}` });
     this.save();
   }
@@ -1012,10 +1057,10 @@ export class GameScreen {
   }
 
   handleKey(e) {
-    if (this.challenge || this.ranchScreen) return; // (their editors have their own Ctrl+Enter)
+    if (e.defaultPrevented || this.challenge || this.ranchScreen) return; // (their editors have their own Ctrl+Enter)
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
-      this.run();
+      if (!e.repeat) this.run();
     }
   }
 
@@ -1032,6 +1077,12 @@ export class GameScreen {
         this.save();
       },
       onLogout: () => this.exit(),
+      onLang: async (lang) => {
+        this.prefs.lang = lang; // the account keeps it (other computers follow, see main.js)
+        this.save();
+        await this.syncCloud({ now: true }).catch(() => {});
+        this.app.switchLang(lang, { enter: true });
+      },
     });
   }
 
@@ -1043,6 +1094,7 @@ export class GameScreen {
       onLogout: () => this.exit(),
       onRename: (name, password) => this.rename(name, password),
       onKeep: (name, password) => this.keepFarm(name, password),
+      onDeleteMe: (password) => this.deleteAccount(password),
       ranch: this.game.research.hasPanel('ranch') ? this.game.ranch : null,
     });
   }
@@ -1084,6 +1136,24 @@ export class GameScreen {
       openKeepFarm(this.app, (name, password) => this.keepFarm(name, password));
     };
     this.bridgy.say([{ emotion: 'thinking', text: t('ui.guestRemind'), buttons: [{ label: t('ui.guestKeep'), class: 'btn-gold', onClick: keep }] }], { key: 'guest' });
+  }
+
+  // The player deletes their account. An online save still on its way finishes first, and none goes
+  // after (it would bring the farm back); then the start screen.
+  async deleteAccount(password) {
+    this.save();
+    this.erasing = true; // (syncCloud sends nothing now)
+    while (this.pushing) await this.pushing;
+    try {
+      await this.app.account.deleteMe(password);
+    } catch (e) {
+      this.erasing = false;
+      throw e;
+    }
+    this.leaving = true;
+    this.destroy();
+    this.onExit();
+    this.app.toast(this.app.i18n.t('ui.deleteMeDone'));
   }
 
   // The farm moves to the new account (an online save still on its way finishes first).
@@ -1243,7 +1313,7 @@ export class GameScreen {
   // Online copy + leaderboard row: every `online.cloudSaveSeconds` when something changed, at the
   // next autosave after a research, and right away when asked. Resolves to true when saved.
   syncCloud({ now = false, keepalive = false } = {}) {
-    if (this.app.account.isGuest) return Promise.resolve(true); // a guest's farm stays in this browser
+    if (this.app.account.isGuest || this.erasing) return Promise.resolve(true); // a guest's farm stays in this browser
     if (this.pushing) return this.pushing.then(() => this.syncCloud({ now, keepalive }));
     const every = ((this.app.config.settings.online || {}).cloudSaveSeconds || 60) * 1000;
     if (!this.cloudDirty || (!now && !this.cloudSoon && Date.now() - this.lastPush < every)) return Promise.resolve(true);
@@ -1308,6 +1378,7 @@ export class GameScreen {
 
   destroy() {
     if (this.destroyed) return;
+    this.app.audio.stopNotes();
     if (this.challenge) this.challenge.destroy();
     if (this.ranchScreen) this.ranchScreen.destroy();
     if (this.market) this.market.close();

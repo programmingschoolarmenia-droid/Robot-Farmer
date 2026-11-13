@@ -2,16 +2,15 @@ export function clamp(v, min, max) {
   return v < min ? min : v > max ? max : v;
 }
 
-// 1234 -> "1 234", 1500000 -> "1.5Մ" (Armenian short suffixes: Հ = հազար, Մ = միլիոն, Մլրդ = միլիարդ)
+// Words the engine writes by itself, in the game's language (main.js sets them from texts.json → ui.engineWords).
+export const WORDS = { units: ['Մլրդ', 'Մ', 'Հ'], drone: 'Դրոն' };
+
+// 1234 -> "1 234", 1500000 -> "1.5Մ" (short suffixes for billion, million, thousand: Մլրդ, Մ, Հ in Armenian)
 export function formatCount(n) {
   if (!Number.isFinite(n)) return String(n);
   const abs = Math.abs(n);
   if (abs < 100000) return groupDigits(Math.floor(n));
-  const units = [
-    [1e9, 'Մլրդ'],
-    [1e6, 'Մ'],
-    [1e3, 'Հ'],
-  ];
+  const units = [1e9, 1e6, 1e3].map((size, i) => [size, WORDS.units[i]]);
   for (const [size, suffix] of units) {
     if (abs >= size) {
       const v = n / size;

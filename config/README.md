@@ -19,6 +19,7 @@ problem**; nothing breaks silently.
 | `village.json` | The village across the river: buildings and what they cost and unlock, Bridgy's story, the villagers' daily requests, the kitchen machines and recipes, the dishes' boosts, the greenhouse glass |
 | `events.json` | Festivals on their real dates, the weekly challenge, the secret notes, the stickers and Perfection % |
 | `ranch.json` | Bridgy's ranch: its map and areas, the animals and their needs, prices, the farm's cart, the villagers' orders, the shop, Bridgy's ranch story, lessons and quests |
+| `en/`, `ru/` | The English and Russian game: their command names and the translation of every text (see **Languages** below) |
 
 ---
 
@@ -42,24 +43,27 @@ problem**; nothing breaks silently.
 | `speedResearch` | Research id that makes the drone faster (`"Speed"`) |
 | `speedPerTier` | Speed multiplier per level of that research (`1.33592`: 7 levels end at ×7.59; the ranch's shop has its own in `ranch.json`) |
 | `doAFlipSeconds` | How long `salto()` takes |
-| `noteBeatSeconds` | How long one beat of `nvagel()` takes (0.5: `nvagel(Notaner.Do, 2)` lasts 1 s) |
+| `noteBeatSeconds` | Default beat length for `nvagel()` (0.5: `nvagel(Notaner.Do, 2)` lasts 1 s). An optional third argument sets BPM for that call, from 30 to 300. Notes can be enum values, pitches such as `"C#4"` (A0–C8), or a chord of up to 8 notes; durations range from 0.125 to 8 beats. |
 
 ### `costs`
-`actionSuccess` (200) — ticks for a successful drone action (move, harvest, plant, till…);
-`actionFail` (1) — ticks when an action fails; `getter` (1) — ticks for questions like
+`actionSuccess` (200) — ticks for a successful drone action; `actionTicks` — the actions with
+their own time: `move` (150), `harvest` (200), `plant` (200), `till` (300), every other action costs
+`actionSuccess`; `actionFail` (1) — ticks when an action fails; `getter` (1) — ticks for questions like
 `hasunE()`. `language` — ticks for JS operations (`loop`, `if`, `binary`, `index`,
 `define`, `callValue`, `collection`, `template`, `method`).
 
 ### `world`
 `sizeResearch` — research that grows the farm (`"Expand"`). `sizes` — farm size for each
-level of it: `[[1,1], [3,1], [3,3], …]` (level 0 = first item).
+level of it: `[[1,1], [2,2], [3,3], …, [16,16]]` (level 0 = first item). A farm saved before these
+sizes never shrinks (old 22×22 and 32×32 farms keep their size).
 
 ### `entities` (plants)
 The plant ids are the old English ones and never change, because saves and scores use them.
 Players see Armenian plants instead: Grass = wheat (Ցորեն), Bush = rosehip (Մասուր), Tree = apricot
 tree (Ծիրանենի), Carrot = eggplant (Բադրիջան), Pumpkin = watermelon (Ձմերուկ), Sunflower = pomegranate
-(Նուռ, `petals` are its seeds), Cactus = grape vine (Խաղող). Items: Hay = wheat, Power = pomegranate
-juice (Նռան հյութ), Weird_Substance = magic dust (Կախարդական փոշի). Names live in `texts.json` and `aliases.json`.
+(Նուռ, `petals` are its seeds), Cactus = grape vine (Խաղող), Mulberry (Թթենի), YellowMelon (Դեղին ձմերուկ),
+SquareMelon (Քառակուսի ձմերուկ), Apple = the mouse the snake hunts (Մուկ). Items: Hay = wheat, Power = pomegranate
+juice (Նռան հյութ), Weird_Substance = magic dust (Կախարդական փոշի), Seeds (Սերմեր). Names live in `texts.json` and `aliases.json`.
 
 Each plant has:
 | Field | Meaning | Example |
@@ -70,25 +74,28 @@ Each plant has:
 | `yieldResearch` | Research whose levels multiply the yield | `"Carrots"` |
 | `yieldBaseLevel` | Level at which the multiplier is ×1 | `1` |
 | `yieldFactor` | Multiplier per extra level (default 2) | `2` |
-| `plantCost` | Items paid to plant it | `{ "Hay": 1, "Wood": 1 }` |
+| `plantCost` | Items paid to plant it | `{ "Seeds": 1 }` |
 | `plantCostScales` | If `true`, the cost grows together with the yield | `true` |
-| `neighborSlowdown` | (Tree) growth time × this for each neighbouring tree | `2` |
-| `deathChance` | (Pumpkin) chance to rot when ripe | `0.2` |
-| `giant` | (Pumpkin) giant yield: n³ up to `cubeUntil`, then n²×`bigMultiplier` | |
-| `petals`, `minForBonus`, `bonusMultiplier` | (Sunflower) petals range and the big-sunflower bonus | |
-| `sizes` | (Cactus) size range | `[0, 9]` |
+| `seedChance` | (Grass) chance that a harvest drops one seed, once the eggplant card is owned | `0.05` |
+| `seeds` | (Carrot) seeds one harvest gives back, min and max (not multiplied by levels) | `[1, 3]` |
+| `fruits`, `regrow` | (Tree) how many times one tree fruits, and how far grown it starts again after a harvest (0.5 = half way). `chapel()` = fruits left | `3`, `0.5` |
+| `beeMultiplier` | (Mulberry) harvest × this when a ripe rosehip stands right next to it | `2` |
+| `ripeFrom`, `ripeWindow`, `rotSeconds` | (Pumpkin) a grown watermelon's sweetness (`chapel()`) goes 0 → 100 in `ripeWindow` seconds; harvested from `ripeFrom` it gives its yield, earlier nothing; `rotSeconds` after 100 it rots | `80`, `6`, `12` |
+| `spreadSeconds` | (YellowMelon) every N seconds of game time each ripe one sends a vine into the empty soil next to it. One harvest takes the joined ripe ones: n give n² | `4` |
+| `giant` | (SquareMelon) giant yield: n³ up to `cubeUntil`, then n²×`bigMultiplier` | |
+| `petals` | (Sunflower) range of a pomegranate's seeds. Even ones in rising order pay a growing combo (1, 2, 3 …), another even one starts it again at 1, an odd one spills one juice | `[1, 30]` |
+| `sizes` | (Cactus) range of a grape's sweetness. A run of ripe grapes in one row that never gets smaller from left to right is harvested whole: n give n² | `[0, 9]` |
 | `seasons` | The plant's favourite seasons (`Spring`, `Summer`, `Autumn`, `Winter`): it grows `calendar.inSeason` times faster in them and `calendar.outOfSeason` times as fast in the others. No `seasons` = the same speed all year | `["Spring", "Autumn"]` |
 
-### `water`, `fertilizer`, `power`, `megafarm`, `maze`, `dinosaur`, `polyculture`, `fishing`
+### `water`, `fertilizer`, `power`, `megafarm`, `maze`, `dinosaur`, `fishing`
 | Section | Fields |
 |---|---|
 | `water` | `research`, `secondsPerItem` (one tank every N s, halves per level), `tankAmount` (0.25), `evaporationPerSecond`, `maxGrowthMultiplier` (5) |
-| `fertilizer` | `research`, `secondsPerItem`, `secondsSaved` (growth per use), `infectedWeird` (weird substance from each infected plant harvested, whatever its harvest) |
-| `power` | `speedMultiplier` (2), `actionsPerPower` (one power used per N actions) |
+| `fertilizer` | `research`, `secondsPerItem`, `secondsSaved` (growth per use). Tired soil, only after this card is bought: the same crop twice in a row on a soil square lowers its harvest by `tiredStep` (0.1) down to `tiredMin` (0.5); another crop rests it one step, humus mends it at once |
+| `power` | `xmel()` drinks one juice: the drone is `speedMultiplier` (2) times faster for its next `actions` (50) actions. Nothing happens by itself |
 | `megafarm` | `research`, `dronesPerLevel` (`[1, 2, 4, 8, 16, 32]`) |
 | `maze` | `research`, `maxReuses` (how many times the treasure can be moved) |
-| `dinosaur` | `research`, `appleCost`, `moveTicks`, `speedupPerApple` |
-| `polyculture` | `research`, `entities`, `distance`, `baseMultiplier` |
+| `dinosaur` | `research`, `mouseEvery` (the mouse runs one square every N snake moves), `moveTicks`, `speedupPerApple` (the snake gets faster with every mouse). Skins = mice × length |
 | `fishing` | `research`, `castSeconds` (one cast at the base speed; speed upgrades make it faster), `restSeconds` (how long a pond rests after a catch, so more fish take more ponds; `0` = no rest), `fish` (`Carp`, `Barbel`, `Trout`, `Golden_Fish`, `Whitefish`, `Catfish`, each `{ "chance": 70, "amount": 1 }`: chance weight and how many fish it gives, doubled by every research level after the first; optional `"seasons": ["Winter"]` / `"weather": ["Rain", "Storm"]` = the fish bites only then), `hat` (unlocked by the first golden fish) |
 
 **Fishing:** `porel()` digs a pond under the drone (plants can't grow there; `herkel()` fills it
@@ -198,8 +205,12 @@ Each card in `nodes`:
 ```
 `"panels": ["ranch"]` (on the «Ranch» card) shows the 🐄 ranch button.
 Icons available: `mushroom, hat, goldhat, speed, grass, expand, carrot, water, tree, fertilizer,
-sunflower, maze, drones, pumpkin, cactus, polyculture, dinosaur, secret, debugger, trophy, fishing,
-calendar, ranch`.
+sunflower, maze, drones, pumpkin, yellowMelon, squareMelon, mulberry, cactus, dinosaur, secret, debugger,
+trophy, fishing, calendar, ranch`.
+
+**Prices.** `npm run balance` plays the tree with programs an average student writes and reports how
+many real minutes each card takes (`test-reports/balance-now.md`); `npm run balance -- --suggest`
+proposes prices for an even curve. The prices themselves stay hand-written here.
 A function that is not listed in any card is available from the start (e.g. `harvest` = `havaqel()`).
 A `label` with code (`tnkel()`, `while`…) should use the Armenian command names.
 
@@ -232,8 +243,8 @@ A `label` with code (`tnkel()`, `while`…) should use the Armenian command name
   | `use` | `item`, `amount` | `useItem()` used that many times |
   | `code` | `feature` or `fn` | the player runs code that uses e.g. `"loops"` or `"move"` |
   | `visitAll` | — | the drone visits every tile in one run |
-  | `giant` | `size` | a giant pumpkin of that size is harvested |
-  | `chain` | `size` | that many sorted cacti are harvested at once |
+  | `giant` | `size` | a giant square melon of that size is harvested |
+  | `chain` | `size` | a sorted row of that many grapes is harvested at once |
   | `pond` | — | a full pond is on the farm |
   | `fish` | `fish`, `amount` | that many fish of a kind (`Carp`, `Barbel`, `Trout`, `Golden_Fish`) are caught |
 
@@ -260,6 +271,33 @@ If you rename a command here, also update the texts that mention it (`bridgy.jso
 renamed — it is the real language the students learn.
 The `ranch` section has the ranch's own names in the same format (`datarkel()`, `kendaniner()`,
 `Tesakner.Hav`, `Sarqer.Keraman`…); the farm's names (`gnal`, `tpel`, `havaqel`…) work there too.
+
+## Languages (`en/`, `ru/`)
+The game speaks Armenian, English and Russian. The Armenian files above are the source; a
+language folder only holds words, never numbers or rules, so a price or a quest goal is changed
+once, in the Armenian file, for every language.
+
+- **Which language a player sees:** the one they chose (ՀԱՅ / ENG / РУС on the start screen and
+  in ⚙ Settings; their account remembers it on every computer). Before any choice: Armenian on a
+  computer set to Armenia's time zone (every school computer), else the browser's language
+  (Russian for Russian, Belarusian, Kazakh, Kyrgyz and Tajik browsers), else English.
+  `?lang=en` in the address shows a language for that visit only.
+- `en/aliases.json`, `ru/aliases.json`: that language's command names, same format as
+  `aliases.json`. The first name is shown; **every language's names work in every language**, so
+  a student's code keeps running after switching. A name may not mean two different things in two
+  languages (the red error screen says «անունն արդեն զբաղված է»).
+- `en/<file>.json`, `ru/<file>.json`: `"key": "text"` for each Armenian text of `<file>.json`.
+  The key is the text's place: `quests.use_while.hints.2` (a list item by its `id`, else its
+  number). A missing translation shows the Armenian text.
+- Code examples without Armenian letters (`example`, `code`, `sig`…) are not translated: the
+  game renames their commands to the language's names by itself.
+- **After changing an Armenian text**, run `npm run i18n`: it lists, per language, the missing
+  translations and the ones whose Armenian changed since. `npm run i18n -- ru bridgy --todo`
+  prints them; after translating, `npm run i18n -- ru bridgy --stamp`. `npm test` checks that
+  nothing is missing, the `{placeholders}` match and the code uses the right language's names.
+- How to write the translations (Bridgy's voice, the glossary of every game word):
+  [`docs/TRANSLATION.md`](../docs/TRANSLATION.md). The `translator` and `native-reviewer`
+  agents (`.claude/agents/`) do this work.
 
 ## guide.json (Bridgy's book)
 Opened from «Բրիջի, օգնի՛ր» → 📖 Խաղի հրամաններ / 🟨 JavaScript / 🌱 Բույսեր. Students see
@@ -296,10 +334,14 @@ Until you add Firebase keys, accounts and the leaderboard work **only inside one
    service cloud.firestore {
      match /databases/{database}/documents {
        function isAdmin() {
-         return request.auth != null && request.auth.token.email in ['admin@bridgys-farm.app'];
+         return request.auth != null
+           && request.auth.token.email
+              in ['admin@bridgys-farm.app'];
        }
        function isOwner(name) {
-         return request.auth != null && request.auth.token.email == name + '@bridgys-farm.app'
+         return request.auth != null
+           && request.auth.token.email
+              == name + '@bridgys-farm.app'
            && !exists(/databases/$(database)/documents/deleted/$(name));
        }
        match /players/{name} {
@@ -308,36 +350,61 @@ Until you add Firebase keys, accounts and the leaderboard work **only inside one
        }
        match /saves/{name} {
          allow read, delete: if isOwner(name) || isAdmin();
-         allow create, update: if isAdmin() || (isOwner(name) && (resource == null
-           || !('rev' in resource.data) || request.resource.data.get('rev', 0) >= resource.data.rev));
+         allow create, update: if isAdmin()
+           || (isOwner(name)
+             && (resource == null
+               || !('rev' in resource.data)
+               || request.resource.data.get('rev', 0)
+                  >= resource.data.rev));
        }
        match /orders/{id} {
          allow read: if true;
-         allow create: if isOwner(request.resource.data.owner) && request.resource.data.status == 'open';
-         allow update: if isAdmin() || (resource.data.status == 'open'
-           && request.resource.data.status == 'taken'
-           && isOwner(request.resource.data.taker)
-           && request.resource.data.taker != resource.data.owner
-           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'taker']));
-         allow delete: if isOwner(resource.data.owner) || isAdmin();
+         allow create: if isOwner(request.resource.data.owner)
+           && request.resource.data.status == 'open';
+         allow update: if isAdmin()
+           || (resource.data.status == 'open'
+             && request.resource.data.status == 'taken'
+             && isOwner(request.resource.data.taker)
+             && request.resource.data.taker
+                != resource.data.owner
+             && request.resource.data.diff(resource.data)
+                .affectedKeys().hasOnly(['status', 'taker']));
+         allow delete: if isOwner(resource.data.owner)
+           || isAdmin();
        }
        match /deleted/{name} {
          allow read: if true;
          allow write: if isAdmin();
        }
-       match /carpets/{entry} {
+       match /carpets/{docId} {
          allow read: if true;
          allow create, update: if isOwner(request.resource.data.owner)
-           && entry == request.resource.data.week + '~' + request.resource.data.owner
+           && docId.matches(request.resource.data.week + '.'
+              + request.resource.data.owner)
            && request.resource.data.cells.size() == 81;
-         allow delete: if isAdmin();
+         allow delete: if isOwner(resource.data.owner)
+           || isAdmin();
        }
-       match /likes/{like} {
+       match /likes/{docId} {
          allow read: if true;
          allow create, update: if isOwner(request.resource.data.voter)
-           && request.resource.data.voter != request.resource.data.owner
-           && like == request.resource.data.week + '~' + request.resource.data.owner + '~' + request.resource.data.voter;
-         allow delete: if isAdmin();
+           && request.resource.data.voter
+              != request.resource.data.owner
+           && docId.matches(request.resource.data.week + '.'
+              + request.resource.data.owner + '.'
+              + request.resource.data.voter);
+         allow delete: if isOwner(resource.data.voter)
+           || isOwner(resource.data.owner)
+           || isAdmin();
+       }
+       match /reports/{docId} {
+         allow create, update: if isOwner(request.resource.data.reporter)
+           && request.resource.data.target
+              != request.resource.data.reporter
+           && docId.matches(request.resource.data.reporter + '.'
+              + request.resource.data.key);
+         allow read, delete: if isOwner(resource.data.reporter)
+           || isAdmin();
        }
      }
    }
@@ -364,6 +431,19 @@ logged out at its next save (within `cloudSaveSeconds`), and that username canno
 To allow the name again, delete `deleted/username` in Firestore. (The Auth account stays; delete
 it in Authentication → Users only if you want the name to be free for a new registration.)
 Another teacher: add the username to `admins` and to the list in `isAdmin()`.
+
+**Reports (teacher account):** a «Բողոքել» button on a player's card and under each contest carpet
+sends a report to `reports/{reporter}~{player}` (or `~{week}~{player}` for a carpet); the student
+then no longer sees that player or carpet. Logged in as admin, **Profile → Բողոքներ (n)** lists them:
+open the player's card (Delete is there), take a reported carpet out of the contest, or close the
+report. Only the teachers read reports.
+
+**A student deletes their own account:** Profile → «Ջնջել հաշիվը» → the password. The farm, the
+row, their market orders, contest carpets, likes given and received and the reports they wrote are
+deleted, then the login; the name is free again. (Google Play requires this.) A student who
+can't log in asks by e-mail (see `privacy.html`): delete them with **Ջնջել խաղացողին**, then the
+login in Authentication → Users. The rules above (carpets, likes and reports parts) are needed
+for both; without them the game says the online settings are wrong.
 
 **A forgotten password (teacher account):** there is no reset, so the farm moves to a new name.
 The student registers a new username and logs out. Logged in as admin, open the leaderboard →
@@ -430,7 +510,7 @@ winner's code. Last week's 1st, 2nd and 3rd get a challenge hat and 🏅 medals 
 | Field | Meaning |
 |---|---|
 | `challenge` | `building`, `limit` (game seconds per try, `600`), `speeds`, `stars` (first solution), `hats` and `medals` (for places 1–3), `levels` (research every test farm has; a task's `levels` add to it) |
-| `challenges` | `id`, `name`, `about`, `goal` (one of: `items: { "Hay": 500 }` gathered, `harvest: { "Trout": 1 }` harvested or caught, also `Treasure`, `giant: 4` pumpkin size, `chain: 16` cacti in one harvest, `dino: 12` dinosaur length), `levels` (`Expand` sets the farm size), `items` (the storage at the start), `seed` (the farm's luck: the same for everyone) |
+| `challenges` | `id`, `name`, `about`, `goal` (one of: `items: { "Hay": 500 }` gathered, `harvest: { "Trout": 1 }` harvested or caught, also `Treasure`, `giant: 4` giant square melon size, `chain: 6` grapes in one sorted row, `dino: 12` snake length), `levels` (`Expand` sets the farm size), `items` (the storage at the start), `seed` (the farm's luck: the same for everyone) |
 
 **The ranch's weekly challenge** is in the same School, once the ranch is open: `ranchChallenges` goes round
 every Monday like `challenges`, on a fresh test ranch with its own list. `ranchChallenge`: `limit`, `stars`,
@@ -520,3 +600,6 @@ drone (`vacharel()`, villagers' orders) and spent in the 🛒 shop.
 
 ## texts.json
 All interface text. Words in `{curly}` braces are filled in by the game — keep them.
+`{n|form|forms}` picks a plural form for the number `n` (Russian: `{n|день|дня|дней}`).
+`ui.quote` is how a language quotes a button's name («…» or "…"): Bridgy's button glows when a
+text names it in those quotes. `ui.amount` writes "5 Wheat" (`{n} {item}`; Russian `{item} ×{n}`).

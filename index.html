@@ -7,7 +7,7 @@
   <link rel="icon" type="image/png" href="assets/bridgy/bridgy-head.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;600;700;800&family=Noto+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="vendor/codemirror/codemirror.css">
   <link rel="stylesheet" href="vendor/codemirror/addon/show-hint.css">
   <link rel="stylesheet" href="css/theme.css">
@@ -25,10 +25,33 @@
   <script src="vendor/codemirror/addon/active-line.js"></script>
   <script src="vendor/codemirror/addon/comment.js"></script>
   <script>
-    // Flaky internet: a file that fails to load would leave «Բեռնվում է…» forever, so say what to do.
+    // The loading screen's words before the game starts, in the language main.js will pick (same rules).
+    var LOADING = {
+      hy: ['Բեռնվում է…', 'Երկար է տևում… Եթե չի բեռնվում, սեղմիր F5։', 'Խաղը լրիվ չբեռնվեց (համացանցը ընդհատվեց)։ Սեղմիր F5՝ նորից փորձելու համար։'],
+      en: ['Loading…', 'This is taking a while… If nothing happens, press F5.', 'The game didn\'t fully load (the internet dropped). Press F5 to try again.'],
+      ru: ['Загрузка…', 'Что-то долго… Если ничего не происходит, нажми F5.', 'Игра не загрузилась до конца (пропал интернет). Нажми F5, чтобы попробовать ещё раз.']
+    };
+    var LANG = (function () {
+      var m = /[?&]lang=(hy|en|ru)\b/.exec(location.search);
+      if (m) return m[1];
+      try {
+        var c = sessionStorage.getItem('bridgysFarm.lang') || localStorage.getItem('bridgysFarm.lang');
+        if (LOADING[c]) return c;
+      } catch (e) {}
+      try { if (Intl.DateTimeFormat().resolvedOptions().timeZone === 'Asia/Yerevan') return 'hy'; } catch (e) {}
+      var list = navigator.languages || [navigator.language || ''];
+      for (var i = 0; i < list.length; i++) {
+        var code = String(list[i]).toLowerCase().split('-')[0];
+        if (code === 'hy' || code === 'en') return code;
+        if (/^(ru|be|kk|ky|tg)$/.test(code)) return 'ru';
+      }
+      return 'en';
+    })();
+    document.documentElement.lang = LANG;
+    // Flaky internet: a file that fails to load would leave the loading text forever, so say what to do.
     function loadProblem(failed) {
       var text = document.querySelector('#screen-loading:not([hidden]) .loading-text');
-      if (text) text.textContent = failed ? 'Խաղը լրիվ չբեռնվեց (համացանցը ընդհատվեց)։ Սեղմիր F5՝ նորից փորձելու համար։' : 'Երկար է տևում… Եթե չի բեռնվում, սեղմիր F5։';
+      if (text) text.textContent = LOADING[LANG][failed ? 2 : 1];
     }
     setTimeout(function () { if (!window.bridgysFarm) loadProblem(false); }, 20000);
   </script>
@@ -40,7 +63,8 @@
       <img class="loading-bridgy" src="assets/bridgy/bridgy.png" alt="">
       <p class="loading-text">Բեռնվում է…</p>
     </section>
+    <script>document.querySelector('.loading-text').textContent = LOADING[LANG][0];</script>
   </div>
-  <noscript>Խաղի համար անհրաժեշտ է JavaScript։</noscript>
+  <noscript>Խաղի համար անհրաժեշտ է JavaScript։ / The game needs JavaScript. / Для игры нужен JavaScript.</noscript>
 </body>
 </html>

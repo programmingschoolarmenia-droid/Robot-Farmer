@@ -11,7 +11,7 @@ import { GameError } from '../lang/errors.js';
 const FARM_ONLY = [
   'canHarvest', 'till', 'getGroundType', 'changeHat', 'useItem', 'getWater', 'measure', 'swap', 'getCost', 'unlock', 'numUnlocked',
   'findTreasure', 'catchFish', 'getSeason', 'getWeather', 'getNextWeather', 'buildGreenhouse',
-  'getCompanion',
+  'drinkJuice',
 ];
 export const RANCH_THINGS = ['FeedTrough', 'WaterTrough', 'Well', 'Basket', 'Stall', 'Dairy', 'Stove', 'Wheel', 'Loom', 'DyePot', 'HoneyHouse', 'Hive', 'Pool'];
 const TROUGHS = ['FeedTrough', 'WaterTrough', 'Pool'];

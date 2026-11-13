@@ -88,17 +88,14 @@
   justify-content: center;
   overflow: auto;
   padding: 24px 24px 120px;
+  /* The fields under Ararat: the tall picture on upright screens, the wide one on the others.
+     Anchored at the bottom, so a screen of another shape loses sky, never the fields. */
+  background: #b4d7f7 url(../assets/login/portrait.jpg) center bottom / cover no-repeat;
 }
-.login-meadow {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 96px;
-  background-size: 48px 48px;
-  image-rendering: pixelated;
-  border-top: 4px solid #7cbf55;
-  pointer-events: none;
+@media (min-aspect-ratio: 1/1) {
+  .screen-login {
+    background-image: url(../assets/login/wide.jpg);
+  }
 }
 .login-card {
   position: relative;
@@ -255,9 +252,65 @@
   cursor: pointer;
   opacity: 0.7;
 }
+/* «Կարդալ կանոնները» inside a hint line */
+.link-inline {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--blue);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+/* privacy.html inside the game (⚙ Settings, the start screen) */
+.privacy-frame {
+  display: block;
+  width: 100%;
+  height: min(70vh, 640px);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+}
+/* the teacher's list of reports */
+.report-list {
+  display: grid;
+  gap: 8px;
+}
+.report-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 8px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.report-item .carpet-canvas {
+  width: 40px;
+}
+.report-text {
+  flex: 1 1 140px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
 .login-main > .form-hint,
 .login-main > .form-error {
   margin-top: 14px;
+}
+.login-main > .lang-seg {
+  display: flex;
+  width: max-content;
+  margin: -8px -10px 6px auto;
+}
+.lang-seg button {
+  padding: 3px 10px;
+  font-size: 0.85rem;
 }
 
 /* ---------- profile window + leaderboard */

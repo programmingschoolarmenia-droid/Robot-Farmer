@@ -48,7 +48,7 @@ export class Notes {
     let at = [];
     if (n.fact === 'sunflower') at = most('Sunflower', (t) => t.entity.data.petals);
     else if (n.fact === 'cactus') at = most('Cactus', (t) => t.entity.data.size + 1);
-    else if (n.fact === 'giant') at = most('Pumpkin', (t) => (t.entity.data.giant ? t.entity.data.giant.size : 0)).map((t) => t.entity.data.giant); // lower left corners
+    else if (n.fact === 'giant') at = most('SquareMelon', (t) => (t.entity.data.giant ? t.entity.data.giant.size : 0)).map((t) => t.entity.data.giant); // lower left corners
     else if (n.fact === 'ponds') at = [{ x: tiles.filter((t) => t.ground === 'Pond').length, y: 0 }];
     else if (n.fact === 'gold') at = [{ x: Math.floor(this.game.inventory.get('Gold')) % 10, y: 0 }];
     return at.map((p) => [p.x + (n.dx || 0), p.y + (n.dy || 0)]);

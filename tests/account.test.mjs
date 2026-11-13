@@ -427,3 +427,96 @@ test('closing the page: the last save goes out at once, without the account chec
     globalThis.fetch = realFetch;
   }
 });
+
+test('a player deletes their own account: their farm, row, orders, carpets, likes and reports go, nobody else\'s (here and on Firebase)', async () => {
+  const fb = createFakeFirebase({ admins: ['admin'] });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = fb.fetch;
+  try {
+    for (const cfg of [{ admins: ['admin'] }, { apiKey: 'test-key', projectId: 'test-project', admins: ['admin'] }]) {
+      const browser = memory(); // (local accounts: everyone on one computer)
+      const pc = () => (cfg.apiKey ? memory() : browser);
+      const week = '2026W46';
+      const join = async (name, points) => {
+        const acc = new Accounts(pc(), cfg);
+        await acc.register(name, 'secret1');
+        const farm = { game: { time: points } };
+        acc.saveLocal(farm);
+        await acc.saveOnline(farm, stats({ points }));
+        await acc.enterContest(week, name[0].repeat(81));
+        return acc;
+      };
+      const aram = await join('Aram', 30);
+      const nare = await join('Nare', 20);
+      const teacher = new Accounts(pc(), cfg);
+      await teacher.register('admin', 'secret1');
+      await aram.tradeSave({ game: { time: 30 } }, stats({ points: 30 }), { id: 'aram~1', fields: { owner: 'aram', name: 'Aram', at: 1, status: 'open' } });
+      await aram.likeCarpet(week, 'nare');
+      await nare.likeCarpet(week, 'aram');
+      await aram.report({ kind: 'carpet', target: 'nare', name: 'Nare', week, cells: 'N'.repeat(81) });
+      await nare.report({ kind: 'player', target: 'aram', name: 'Aram' });
+
+      assert.equal(await codeOf(aram.deleteMe('wrong12')), 'badLogin');
+      assert.equal(await codeOf(aram.deleteMe('')), 'badLogin');
+      assert.equal(await codeOf(teacher.deleteMe('secret1')), 'unknown', 'a teacher keeps the name');
+      assert.equal(aram.user.id, 'aram', 'nothing happened yet');
+      await aram.deleteMe('secret1');
+      assert.equal(aram.session, null);
+      assert.equal(aram.adapter.get('save.v2.aram'), null);
+
+      assert.deepEqual((await nare.leaderboard('points', null, true)).rows.map((r) => r.id), ['nare']);
+      assert.deepEqual((await nare.contest(week)).map((e) => [e.id, e.likes]), [['nare', 0]]);
+      assert.deepEqual(await nare.orders(0), []);
+      assert.deepEqual((await teacher.reports()).map((r) => [r.by, r.name]), [['Nare', 'Aram']], 'reports about Aram stay for the teacher');
+      assert.equal(await codeOf(aram.login('aram', 'secret1')), 'badLogin');
+      await aram.register('Aram', 'secret2'); // the name is free again
+      assert.equal(await aram.loadSave(), null, 'a new, empty farm');
+      if (cfg.apiKey) assert.deepEqual([...fb.docs.keys()].filter((k) => k.includes('aram')), ['reports/nare~aram']);
+    }
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test('reports: players report a player or a contest carpet, only teachers see and close them (here and on Firebase)', async () => {
+  const fb = createFakeFirebase({ admins: ['admin'] });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = fb.fetch;
+  try {
+    for (const cfg of [{ admins: ['admin'] }, { apiKey: 'test-key', projectId: 'test-project', admins: ['admin'] }]) {
+      const browser = memory();
+      const pc = () => (cfg.apiKey ? memory() : browser);
+      const kid = new Accounts(pc(), cfg);
+      await kid.register('Seroj', 'secret1');
+      await kid.saveOnline({ game: {} }, stats({ points: 5 }));
+      const other = new Accounts(pc(), cfg);
+      await other.register('Gor', 'secret1');
+      await other.saveOnline({ game: {} }, stats({ points: 7 }));
+      const teacher = new Accounts(pc(), cfg);
+      await teacher.register('admin', 'secret1');
+
+      assert.equal(await codeOf(kid.report({ kind: 'player', target: 'seroj', name: 'Seroj' })), 'unknown', 'not yourself');
+      assert.equal(await kid.report({ kind: 'player', target: 'gor', name: 'Gor' }), 'gor');
+      await tick();
+      assert.equal(await kid.report({ kind: 'carpet', target: 'gor', name: 'Gor', week: '2026W46', cells: 'B'.repeat(81) }), '2026W46~gor');
+      await kid.report({ kind: 'player', target: 'gor', name: 'Gor' }); // again: still one report
+      assert.equal(await codeOf(kid.reports()), 'unknown', 'only teachers read them');
+      const guest = new Accounts(memory(), cfg);
+      guest.startGuest('Հյուր');
+      assert.equal(await codeOf(guest.report({ kind: 'player', target: 'gor', name: 'Gor' })), 'unknown');
+
+      const list = await teacher.reports();
+      assert.deepEqual(list.map((r) => [r.id, r.by, r.kind, r.name]), [['seroj~gor', 'Seroj', 'player', 'Gor'], ['seroj~2026W46~gor', 'Seroj', 'carpet', 'Gor']]);
+      assert.equal(list[1].cells, 'B'.repeat(81));
+      assert.equal(list[1].week, '2026W46');
+      assert.equal(list[0].cells, undefined);
+      assert.equal((await teacher.player('gor')).name, 'Gor');
+      assert.equal(await teacher.player('nobody'), null);
+      await teacher.closeReport('seroj~gor');
+      assert.deepEqual((await teacher.reports()).map((r) => r.id), ['seroj~2026W46~gor']);
+      assert.equal(await codeOf(kid.closeReport('seroj~2026W46~gor')), 'unknown');
+    }
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

@@ -8,7 +8,7 @@ import { EditorPanel } from './editor.js';
 import { Controls, InventoryPanel } from './panels.js';
 import { openModal } from './modal.js';
 import { describeError, describeWarning } from './errorText.js';
-import { championsOf } from './account.js';
+import { championsOf, isHidden } from './account.js';
 import { testGame, watchGoal, rollWeek, recordResult, CHALLENGE_SCRIPT } from '../engine/challenge.js';
 import { formatTenths, dayNumber, keyOfDay, weekKey } from '../core/util.js';
 
@@ -27,7 +27,7 @@ export function schoolPanel(app, game, task, today, onStart) {
     ({ rows, place }) =>
       top.replaceWith(
         rows.length
-          ? h('ol', { class: 'challenge-top' }, rows.slice(0, 10).map((r, i) => h('li', { class: r.id === me ? 'me' : '' }, h('span', {}, MEDALS[i] ? icon(app.sprites, MEDALS[i]) : `${i + 1}.`), h('span', { class: 'board-name' }, r.name), h('b', {}, formatTenths(r[field])))))
+          ? h('ol', { class: 'challenge-top' }, rows.slice(0, 10).map((r, i) => !isHidden(app, r.id) && h('li', { class: r.id === me ? 'me' : '' }, h('span', {}, MEDALS[i] ? icon(app.sprites, MEDALS[i]) : `${i + 1}.`), h('span', { class: 'board-name' }, r.name), h('b', {}, formatTenths(r[field])))).filter(Boolean))
           : h('div', { class: 'board-note' }, t('ui.leadersEmptyChallenge')),
         place ? h('div', { class: 'board-place' }, t('ui.challengePlace', { place })) : me ? '' : h('div', { class: 'board-note' }, t('ui.guestOnly')),
       ),
@@ -36,7 +36,7 @@ export function schoolPanel(app, game, task, today, onStart) {
   const last = weekKey(keyOfDay(dayNumber(today) - 7));
   championsOf(app, today).then((c) => {
     const w = c && c.week;
-    if (w && w[`cc${last}`]) {
+    if (w && w[`cc${last}`] && !isHidden(app, w.id)) {
       winner.replaceChildren(
         h('h4', {}, t('ui.challengeWinner', { name: w.name, time: formatTenths(w[`c${last}`]) })),
         h('pre', { class: 'bridgy-code challenge-code' }, highlightCode(w[`cc${last}`], (word) => game.api.codeKind(word))),

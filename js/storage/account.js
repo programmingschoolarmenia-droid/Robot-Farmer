@@ -221,6 +221,18 @@ export class Accounts {
     return this.user;
   }
 
+  // The player deletes their own account (Google Play asks for this): the password again for a fresh
+  // login, then everything of theirs goes (see erase()) and this browser forgets the farm. Not a
+  // teacher: a student could then register the teacher's name.
+  async deleteMe(password) {
+    if (!this.session || this.isGuest || this.isAdmin) throw new AccountError('unknown', 'not allowed');
+    if (!password) throw new AccountError('badLogin');
+    const s = await this.backend.signIn(this.session.id, password, this.session.name);
+    await this.backend.erase(s);
+    this.forget(s.id);
+    this.cache.clear();
+  }
+
   // The teacher deleted the account: this browser forgets its farm too.
   forget(id) {
     this.adapter.remove(saveKey(id));
@@ -365,6 +377,36 @@ export class Accounts {
     return this.backend.contestRemove(this.session, week, owner);
   }
 
+  // ---- reports: a player reports another player or a contest carpet; only the teachers read them.
+  // what: { kind: 'player' | 'carpet', target (id), name, week (a carpet's), cells (the carpet) }.
+  // Resolves to the key the reporter hides: the player's id, or «week~id» for a carpet.
+  async report({ kind, target, name, week, cells }) {
+    const s = this.session;
+    if (!s || this.isGuest || target === s.id) throw new AccountError('unknown', 'not allowed');
+    const key = kind === 'carpet' ? `${week}~${target}` : target;
+    const fields = { reporter: s.id, by: s.name, key, kind, target, name, at: Date.now() };
+    if (week) fields.week = week;
+    if (CARPET_RE.test(cells || '')) fields.cells = cells;
+    await this.backend.report(s, `${s.id}~${key}`, fields);
+    return key;
+  }
+
+  // Teachers: the newest reports first, [{ id, by, kind, target, name, week, cells, at }].
+  reports() {
+    if (!this.isAdmin) return Promise.reject(new AccountError('unknown', 'not allowed'));
+    return this.backend.reports(this.session);
+  }
+
+  closeReport(id) {
+    if (!this.isAdmin) return Promise.reject(new AccountError('unknown', 'not allowed'));
+    return this.backend.closeReport(this.session, id);
+  }
+
+  // A player's leaderboard row by id (null when the player is gone).
+  player(id) {
+    return this.backend.player(id);
+  }
+
   // The #1 rows of yesterday's, last month's and last week's challenge lists: { day, month, week }
   // (null when empty).
   champions(dayField, monthField, weekField) {
@@ -432,6 +474,13 @@ const int = (n) => ({ integerValue: String(Math.floor(n)) });
 const encode = (v) => (typeof v === 'number' ? int(v) : { stringValue: String(v) });
 const decode = (v) => ('integerValue' in v ? Number(v.integerValue) : 'doubleValue' in v ? v.doubleValue : v.stringValue);
 const above = (field, min) => ({ fieldFilter: { field: { fieldPath: field }, op: 'GREATER_THAN', value: int(min) } });
+const fieldsOf = (doc) => ({ id: doc.name.split('/').pop(), ...Object.fromEntries(Object.entries(doc.fields).map(([k, v]) => [k, decode(v)])) });
+// A collection the rules don't have yet holds nothing of anyone.
+const noneIfMissing = (promise) =>
+  promise.catch((e) => {
+    if (e.code === 'config') return [];
+    throw e;
+  });
 
 class FirebaseBackend {
   constructor({ apiKey, projectId, emailDomain }) {
@@ -624,6 +673,51 @@ class FirebaseBackend {
     await call(`https://identitytoolkit.googleapis.com/v1/accounts:delete?key=${this.key}`, { body: { idToken: s.idToken } });
   }
 
+  // The full names of the documents in `collection` whose `field` is `value`.
+  async docsWhere(collection, field, value, token) {
+    const where = { fieldFilter: { field: { fieldPath: field }, op: 'EQUAL', value: { stringValue: value } } };
+    const res = await call(`${this.url}:runQuery${token ? '' : `?key=${this.key}`}`, { token, body: { structuredQuery: { from: [{ collectionId: collection }], where } } });
+    return res.filter((r) => r.document).map((r) => r.document.name);
+  }
+
+  // A player deletes their own account (s: a fresh session): their market orders, contest carpets,
+  // likes given and got and the reports they wrote go first, then the farm, the row and the login
+  // (remove). Anything failing on the way leaves the account working, so the player can try again.
+  async erase(s) {
+    const token = s.idToken;
+    const lists = await Promise.all([
+      noneIfMissing(this.docsWhere('orders', 'owner', s.id)),
+      noneIfMissing(this.docsWhere('carpets', 'owner', s.id)),
+      noneIfMissing(this.docsWhere('likes', 'owner', s.id)),
+      noneIfMissing(this.docsWhere('likes', 'voter', s.id)),
+      noneIfMissing(this.docsWhere('reports', 'reporter', s.id, token)),
+    ]);
+    const writes = [...new Set(lists.flat())].map((name) => ({ delete: name }));
+    for (let i = 0; i < writes.length; i += 400) await call(`${this.url}:commit`, { token, body: { writes: writes.slice(i, i + 400) } }); // (Firestore: 500 writes a commit)
+    await this.remove(s);
+  }
+
+  // ---- reports/{reporter}~{key}: one per reporter and player or carpet
+  async report(s, id, fields) {
+    const data = Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, encode(v)]));
+    await call(`${this.url}:commit`, { token: await this.check(s), body: { writes: [{ update: { name: `${this.docs}/reports/${id}`, fields: data } }] } });
+  }
+
+  async reports(s) {
+    const query = { from: [{ collectionId: 'reports' }], orderBy: [{ field: { fieldPath: 'at' }, direction: 'DESCENDING' }], limit: 100 };
+    const res = await call(`${this.url}:runQuery`, { token: await this.check(s), body: { structuredQuery: query } });
+    return res.filter((r) => r.document).map((r) => fieldsOf(r.document));
+  }
+
+  async closeReport(s, id) {
+    await call(`${this.url}:commit`, { token: await this.check(s), body: { writes: [{ delete: `${this.docs}/reports/${id}` }] } });
+  }
+
+  async player(id) {
+    const doc = await call(`${this.url}/players/${id}?key=${this.key}`, { missingOk: true });
+    return doc && doc.fields ? fieldsOf(doc) : null;
+  }
+
   // Rows whose `field` is above `min`, sorted by it. Firestore indexes every field by itself,
   // so the dated day / month fields need no setup.
   async query(field, min, asc, limit) {
@@ -782,6 +876,41 @@ class LocalBackend {
       delete table[s.id];
       this.adapter.set(key, JSON.stringify(table));
     }
+  }
+
+  // Drops the rows of a table that `gone` picks.
+  drop(key, gone) {
+    const table = this.table(key);
+    for (const k of Object.keys(table)) if (gone(table[k])) delete table[k];
+    this.adapter.set(key, JSON.stringify(table));
+  }
+
+  async erase(s) {
+    this.drop('orders.v1', (o) => o.owner === s.id);
+    this.drop('carpets.v1', (c) => c.id === s.id);
+    this.drop('likes.v1', (l) => l.owner === s.id || l.voter === s.id);
+    this.drop('reports.v1', (r) => r.reporter === s.id);
+    await this.remove(s);
+  }
+
+  // reports, in this browser
+  async report(s, id, fields) {
+    const table = this.table('reports.v1');
+    table[id] = { ...fields, id };
+    this.adapter.set('reports.v1', JSON.stringify(table));
+  }
+
+  async reports() {
+    return Object.values(this.table('reports.v1')).sort((a, b) => b.at - a.at);
+  }
+
+  async closeReport(s, id) {
+    this.drop('reports.v1', (r) => r.id === id);
+  }
+
+  async player(id) {
+    const p = this.table('players.v1')[id];
+    return p ? { id, ...p } : null;
   }
 
   async query(field, min, asc, limit) {

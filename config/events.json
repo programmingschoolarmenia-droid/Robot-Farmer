@@ -387,19 +387,19 @@
       {
         "id": "n32",
         "kind": "fact",
-        "text": "Գանձը ամենամեծ խաղողից մեկ քայլ աջ է։",
+        "text": "Գանձը ամենաքաղցր խաղողից մեկ քայլ աջ է։",
         "fact": "cactus",
         "needs": "Cactus",
         "dx": 1,
-        "hint": "chapel()-ը խաղողի վրա ասում է նրա չափը։ Գտիր ամենամեծը և գնա մեկ քայլ աջ։"
+        "hint": "chapel()-ը խաղողի վրա ասում է նրա քաղցրությունը։ Գտիր ամենաքաղցրը և գնա մեկ քայլ աջ։"
       },
       {
         "id": "n33",
         "kind": "fact",
-        "text": "Գանձը ամենամեծ հսկա ձմերուկի ձախ ներքևի անկյունում է։",
+        "text": "Գանձը ամենամեծ հսկա քառակուսի ձմերուկի ձախ ներքևի անկյունում է։",
         "fact": "giant",
-        "needs": "Pumpkins",
-        "hint": "Հսկա ձմերուկը մի քանի վանդակ է։ Նրա ձախ ներքևի վանդակն ունի ամենափոքր x-ը և ամենափոքր y-ը։"
+        "needs": "SquareMelon",
+        "hint": "Հսկա քառակուսի ձմերուկը մի քանի վանդակ է։ Նրա ձախ ներքևի վանդակն ունի ամենափոքր x-ը և ամենափոքր y-ը։"
       },
       {
         "id": "n34",
@@ -443,25 +443,25 @@
 
   "challenges": [
     {"id": "hay500", "name": "Հունձ", "about": "Հավաքիր 500 ցորեն։", "goal": {"items": {"Hay": 500}}, "levels": {"Expand": 3, "Grass": 2}, "seed": 101},
-    {"id": "giant3", "name": "Հսկա ձմերուկ 3×3", "about": "Աճեցրու և հավաքիր 3×3 հսկա ձմերուկ։ Փտած ձմերուկի տեղը նորը տնկիր։", "goal": {"giant": 3}, "levels": {"Expand": 2, "Carrots": 1, "Pumpkins": 1}, "items": {"Carrot": 200}, "seed": 102},
+    {"id": "giant3", "name": "Հսկա ձմերուկ 3×3", "about": "Տնկիր 3×3 քառակուսի ձմերուկ և հավաքիր դրանք մեկ հսկայով։ Հսկան ծնվում է, երբ քառակուսու բոլոր ձմերուկները հասած են։", "goal": {"giant": 3}, "levels": {"Expand": 2, "Carrots": 1, "Pumpkins": 1, "SquareMelon": 1}, "items": {"Carrot": 200}, "seed": 102},
     {"id": "fish150", "name": "Ձկնորս", "about": "Հավաքիր 150 ձուկ։ Ձուկը բռնվում է միայն լիքը լճակում։", "goal": {"items": {"Fish": 150}}, "levels": {"Expand": 3, "Fishing": 2, "Watering": 1}, "items": {"Water": 300}, "seed": 103},
-    {"id": "chain16", "name": "Խաղողի շարք 4×4", "about": "Դասավորիր խաղողի վազերը և մեկ havaqel()-ով հավաքիր 16 խաղողի շղթա։", "goal": {"chain": 16}, "levels": {"Expand": 3, "Carrots": 1, "Cactus": 1}, "items": {"Pumpkin": 100}, "seed": 104},
-    {"id": "wood500", "name": "Փայտահատ", "about": "Հավաքիր 500 փայտ։ Հուշում՝ կողք կողքի ծիրանենիները դանդաղ են աճում։", "goal": {"items": {"Wood": 500}}, "levels": {"Expand": 3, "Trees": 2}, "seed": 105},
-    {"id": "dino12", "name": "Փոքրիկ վիշապ", "about": "Օձին դարձրու 12 վանդակ երկար։ Մի՛ բախվիր պոչին։", "goal": {"dino": 12}, "levels": {"Expand": 3, "Hats": 1, "Dinosaurs": 1}, "items": {"Cactus": 100}, "seed": 106},
-    {"id": "maze3", "name": "Լաբիրինթոս", "about": "Գտիր և հավաքիր 3 լաբիրինթոսի գանձ։", "goal": {"harvest": {"Treasure": 3}}, "levels": {"Expand": 4, "Watering": 1, "Mazes": 1}, "items": {"Weird_Substance": 100}, "seed": 107},
-    {"id": "power100", "name": "Նռան հյութ", "about": "Հավաքիր 100 նռան հյութ։ Ամենաշատ հատիկներով նուռը 8 անգամ ավելի է տալիս։", "goal": {"items": {"Power": 100}}, "levels": {"Expand": 3, "Carrots": 1, "Sunflowers": 1}, "items": {"Carrot": 300}, "seed": 108},
-    {"id": "carrot200", "name": "Բադրիջանի բերք", "about": "Հավաքիր 200 բադրիջան։ Բադրիջանը աճում է միայն հերկած հողում։", "goal": {"items": {"Carrot": 200}}, "levels": {"Expand": 3, "Carrots": 2}, "items": {"Hay": 300, "Wood": 300}, "seed": 109},
-    {"id": "giant4", "name": "Հսկա ձմերուկ 4×4", "about": "Աճեցրու և հավաքիր 4×4 հսկա ձմերուկ։", "goal": {"giant": 4}, "levels": {"Expand": 3, "Carrots": 1, "Pumpkins": 1}, "items": {"Carrot": 300}, "seed": 110},
+    {"id": "chain16", "name": "Խաղողի շարք՝ 4", "about": "Դասավորիր մեկ շարքի 4 խաղողը ձախից աջ՝ թթվից քաղցր, և հավաքիր դրանք մեկ havaqel()-ով։", "goal": {"chain": 4}, "levels": {"Expand": 3, "Carrots": 1, "Cactus": 1}, "items": {"Pumpkin": 100}, "seed": 104},
+    {"id": "wood500", "name": "Փայտահատ", "about": "Հավաքիր 500 փայտ։ Հուշում՝ ծիրանենին երեք անգամ է բերք տալիս, մի՛ շտապիր նորը տնկել։", "goal": {"items": {"Wood": 500}}, "levels": {"Expand": 3, "Trees": 2}, "seed": 105},
+    {"id": "dino12", "name": "Փոքրիկ վիշապ", "about": "Օձին դարձրու 10 վանդակ երկար։ Մուկը փախչում է, իսկ դու մի՛ բախվիր պոչին։", "goal": {"dino": 10}, "levels": {"Expand": 3, "Hats": 1, "Dinosaurs": 1}, "seed": 106},
+    {"id": "maze3", "name": "Լաբիրինթոս", "about": "Գտիր և հավաքիր 3 լաբիրինթոսի գանձ։", "goal": {"harvest": {"Treasure": 3}}, "levels": {"Expand": 5, "Watering": 1, "Mazes": 1}, "items": {"Weird_Substance": 100}, "seed": 107},
+    {"id": "power100", "name": "Նռան հյութ", "about": "Հավաքիր 100 նռան հյութ։ Զույգ թվով հատիկ ունեցող նռները հավաքիր աճման կարգով, և ամեն հաջորդը ավելի շատ հյութ կտա։", "goal": {"items": {"Power": 100}}, "levels": {"Expand": 3, "Carrots": 1, "Sunflowers": 1}, "items": {"Carrot": 300}, "seed": 108},
+    {"id": "carrot200", "name": "Բադրիջանի բերք", "about": "Հավաքիր 200 բադրիջան։ Բադրիջանը աճում է միայն հերկած հողում և տնկվում է սերմից։", "goal": {"items": {"Carrot": 200}}, "levels": {"Expand": 3, "Carrots": 2}, "items": {"Seeds": 20}, "seed": 109},
+    {"id": "giant4", "name": "Հսկա ձմերուկ 4×4", "about": "Աճեցրու և հավաքիր 4×4 հսկա քառակուսի ձմերուկ։", "goal": {"giant": 4}, "levels": {"Expand": 3, "Carrots": 1, "Pumpkins": 1, "SquareMelon": 1}, "items": {"Carrot": 300}, "seed": 110},
     {"id": "trout", "name": "Իշխան", "about": "Բռնիր մեկ իշխան։ Իշխանը հազվադեպ է բռնվում, ուրեմն արագ ձկնորսիր։", "goal": {"harvest": {"Trout": 1}}, "levels": {"Expand": 3, "Fishing": 1, "Watering": 1}, "items": {"Water": 200}, "seed": 111},
-    {"id": "drones2000", "name": "Դրոնների թիմ", "about": "Հավաքիր 2000 ցորեն։ Օգնության կանչիր նոր դրոններ՝ norDron()։", "goal": {"items": {"Hay": 2000}}, "levels": {"Expand": 4, "Grass": 2, "Megafarm": 2}, "seed": 112},
-    {"id": "chain36", "name": "Խաղողի շարք 6×6", "about": "Դասավորիր 36 խաղող և հավաքիր դրանք մեկ շղթայով։", "goal": {"chain": 36}, "levels": {"Expand": 4, "Carrots": 1, "Cactus": 1}, "items": {"Pumpkin": 200}, "seed": 113},
-    {"id": "mixed", "name": "Ամեն ինչից", "about": "Հավաքիր 150 ցորեն, 150 փայտ և 100 բադրիջան։", "goal": {"items": {"Hay": 150, "Wood": 150, "Carrot": 100}}, "levels": {"Expand": 3, "Trees": 1, "Carrots": 1}, "items": {"Hay": 200, "Wood": 200}, "seed": 114},
-    {"id": "pumpkin500", "name": "Ձմերուկի սար", "about": "Հավաքիր 500 ձմերուկ։", "goal": {"items": {"Pumpkin": 500}}, "levels": {"Expand": 3, "Carrots": 1, "Pumpkins": 2}, "items": {"Carrot": 400}, "seed": 115},
-    {"id": "dino30", "name": "Մեծ վիշապ", "about": "Օձին դարձրու 30 վանդակ երկար 6×6 ֆերմայում։", "goal": {"dino": 30}, "levels": {"Expand": 4, "Hats": 1, "Dinosaurs": 1}, "items": {"Cactus": 200}, "seed": 116},
-    {"id": "gold500", "name": "Ոսկու որս", "about": "Հավաքիր 500 ոսկի լաբիրինթոսներից։", "goal": {"items": {"Gold": 500}}, "levels": {"Expand": 4, "Watering": 1, "Mazes": 1}, "items": {"Weird_Substance": 200}, "seed": 117},
-    {"id": "giant6", "name": "Հսկա ձմերուկ 6×6", "about": "Ամբողջ ֆերման մեկ հսկա ձմերուկ դարձրու և հավաքիր այն։", "goal": {"giant": 6}, "levels": {"Expand": 4, "Carrots": 1, "Pumpkins": 1}, "items": {"Carrot": 600}, "seed": 118},
-    {"id": "power300", "name": "Հյութի գործարան", "about": "Հավաքիր 300 նռան հյութ 6×6 ֆերմայում։", "goal": {"items": {"Power": 300}}, "levels": {"Expand": 4, "Carrots": 1, "Sunflowers": 1}, "items": {"Carrot": 600}, "seed": 119},
-    {"id": "chain64", "name": "Խաղողի թագավոր", "about": "Դասավորիր 64 խաղող 8×8 ֆերմայում և հավաքիր մեկ շղթայով։ Դրոնները կարող են օգնել։", "goal": {"chain": 64}, "levels": {"Expand": 5, "Carrots": 1, "Cactus": 1, "Megafarm": 2}, "items": {"Pumpkin": 400}, "seed": 120}
+    {"id": "drones2000", "name": "Դրոնների թիմ", "about": "Հավաքիր 2000 ցորեն։ Օգնության կանչիր նոր դրոններ՝ norDron()։", "goal": {"items": {"Hay": 2000}}, "levels": {"Expand": 5, "Grass": 2, "Megafarm": 2}, "seed": 112},
+    {"id": "chain36", "name": "Խաղողի շարք՝ 6", "about": "Դասավորիր մեկ շարքի 6 խաղողը ձախից աջ և հավաքիր դրանք մեկ havaqel()-ով։", "goal": {"chain": 6}, "levels": {"Expand": 5, "Carrots": 1, "Cactus": 1}, "items": {"Pumpkin": 200}, "seed": 113},
+    {"id": "mixed", "name": "Ամեն ինչից", "about": "Հավաքիր 150 ցորեն, 150 փայտ և 100 բադրիջան։", "goal": {"items": {"Hay": 150, "Wood": 150, "Carrot": 100}}, "levels": {"Expand": 3, "Trees": 1, "Carrots": 1}, "items": {"Seeds": 20}, "seed": 114},
+    {"id": "pumpkin500", "name": "Ձմերուկի սար", "about": "Հավաքիր 500 ձմերուկ։ Ձմերուկը հավաքիր, երբ chapel()-ը 80 կամ ավելի է, և մի՛ ուշացիր, թե չէ կփտի։", "goal": {"items": {"Pumpkin": 500}}, "levels": {"Expand": 3, "Carrots": 1, "Trees": 1, "Pumpkins": 2}, "items": {"Carrot": 800}, "seed": 115},
+    {"id": "dino30", "name": "Մկան որս", "about": "6×6 ֆերմայում օձին դարձրու 12 վանդակ երկար։ Մեծ դաշտում մուկը փախչելու շատ տեղ ունի, ուրեմն քշիր նրան դեպի անկյուն։", "goal": {"dino": 12}, "levels": {"Expand": 5, "Hats": 1, "Dinosaurs": 1}, "seed": 116},
+    {"id": "gold500", "name": "Ոսկու որս", "about": "Հավաքիր 500 ոսկի լաբիրինթոսներից։", "goal": {"items": {"Gold": 500}}, "levels": {"Expand": 5, "Watering": 1, "Mazes": 1}, "items": {"Weird_Substance": 200}, "seed": 117},
+    {"id": "giant6", "name": "Հսկա ձմերուկ 6×6", "about": "Ամբողջ ֆերման մեկ հսկա քառակուսի ձմերուկ դարձրու և հավաքիր այն։", "goal": {"giant": 6}, "levels": {"Expand": 5, "Carrots": 1, "Pumpkins": 1, "SquareMelon": 1}, "items": {"Carrot": 600}, "seed": 118},
+    {"id": "power300", "name": "Հյութի գործարան", "about": "Հավաքիր 300 նռան հյութ 6×6 ֆերմայում։ Երկար կոմբոն ամենաշատն է տալիս։", "goal": {"items": {"Power": 300}}, "levels": {"Expand": 5, "Carrots": 1, "Sunflowers": 1}, "items": {"Carrot": 600}, "seed": 119},
+    {"id": "chain64", "name": "Խաղողի թագավոր", "about": "8×8 ֆերմայում դասավորիր մեկ շարքի 8 խաղողը և հավաքիր դրանք մեկ havaqel()-ով։", "goal": {"chain": 8}, "levels": {"Expand": 6, "Carrots": 1, "Cactus": 1, "Megafarm": 2}, "items": {"Pumpkin": 400}, "seed": 120}
   ],
 
   "stickers": [
@@ -476,9 +476,9 @@
     {"id": "import", "group": "code", "icon": "inbox", "name": "Ներմուծում", "about": "Օգտագործիր ուրիշ ֆայլի կոդը import-ով։", "when": {"feature": "import"}},
     {"id": "drones5", "group": "code", "icon": "drones", "name": "Դրոնների թիմ", "about": "Միաժամանակ աշխատեցրու 5 դրոն։", "when": {"drones": 5}},
     {"id": "words1000", "group": "code", "icon": "code", "name": "1000 կոդի բառ", "about": "Հավաքիր 1000 կոդի բառ «Լավագույն կոդ» ցուցակի համար։", "when": {"codeWords": 1000}},
-    {"id": "giant6", "group": "farm", "icon": "pumpkin", "name": "Հսկաների հսկա", "about": "Հավաքիր 6×6 հսկա ձմերուկ։", "when": {"giant": 6}},
-    {"id": "chain30", "group": "farm", "icon": "cactus", "name": "Խաղողի շղթա", "about": "Մեկ havaqel()-ով հավաքիր 30 խաղող։", "when": {"chain": 30}},
-    {"id": "sun", "group": "farm", "icon": "sunflower", "name": "Նռան ուժ", "about": "Հավաքիր ամենամեծ նուռը բոնուսով։", "when": {"sunflowerBonus": true}},
+    {"id": "giant6", "group": "farm", "icon": "pumpkin", "name": "Հսկաների հսկա", "about": "Հավաքիր 6×6 հսկա քառակուսի ձմերուկ։", "when": {"giant": 6}},
+    {"id": "chain30", "group": "farm", "icon": "cactus", "name": "Խաղողի շարք", "about": "Մեկ havaqel()-ով հավաքիր 12 խաղողի դասավորված շարք։", "when": {"chain": 12}},
+    {"id": "sun", "group": "farm", "icon": "sunflower", "name": "Նռան ուժ", "about": "Նռները հավաքիր այնպես, որ հյութի կոմբոն հասնի 5-ի։", "when": {"sunflowerBonus": 5}},
     {"id": "fishAll", "group": "farm", "icon": "fish", "name": "Բոլոր ձկները", "about": "Բռնիր ձկան բոլոր տեսակները։", "when": {"fishAll": true}},
     {"id": "golden10", "group": "farm", "icon": "goldFish", "name": "10 ոսկե ձուկ", "about": "Բռնիր 10 ոսկե ձուկ։", "when": {"goldenFish": 10}},
     {"id": "hayMillion", "group": "farm", "icon": "farm", "name": "Միլիոն ցորեն", "about": "Հավաքիր 1 000 000 ցորեն։", "when": {"total": {"Hay": 1000000}}},

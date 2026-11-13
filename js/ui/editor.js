@@ -123,6 +123,12 @@ export class EditorPanel {
       },
     });
     this.cm.addOverlay(this.makeOverlay());
+    this.cm.on('keydown', (cm, e) => {
+      if (e.repeat && (e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
     this.cm.on('changes', () => this.handleChange());
     this.cm.on('inputRead', (cm, change) => this.maybeHint(cm, change));
     // Phones: while typing, the control and tab bars hide to leave room above the keyboard.

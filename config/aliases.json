@@ -29,7 +29,7 @@
     "setSpeed": ["aragutyun", "արագություն"],
     "clear": ["maqrel", "մաքրել"],
     "canMove": ["karoxEmGnal", "կարողեմգնալ"],
-    "getCompanion": ["enker", "ընկեր", "ynker"],
+    "drinkJuice": ["xmel", "խմել"],
     "spawnDrone": ["norDron", "նորդրոն"],
     "waitFor": ["spasel", "սպասել"],
     "hasFinished": ["avartelE", "ավարտելէ"],
@@ -80,10 +80,13 @@
       "Cactus": ["Xaxox", "Խաղող", "Kaktus", "Կակտուս"],
       "Hedge": ["Cankapat", "Ցանկապատ"],
       "Treasure": ["Gandz", "Գանձ", "Ganc"],
-      "Apple": ["Xndzor", "Խնձոր"],
+      "Apple": ["Muk", "Մուկ", "Xndzor", "Խնձոր"],
       "Dinosaur": ["Odz", "Օձ", "Dinozavr", "Դինոզավր"],
       "Mushroom": ["Sunk", "Սունկ"],
-      "Maze": ["Labirint", "Լաբիրինթոս", "Labirintos"]
+      "Maze": ["Labirint", "Լաբիրինթոս", "Labirintos"],
+      "Mulberry": ["Tteni", "Թթենի"],
+      "YellowMelon": ["DexinDzmeruk", "ԴեղինՁմերուկ"],
+      "SquareMelon": ["QarakusiDzmeruk", "ՔառակուսիՁմերուկ"]
     },
     "Items": {
       "Hay": ["Coren", "Ցորեն", "ChorXot", "ՉորԽոտ"],
@@ -113,7 +116,10 @@
       "Nazook": ["Nazuk", "Նազուկ"],
       "Honey": ["Mexr", "Մեղր"],
       "Candle": ["Mom", "Մոմ"],
-      "Honey_Gata": ["MexrotGata", "ՄեղրոտԳաթա"]
+      "Honey_Gata": ["MexrotGata", "ՄեղրոտԳաթա"],
+      "Seeds": ["Sermer", "Սերմեր"],
+      "YellowMelon": ["DexinDzmeruk", "ԴեղինՁմերուկ"],
+      "SquareMelon": ["QarakusiDzmeruk", "ՔառակուսիՁմերուկ"]
     },
     "Machines": {
       "Mill": ["Jraxac", "Ջրաղաց"],
@@ -212,7 +218,9 @@
       "GoldenHat": ["VoskeGlxark", "ՈսկեԳլխարկ"],
       "Pumpkins": ["Dzmerukner", "Ձմերուկներ", "Ddumner", "Դդումներ"],
       "Cactus": ["Xaxox", "Խաղող", "Kaktusner", "Կակտուսներ"],
-      "Polyculture": ["BariHarevanner", "ԲարիՀարևաններ", "Enkerutyun", "Ընկերություն", "Ynkerutyun"],
+      "Mulberry": ["Tteni", "Թթենի"],
+      "YellowMelon": ["DexinDzmeruk", "ԴեղինՁմերուկ"],
+      "SquareMelon": ["QarakusiDzmeruk", "ՔառակուսիՁմերուկ"],
       "Dinosaurs": ["Odz", "Օձ", "Dinozavr", "Դինոզավր"],
       "Secret": ["Gaxtnik", "Գաղտնիք"],
       "SetSpeed": ["Dandaxecum", "Դանդաղեցում"],

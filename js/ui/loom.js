@@ -3,7 +3,7 @@
 // under it; RanchScreen calls update() a few times a second.
 import { h, icon, pixelImg, carpetCanvas, paintCarpet, onBack, phoneText } from './dom.js';
 import { confirmModal } from './modal.js';
-import { carpetGallery } from './account.js';
+import { carpetGallery, isHidden, reportContent } from './account.js';
 import { alikeShare, sampleCells } from '../engine/carpet.js';
 import { weekKey } from '../core/util.js';
 
@@ -147,6 +147,8 @@ export class LoomScreen {
       return;
     }
     if (this.tab !== 'Contest') return;
+    const week = this.week();
+    entries = entries.filter((e) => !isHidden(app, e.id, `${week}~${e.id}`)); // reported ones stay hidden for this player
     if (!entries.length) {
       box.textContent = t('ui.contestEmpty');
       return;
@@ -176,6 +178,18 @@ export class LoomScreen {
               : guest
                 ? null
                 : h('button', { class: 'btn btn-sm', disabled: e.liked, onclick: act(() => app.account.likeCarpet(this.week(), e.id)) }, t(e.liked ? 'ui.contestLiked' : 'ui.contestLike')),
+            e.id !== me && !guest && !app.account.isAdmin
+              ? h(
+                  'button',
+                  {
+                    class: 'link-quiet',
+                    onclick: async () => {
+                      if ((await reportContent(app, { kind: 'carpet', target: e.id, name: e.name, week, cells: e.cells })) && this.tab === 'Contest') this.buildContest();
+                    },
+                  },
+                  t('ui.report'),
+                )
+              : null,
             app.account.isAdmin
               ? h(
                   'button',

@@ -1,0 +1,23 @@
+{
+  "game.title": "Ферма Бриджи",
+  "calendar.luck.0.text": "День баклажана. Баклажаны дают двойной урожай.",
+  "calendar.luck.1.text": "Сегодня арбузы не гниют.",
+  "calendar.luck.2.text": "День золотой рыбки. Золотая рыбка ловится в 3 раза чаще.",
+  "calendar.luck.3.text": "День быстрого роста. Все растения растут в 1,5 раза быстрее.",
+  "calendar.luck.4.text": "Солнечный день. Гранаты дают вдвое больше гранатового сока.",
+  "calendar.luck.5.text": "День винограда. Виноградные лозы дают двойной урожай.",
+  "calendar.luck.6.text": "День дровосека. Шиповник и абрикосы дают вдвое больше дров.",
+  "calendar.luck.7.text": "День пшеницы. Пшеница даёт тройной урожай.",
+  "calendar.luck.8.text": "Рыбный день. Каждая рыба идёт за две.",
+  "calendar.luck.9.text": "Счастливое озеро. Ишхан и золотая рыбка ловятся в 2 раза чаще.",
+  "calendar.luck.10.text": "День клада. Золота в лабиринте вдвое больше.",
+  "calendar.luck.11.text": "День змеи. Змеиной кожи вдвое больше.",
+  "leaderboard.tiers.0.name": "Семечко",
+  "leaderboard.tiers.1.name": "Росток",
+  "leaderboard.tiers.2.name": "Колосок",
+  "leaderboard.tiers.3.name": "Дерево",
+  "leaderboard.tiers.4.name": "Фермер",
+  "leaderboard.tiers.5.name": "Мастер",
+  "leaderboard.tiers.6.name": "Алмаз",
+  "leaderboard.tiers.7.name": "Легенда"
+}

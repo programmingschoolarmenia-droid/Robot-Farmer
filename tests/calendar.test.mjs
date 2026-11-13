@@ -49,7 +49,7 @@ test('calendar: every student has the same season, weather and luck at the same 
 test('calendar: crops grow ×2 in their season and ×0.5 outside it, exactly across a season change', () => {
   const at = find((s) => s.season === 'Spring' && dry(s) && s.next !== 'Rain' && s.next !== 'Storm' && (s.weatherEnds - START) % HOUR === 15 * MIN);
   const before = at + (15 * MIN - ((at - START) % HOUR)) - 2000; // 2 s before summer
-  const { game, set } = farm(before, { levels: { Plant: 1, Carrots: 1 }, items: { Hay: 5, Wood: 5 } });
+  const { game, set } = farm(before, { levels: { Plant: 1, Carrots: 1 }, items: { Seeds: 5 } });
   const tile = game.world.tile(0, 0);
   game.world.till(tile, game.time);
   assert.ok(game.world.plant(tile, 'Carrot', game.time).ok);
@@ -86,7 +86,7 @@ test('calendar: rain fills every square and every pond, then the water dries aga
 
 test('calendar: winter water gives no boost, ponds still have fish, and the whitefish bites only then', () => {
   const at = find((s) => s.season === 'Winter');
-  const { game } = farm(at, { levels: { Plant: 1, Carrots: 1, Expand: 1, Fishing: 1 }, items: { Hay: 5, Wood: 5 } });
+  const { game } = farm(at, { levels: { Plant: 1, Carrots: 1, Expand: 1, Fishing: 1 }, items: { Seeds: 5 } });
   const [soil, pond] = [0, 1].map((x) => game.world.tile(x, 0));
   game.world.till(soil, game.time);
   game.world.plant(soil, 'Carrot', game.time);
@@ -120,7 +120,7 @@ test('calendar: heat dries water ×3 faster', () => {
 });
 
 test('calendar: lightning charges a plant and its harvest is ×3', () => {
-  const { game } = farm(find((s) => s.weather === 'Storm'), { levels: { Plant: 1, Carrots: 1 }, items: { Hay: 5, Wood: 5 } });
+  const { game } = farm(find((s) => s.weather === 'Storm'), { levels: { Plant: 1, Carrots: 1 }, items: { Seeds: 5 } });
   const tile = game.world.tile(0, 0);
   game.world.till(tile, game.time);
   game.world.plant(tile, 'Carrot', game.time);
@@ -130,7 +130,7 @@ test('calendar: lightning charges a plant and its harvest is ×3', () => {
   game.calendar.tick(15, game.time);
   assert.deepEqual(strikes, [true]);
   assert.equal(tile.entity.data.charged, true);
-  assert.deepEqual(game.world.harvest(tile, game.time).items, { Carrot: 3 });
+  assert.equal(game.world.harvest(tile, game.time).items.Carrot, 3);
 });
 
 test('luck: one per day, the same for everyone, never twice in a row, each once in every run of days', () => {
@@ -149,12 +149,12 @@ test('luck: harvest, pumpkin, bones, gold, fish and growth effects', () => {
   const dayWith = (pick) => {
     for (let ms = START; ; ms += 86400000) if (pick(farm(ms, { luck: true }).game.calendar.state.luck)) return ms;
   };
-  const carrots = farm(dayWith((l) => l.yield && l.yield.Carrot === 2), { luck: true, levels: { Plant: 1, Carrots: 1 }, items: { Hay: 5, Wood: 5 } }).game;
+  const carrots = farm(dayWith((l) => l.yield && l.yield.Carrot === 2), { luck: true, levels: { Plant: 1, Carrots: 1 }, items: { Seeds: 5 } }).game;
   const tile = carrots.world.tile(0, 0);
   carrots.world.till(tile, carrots.time);
   carrots.world.plant(tile, 'Carrot', carrots.time);
   tile.entity.progress = 1;
-  assert.deepEqual(carrots.world.harvest(tile, carrots.time).items, { Carrot: 2 });
+  assert.equal(carrots.world.harvest(tile, carrots.time).items.Carrot, 2);
 
   const pumpkins = farm(dayWith((l) => l.pumpkinDeath === 0), { luck: true, levels: { Plant: 1, Carrots: 1, Pumpkins: 1 }, items: { Carrot: 500 } }).game;
   const p = pumpkins.world.tile(0, 0);
@@ -169,7 +169,7 @@ test('luck: harvest, pumpkin, bones, gold, fish and growth effects', () => {
   const bones = farm(dayWith((l) => l.yield && l.yield.Bone === 2), { luck: true, levels: { Dinosaurs: 1 } }).game;
   bones.dino = { drone: bones.mainDrone, tail: [], apple: null, eaten: 1 };
   bones.finishDino(bones.time);
-  assert.equal(bones.inventory.get('Bone'), 4 * 2, 'a 2-long dinosaur gives 4 bones, ×2 today');
+  assert.equal(bones.inventory.get('Bone'), 1 * 2 * 2, 'a snake that caught 1 mouse is 2 long: 1 × 2 skins, ×2 today');
   const gold = farm(dayWith((l) => l.yield && l.yield.Gold === 2), { luck: true, levels: { Mazes: 1 } }).game;
   const plain = makeGame({ levels: { Mazes: 1 } });
   gold.world.maze = plain.world.maze = { size: 3 };

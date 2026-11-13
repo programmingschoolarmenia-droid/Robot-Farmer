@@ -1,0 +1,991 @@
+{
+  "_readme": "These are the English names of the game commands. The first name of each list is shown everywhere; every other name (and the Armenian ones) keeps working. Edit only the right side.",
+  "functions": {
+    "harvest": [
+      "gather"
+    ],
+    "canHarvest": [
+      "isRipe"
+    ],
+    "plant": [
+      "sow"
+    ],
+    "move": [
+      "go"
+    ],
+    "till": [
+      "plow"
+    ],
+    "doAFlip": [
+      "flip"
+    ],
+    "playNote": [
+      "playNote"
+    ],
+    "print": [
+      "say"
+    ],
+    "getEntityType": [
+      "whatsHere"
+    ],
+    "getGroundType": [
+      "soilType"
+    ],
+    "getPosX": [
+      "posX"
+    ],
+    "getPosY": [
+      "posY"
+    ],
+    "getWorldSize": [
+      "farmSize"
+    ],
+    "numItems": [
+      "count"
+    ],
+    "changeHat": [
+      "wearHat"
+    ],
+    "measure": [
+      "scan"
+    ],
+    "swap": [
+      "exchange"
+    ],
+    "useItem": [
+      "use"
+    ],
+    "getWater": [
+      "waterLevel"
+    ],
+    "getTime": [
+      "time"
+    ],
+    "getTickCount": [
+      "steps"
+    ],
+    "unlock": [
+      "research"
+    ],
+    "getCost": [
+      "costOf"
+    ],
+    "numUnlocked": [
+      "level"
+    ],
+    "setSpeed": [
+      "speed"
+    ],
+    "clear": [
+      "wipe"
+    ],
+    "canMove": [
+      "canGo"
+    ],
+    "drinkJuice": [
+      "drink"
+    ],
+    "spawnDrone": [
+      "newDrone"
+    ],
+    "waitFor": [
+      "wait"
+    ],
+    "hasFinished": [
+      "isDone"
+    ],
+    "numDrones": [
+      "droneCount"
+    ],
+    "maxDrones": [
+      "droneLimit"
+    ],
+    "digPond": [
+      "dig"
+    ],
+    "catchFish": [
+      "goFishing"
+    ],
+    "getSeason": [
+      "season"
+    ],
+    "getWeather": [
+      "weather"
+    ],
+    "getNextWeather": [
+      "nextWeather"
+    ],
+    "build": [
+      "build"
+    ],
+    "make": [
+      "make"
+    ],
+    "eat": [
+      "eat"
+    ],
+    "buildGreenhouse": [
+      "greenhouse"
+    ],
+    "festivalDistance": [
+      "sniff"
+    ],
+    "findTreasure": [
+      "find"
+    ]
+  },
+  "constants": {
+    "North": [
+      "Up"
+    ],
+    "South": [
+      "Down"
+    ],
+    "East": [
+      "Right"
+    ],
+    "West": [
+      "Left"
+    ]
+  },
+  "namespaces": {
+    "Entities": [
+      "Plants"
+    ],
+    "Items": [
+      "Goods"
+    ],
+    "Grounds": [
+      "Soils"
+    ],
+    "Hats": [
+      "Hats"
+    ],
+    "Unlocks": [
+      "Research"
+    ],
+    "Fishes": [
+      "Fish"
+    ],
+    "Seasons": [
+      "Seasons"
+    ],
+    "Weathers": [
+      "WeatherTypes"
+    ],
+    "Machines": [
+      "Machines"
+    ],
+    "Notes": [
+      "Notes"
+    ]
+  },
+  "members": {
+    "Entities": {
+      "Grass": [
+        "Wheat"
+      ],
+      "Bush": [
+        "Rosehip"
+      ],
+      "Tree": [
+        "ApricotTree"
+      ],
+      "Carrot": [
+        "Eggplant"
+      ],
+      "Pumpkin": [
+        "Watermelon"
+      ],
+      "Dead_Pumpkin": [
+        "RottenWatermelon"
+      ],
+      "Sunflower": [
+        "Pomegranate"
+      ],
+      "Cactus": [
+        "Grape"
+      ],
+      "Hedge": [
+        "Hedge"
+      ],
+      "Treasure": [
+        "Treasure"
+      ],
+      "Apple": [
+        "Mouse"
+      ],
+      "Dinosaur": [
+        "Snake"
+      ],
+      "Mushroom": [
+        "Mushroom"
+      ],
+      "Maze": [
+        "Maze"
+      ],
+      "Mulberry": [
+        "MulberryTree"
+      ],
+      "YellowMelon": [
+        "YellowMelon"
+      ],
+      "SquareMelon": [
+        "SquareMelon"
+      ]
+    },
+    "Items": {
+      "Hay": [
+        "Wheat"
+      ],
+      "Wood": [
+        "Wood"
+      ],
+      "Carrot": [
+        "Eggplant"
+      ],
+      "Pumpkin": [
+        "Watermelon"
+      ],
+      "Power": [
+        "Juice"
+      ],
+      "Water": [
+        "Water"
+      ],
+      "Fertilizer": [
+        "Humus"
+      ],
+      "Weird_Substance": [
+        "MagicDust"
+      ],
+      "Cactus": [
+        "Grape"
+      ],
+      "Bone": [
+        "SnakeSkin"
+      ],
+      "Gold": [
+        "Gold"
+      ],
+      "Fish": [
+        "Fish"
+      ],
+      "Flour": [
+        "Flour"
+      ],
+      "Jam": [
+        "Jam"
+      ],
+      "Lavash": [
+        "Lavash"
+      ],
+      "Gata": [
+        "Gata"
+      ],
+      "Ghapama": [
+        "Ghapama"
+      ],
+      "Grilled_Fish": [
+        "GrilledFish"
+      ],
+      "Star": [
+        "Star"
+      ],
+      "Medal": [
+        "Medal"
+      ],
+      "Egg": [
+        "Egg"
+      ],
+      "Milk": [
+        "Milk"
+      ],
+      "Cheese": [
+        "Cheese"
+      ],
+      "Butter": [
+        "Butter"
+      ],
+      "Nazook": [
+        "Nazook"
+      ],
+      "Honey": [
+        "Honey"
+      ],
+      "Candle": [
+        "Candle"
+      ],
+      "Honey_Gata": [
+        "HoneyGata"
+      ],
+      "Seeds": [
+        "Seeds"
+      ],
+      "YellowMelon": [
+        "YellowMelon"
+      ],
+      "SquareMelon": [
+        "SquareMelon"
+      ]
+    },
+    "Machines": {
+      "Mill": [
+        "Mill"
+      ],
+      "JamPot": [
+        "JamPot"
+      ],
+      "Tonir": [
+        "Tonir"
+      ]
+    },
+    "Grounds": {
+      "Grassland": [
+        "Meadow"
+      ],
+      "Soil": [
+        "Field"
+      ],
+      "Pond": [
+        "Pond"
+      ]
+    },
+    "Fishes": {
+      "Carp": [
+        "Carp"
+      ],
+      "Barbel": [
+        "Barbel"
+      ],
+      "Trout": [
+        "Ishkhan"
+      ],
+      "Golden_Fish": [
+        "Goldfish"
+      ],
+      "Whitefish": [
+        "Whitefish"
+      ],
+      "Catfish": [
+        "Catfish"
+      ]
+    },
+    "Notes": {
+      "C": [
+        "C"
+      ],
+      "D": [
+        "D"
+      ],
+      "E": [
+        "E"
+      ],
+      "F": [
+        "F"
+      ],
+      "G": [
+        "G"
+      ],
+      "A": [
+        "A"
+      ],
+      "B": [
+        "B"
+      ],
+      "HighC": [
+        "HighC"
+      ],
+      "Rest": [
+        "Rest"
+      ]
+    },
+    "Seasons": {
+      "Spring": [
+        "Spring"
+      ],
+      "Summer": [
+        "Summer"
+      ],
+      "Autumn": [
+        "Autumn"
+      ],
+      "Winter": [
+        "Winter"
+      ]
+    },
+    "Weathers": {
+      "Sunny": [
+        "Sunny"
+      ],
+      "Rain": [
+        "Rain"
+      ],
+      "Storm": [
+        "Storm"
+      ],
+      "Heat": [
+        "Heat"
+      ],
+      "Snow": [
+        "Snow"
+      ]
+    },
+    "Hats": {
+      "Straw_Hat": [
+        "Straw"
+      ],
+      "Blue_Hat": [
+        "Blue"
+      ],
+      "Green_Hat": [
+        "Green"
+      ],
+      "Red_Hat": [
+        "Red"
+      ],
+      "Purple_Hat": [
+        "Purple"
+      ],
+      "Gold_Hat": [
+        "Gold"
+      ],
+      "Dinosaur_Hat": [
+        "Snake"
+      ],
+      "Secret_Hat": [
+        "Secret"
+      ],
+      "Fisher_Hat": [
+        "Fisher"
+      ],
+      "Mayor_Hat": [
+        "Mayor"
+      ],
+      "Trndez_Hat": [
+        "Trndez"
+      ],
+      "Trndez_Gold_Hat": [
+        "TrndezGold"
+      ],
+      "Easter_Hat": [
+        "Easter"
+      ],
+      "Easter_Gold_Hat": [
+        "EasterGold"
+      ],
+      "Vardavar_Hat": [
+        "Vardavar"
+      ],
+      "Vardavar_Gold_Hat": [
+        "VardavarGold"
+      ],
+      "Navasard_Hat": [
+        "Navasard"
+      ],
+      "Navasard_Gold_Hat": [
+        "NavasardGold"
+      ],
+      "Knowledge_Hat": [
+        "Knowledge"
+      ],
+      "Knowledge_Gold_Hat": [
+        "KnowledgeGold"
+      ],
+      "Teacher_Hat": [
+        "Teacher"
+      ],
+      "Teacher_Gold_Hat": [
+        "TeacherGold"
+      ],
+      "NewYear_Hat": [
+        "NewYear"
+      ],
+      "NewYear_Gold_Hat": [
+        "NewYearGold"
+      ],
+      "Challenge_Gold_Hat": [
+        "ChallengeGold"
+      ],
+      "Challenge_Silver_Hat": [
+        "ChallengeSilver"
+      ],
+      "Challenge_Bronze_Hat": [
+        "ChallengeBronze"
+      ],
+      "Treasure_Hat": [
+        "TreasureHunter"
+      ],
+      "Legend_Hat": [
+        "Legend"
+      ],
+      "Papakh_Hat": [
+        "Papakh"
+      ],
+      "Beekeeper_Hat": [
+        "Beekeeper"
+      ],
+      "Rancher_Hat": [
+        "Rancher"
+      ],
+      "Carpet_Hat": [
+        "Weaver"
+      ]
+    },
+    "Unlocks": {
+      "Loops": [
+        "Loops"
+      ],
+      "Hats": [
+        "Hats"
+      ],
+      "Speed": [
+        "Speed"
+      ],
+      "Grass": [
+        "Wheat"
+      ],
+      "Expand": [
+        "BigFarm"
+      ],
+      "Plant": [
+        "Sowing"
+      ],
+      "Carrots": [
+        "Eggplants"
+      ],
+      "Debug": [
+        "Say"
+      ],
+      "Operators": [
+        "Operators"
+      ],
+      "Watering": [
+        "Watering"
+      ],
+      "Trees": [
+        "ApricotTrees"
+      ],
+      "Fertilizer": [
+        "Humus"
+      ],
+      "Sunflowers": [
+        "Pomegranates"
+      ],
+      "Fishing": [
+        "Fishing"
+      ],
+      "Mazes": [
+        "GardenMaze"
+      ],
+      "Megafarm": [
+        "DroneTeam"
+      ],
+      "GoldenHat": [
+        "GoldenHat"
+      ],
+      "Pumpkins": [
+        "Watermelons"
+      ],
+      "Cactus": [
+        "Grapes"
+      ],
+      "Mulberry": [
+        "MulberryTree"
+      ],
+      "YellowMelon": [
+        "YellowMelon"
+      ],
+      "SquareMelon": [
+        "SquareMelon"
+      ],
+      "Dinosaurs": [
+        "Snakes"
+      ],
+      "Secret": [
+        "Secret"
+      ],
+      "SetSpeed": [
+        "SlowMotion"
+      ],
+      "Timing": [
+        "Clock"
+      ],
+      "Debugger": [
+        "VariablesWindow"
+      ],
+      "Final": [
+        "GoldenFarm"
+      ],
+      "Senses": [
+        "Senses"
+      ],
+      "Calendar": [
+        "Calendar"
+      ],
+      "Variables": [
+        "Variables"
+      ],
+      "Lists": [
+        "Lists"
+      ],
+      "Objects": [
+        "Objects"
+      ],
+      "Music": [
+        "Music"
+      ],
+      "Costs": [
+        "Prices"
+      ],
+      "AutoUnlock": [
+        "AutoResearch"
+      ],
+      "Functions": [
+        "Functions"
+      ],
+      "Import": [
+        "Import"
+      ],
+      "Utilities": [
+        "Helpers"
+      ],
+      "Ranch": [
+        "Ranch"
+      ],
+      "Market": [
+        "Market"
+      ],
+      "Mushrooms": [
+        "Mushrooms"
+      ]
+    }
+  },
+  "ranch": {
+    "functions": {
+      "unload": [
+        "unload"
+      ],
+      "take": [
+        "take"
+      ],
+      "fill": [
+        "fill"
+      ],
+      "inHands": [
+        "holding"
+      ],
+      "sell": [
+        "sell"
+      ],
+      "price": [
+        "price"
+      ],
+      "buy": [
+        "buy"
+      ],
+      "milk": [
+        "milk"
+      ],
+      "pet": [
+        "pet"
+      ],
+      "dirt": [
+        "dirt"
+      ],
+      "animals": [
+        "animals"
+      ],
+      "bring": [
+        "bring"
+      ],
+      "orders": [
+        "orders"
+      ],
+      "deliver": [
+        "deliver"
+      ],
+      "on": [
+        "when"
+      ],
+      "write": [
+        "write"
+      ],
+      "read": [
+        "read"
+      ],
+      "sellAnimal": [
+        "sellAnimal"
+      ],
+      "heal": [
+        "heal"
+      ],
+      "repair": [
+        "repair"
+      ],
+      "rope": [
+        "rope"
+      ],
+      "ship": [
+        "ship"
+      ],
+      "shear": [
+        "shear"
+      ],
+      "bell": [
+        "ringBell"
+      ],
+      "moveDog": [
+        "gamprGo"
+      ],
+      "carpet": [
+        "carpet"
+      ],
+      "weave": [
+        "weave"
+      ],
+      "carpetOrders": [
+        "carpetOrders"
+      ],
+      "sellCarpet": [
+        "sellCarpet"
+      ],
+      "flowerKinds": [
+        "flowerKinds"
+      ],
+      "donkeyBring": [
+        "donkeyBring"
+      ],
+      "donkeyShip": [
+        "donkeyShip"
+      ],
+      "fair": [
+        "fair"
+      ]
+    },
+    "namespaces": {
+      "Animals": [
+        "Animals"
+      ],
+      "Colors": [
+        "Colors"
+      ],
+      "Flowers": [
+        "Flowers"
+      ]
+    },
+    "members": {
+      "Items": {
+        "Dram": [
+          "Dram"
+        ],
+        "Grain": [
+          "Grain"
+        ],
+        "Bale": [
+          "HayBale"
+        ],
+        "GoatMilk": [
+          "GoatMilk"
+        ],
+        "Matsun": [
+          "Matsun"
+        ],
+        "Omelet": [
+          "Omelet"
+        ],
+        "Manure": [
+          "Manure"
+        ],
+        "Medicine": [
+          "Medicine"
+        ],
+        "Plank": [
+          "Plank"
+        ],
+        "WoolWhite": [
+          "WhiteWool"
+        ],
+        "WoolBrown": [
+          "BrownWool"
+        ],
+        "WoolBlack": [
+          "BlackWool"
+        ],
+        "WoolGold": [
+          "GoldWool"
+        ],
+        "YarnWhite": [
+          "WhiteYarn"
+        ],
+        "YarnBrown": [
+          "BrownYarn"
+        ],
+        "YarnBlack": [
+          "BlackYarn"
+        ],
+        "YarnGold": [
+          "GoldYarn"
+        ],
+        "YarnRed": [
+          "RedYarn"
+        ],
+        "YarnOrange": [
+          "OrangeYarn"
+        ],
+        "YarnYellow": [
+          "YellowYarn"
+        ],
+        "YarnGreen": [
+          "GreenYarn"
+        ],
+        "YarnBlue": [
+          "BlueYarn"
+        ],
+        "YarnSoft": [
+          "SoftYarn"
+        ],
+        "Carpet": [
+          "Carpet"
+        ],
+        "Down": [
+          "Fluff"
+        ],
+        "Seed": [
+          "Seed"
+        ],
+        "Sunflower": [
+          "Sunflower"
+        ],
+        "Comb": [
+          "Honeycomb"
+        ],
+        "Wax": [
+          "Wax"
+        ],
+        "BuffaloMilk": [
+          "BuffaloMilk"
+        ],
+        "LoriCheese": [
+          "LoriCheese"
+        ],
+        "HoneyCake": [
+          "HoneyCake"
+        ]
+      },
+      "Animals": {
+        "Hen": [
+          "Hen"
+        ],
+        "Cow": [
+          "Cow"
+        ],
+        "Goat": [
+          "Goat"
+        ],
+        "Sheep": [
+          "Sheep"
+        ],
+        "Buffalo": [
+          "Buffalo"
+        ],
+        "Rabbit": [
+          "Rabbit"
+        ]
+      },
+      "Colors": {
+        "White": [
+          "White"
+        ],
+        "Brown": [
+          "Brown"
+        ],
+        "Black": [
+          "Black"
+        ],
+        "Gold": [
+          "Gold"
+        ],
+        "Spotted": [
+          "Spotted"
+        ],
+        "Red": [
+          "Red"
+        ],
+        "Orange": [
+          "Orange"
+        ],
+        "Yellow": [
+          "Yellow"
+        ],
+        "Green": [
+          "Green"
+        ],
+        "Blue": [
+          "Blue"
+        ],
+        "Soft": [
+          "Soft"
+        ]
+      },
+      "Flowers": {
+        "Poppy": [
+          "Poppy"
+        ],
+        "Daisy": [
+          "Daisy"
+        ],
+        "Rose": [
+          "Rose"
+        ],
+        "Jasmine": [
+          "Jasmine"
+        ],
+        "Sunflower": [
+          "Sunflower"
+        ]
+      },
+      "Machines": {
+        "FeedTrough": [
+          "FeedTrough"
+        ],
+        "WaterTrough": [
+          "WaterTrough"
+        ],
+        "Well": [
+          "Well"
+        ],
+        "Basket": [
+          "Basket"
+        ],
+        "Stall": [
+          "Stall"
+        ],
+        "Dairy": [
+          "Dairy"
+        ],
+        "Stove": [
+          "Stove"
+        ],
+        "Wheel": [
+          "SpinningWheel"
+        ],
+        "Loom": [
+          "Loom"
+        ],
+        "DyePot": [
+          "DyePot"
+        ],
+        "HoneyHouse": [
+          "HoneyHouse"
+        ],
+        "Hive": [
+          "Hive"
+        ],
+        "Pool": [
+          "MudPool"
+        ]
+      }
+    }
+  }
+}

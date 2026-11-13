@@ -683,7 +683,7 @@
   }
 }
 
-/* Phones held sideways: Bridgy beside the login form, no meadow strip; the control bar and the
+/* Phones held sideways: Bridgy beside the login form; the control bar and the
    tabs share one row so the panels keep their height. */
 @media (max-height: 599px) and (min-width: 600px) {
   .screen-game {
@@ -703,9 +703,6 @@
   }
   .login-card {
     grid-template-columns: 120px minmax(0, 1fr);
-  }
-  .login-meadow {
-    display: none;
   }
   .game-subtitle {
     margin-bottom: 8px;

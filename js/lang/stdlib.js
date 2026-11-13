@@ -283,7 +283,8 @@ export const SET_METHODS = {
 };
 
 // Library namespaces available to player code (each still gated by research).
-export function createLibraries() {
+// print: the game's print command, which console.log is another name for.
+export function createLibraries(print) {
   const fn = (name, impl) => new BuiltinFunction({ name, impl });
   const num = (v) => {
     const n = Number(v);
@@ -318,11 +319,15 @@ export function createLibraries() {
   NumberNs.set('isInteger', fn('Number.isInteger', (I, [v]) => Number.isInteger(v)));
   NumberNs.callable = fn('Number', (I, args) => (args.length ? (isUserObject(args[0]) ? NaN : Number(args[0])) : 0));
 
+  const ConsoleNs = new Namespace('console', 'lib');
+  if (print) ConsoleNs.set('log', print);
+
   return {
     Math: MathNs,
     Object: ObjectNs,
     Array: ArrayNs,
     Number: NumberNs,
+    console: ConsoleNs,
     parseInt: fn('parseInt', (I, [s, base]) => parseInt(formatValue(s), base === undefined ? 10 : Number(base))),
     parseFloat: fn('parseFloat', (I, [s]) => parseFloat(formatValue(s))),
     String: fn('String', (I, [v]) => formatValue(v)),

@@ -44,7 +44,7 @@
       "w": 17,
       "after": ["Mill"],
       "description": "Այստեղ բադրիջանից մուրաբա են եփում։ Բացում է մուրաբայի կաթսան։",
-      "cost": { "Carrot": 10000, "Pumpkin": 2000, "Wood": 5000, "Star": 6 },
+      "cost": { "Carrot": 5000, "Pumpkin": 500, "Wood": 5000, "Star": 6 },
       "grants": { "machines": ["JamPot"] },
       "story": [
         { "emotion": "celebrating", "text": "Մուրաբայի տունը բաց է։ Անահիտ տատիկն իր գաղտնի բաղադրատոմսը տվեց քեզ" },
@@ -60,7 +60,7 @@
       "w": 17,
       "after": ["JamHouse"],
       "description": "Փուռ թոնիրով՝ լավաշ, գաթա, ղափամա և խորոված ձուկ։ Բացում է թոնիրը և ուտելը։",
-      "cost": { "Wood": 50000, "Pumpkin": 20000, "Cactus": 5000, "Fish": 2000, "Star": 10 },
+      "cost": { "Wood": 50000, "Pumpkin": 5000, "Cactus": 1000, "Fish": 2000, "Star": 10 },
       "grants": { "functions": ["eat"], "machines": ["Tonir"] },
       "story": [
         { "emotion": "celebrating", "text": "Փուռը վառվում է, թոնիրից նորից տաք լավաշի բույր է գալիս" },
@@ -87,7 +87,7 @@
       "w": 17,
       "after": ["Bakery"],
       "description": "Ապակե տուն, որտեղ ձմեռ չկա։ Բացում է ապակե վանդակները ֆերմայում։",
-      "cost": { "Wood": 300000, "Cactus": 50000, "Gold": 2000, "Star": 20 },
+      "cost": { "Wood": 300000, "Cactus": 5000, "Gold": 2000, "Star": 20 },
       "grants": { "functions": ["buildGreenhouse"], "hats": ["Mayor_Hat"] },
       "story": [
         { "emotion": "celebrating", "text": "Ջերմատունը փայլում է արևի տակ։ Հիմա ձմեռն էլ մեզ չի վախեցնում։" },

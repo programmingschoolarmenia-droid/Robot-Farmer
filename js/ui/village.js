@@ -12,7 +12,7 @@ const art = (b, state) => `assets/village/${b.icon}${state === 'repaired' ? '' :
 
 // «20 Չոր խոտ → Ալյուր (5 վրկ)»
 export function recipeText(i18n, item, recipe) {
-  const inputs = Object.entries(recipe.in).map(([k, n]) => `${n} ${i18n.item(k)}`).join(' + ');
+  const inputs = Object.entries(recipe.in).map(([k, n]) => i18n.amount(n, k)).join(' + ');
   return i18n.t('ui.villageRecipe', { inputs, item: i18n.item(item), seconds: recipe.seconds });
 }
 
@@ -176,7 +176,7 @@ export class VillageView {
     if (state === 'repaired') {
       const recipes = [];
       for (const m of (b.grants && b.grants.machines) || []) {
-        for (const [item, r] of Object.entries((village.cfg.machines[m] || {}).recipes || {})) recipes.push(h('div', {}, `${t(`machines.${m}`)}՝ ${recipeText(i18n, item, r)}`));
+        for (const [item, r] of Object.entries((village.cfg.machines[m] || {}).recipes || {})) recipes.push(h('div', {}, t('ui.recipeLine', { machine: t(`machines.${m}`), recipe: recipeText(i18n, item, r) })));
       }
       if (recipes.length) parts.push(h('div', { class: 'rd-section' }, h('h4', {}, t('ui.villageRecipes')), ...recipes));
       if (b.story) parts.push(h('button', { class: 'btn btn-sm', onclick: () => this.onStory(b) }, t('ui.villageStory')));

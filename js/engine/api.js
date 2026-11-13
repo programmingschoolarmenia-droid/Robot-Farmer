@@ -9,17 +9,34 @@ import { suggestNames } from '../core/util.js';
 import { DIRECTIONS } from './world.js';
 import { SEASON_NAMES, WEATHER_NAMES } from './calendar.js';
 
-export const ENTITY_NAMES = ['Grass', 'Bush', 'Tree', 'Carrot', 'Pumpkin', 'Dead_Pumpkin', 'Sunflower', 'Cactus', 'Hedge', 'Treasure', 'Apple', 'Dinosaur', 'Mushroom', 'Maze'];
+// (Apple is the mouse the snake hunts: saves keep the old name)
+export const ENTITY_NAMES = ['Grass', 'Bush', 'Tree', 'Carrot', 'Pumpkin', 'Dead_Pumpkin', 'Sunflower', 'Cactus', 'Hedge', 'Treasure', 'Apple', 'Dinosaur', 'Mushroom', 'Maze', 'Mulberry', 'YellowMelon', 'SquareMelon'];
 export const ITEM_NAMES = [
   'Hay', 'Wood', 'Carrot', 'Pumpkin', 'Power', 'Water', 'Fertilizer', 'Weird_Substance', 'Cactus', 'Bone', 'Gold', 'Fish',
   'Flour', 'Jam', 'Lavash', 'Gata', 'Ghapama', 'Grilled_Fish', 'Star', 'Medal',
   'Egg', 'Milk', 'Cheese', 'Butter', 'Nazook', // ranch goods sent to the farm (ranch.json → ship), nazook from them
   'Honey', 'Candle', 'Honey_Gata',
+  'Seeds', 'YellowMelon', 'SquareMelon',
 ];
 export const GROUND_NAMES = ['Grassland', 'Soil', 'Pond'];
 export const FISH_NAMES = ['Carp', 'Barbel', 'Trout', 'Golden_Fish', 'Whitefish', 'Catfish'];
 // playNote (nvagel): the notes' pitches in Hz (C4 … C5); Rest is a silent beat.
 export const NOTES = { C: 261.63, D: 293.66, E: 329.63, F: 349.23, G: 392.0, A: 440.0, B: 493.88, HighC: 523.25, Rest: 0 };
+const PITCH_CLASSES = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+
+// Scientific pitch names cover the piano keyboard, including sharps and flats.
+function noteFrequency(value, node) {
+  if (value instanceof EnumValue && value.group === 'Notes') return NOTES[value.name];
+  if (typeof value === 'string') {
+    const match = /^([A-Ga-g])([#b]?)([0-8])$/.exec(value.trim());
+    if (match) {
+      const midi = (Number(match[3]) + 1) * 12 + PITCH_CLASSES[match[1].toUpperCase()] + (match[2] === '#' ? 1 : match[2] === 'b' ? -1 : 0);
+      if (midi >= 21 && midi <= 108) return 440 * Math.pow(2, (midi - 69) / 12);
+    }
+    throw new GameError('notePitch', { gotText: formatValue(value, true) }, node);
+  }
+  throw new GameError('badArg', { fn: 'playNote', index: 1, expected: 'Notes', got: typeKey(value), gotText: formatValue(value, true) }, node);
+}
 export const MACHINE_NAMES = ['Mill', 'JamPot', 'Tonir']; // the village kitchen (config/village.json → machines)
 
 // Python habits → JavaScript (shown in "not defined" errors).
@@ -38,6 +55,8 @@ const PYTHON_HINTS = {
   not: '!',
   print_: 'print',
 };
+// Commands the game no longer has (shown in "not defined" errors).
+const REMOVED = new Set(['getCompanion', 'enker', 'ynker', 'ընկեր']);
 
 export class GameApi {
   constructor(game) {
@@ -116,7 +135,7 @@ export class GameApi {
   }
 
   buildLibraries() {
-    const libs = createLibraries();
+    const libs = createLibraries(this.globals.get('print').value);
     for (const [name, value] of Object.entries(libs)) {
       if (name === 'newObject') continue;
       const kind = value instanceof Namespace ? 'lib' : 'function';
@@ -234,6 +253,7 @@ export class GameApi {
   decorateNotDefined(err) {
     const name = err.params.name;
     if (PYTHON_HINTS[name]) err.params.python = PYTHON_HINTS[name];
+    if (REMOVED.has(name)) err.params.removed = true;
     const enumHits = [];
     for (const ns of Object.values(this.enums)) if (ns.has(name)) enumHits.push(String(ns.get(name)));
     if (enumHits.length) err.params.enumHint = enumHits;
@@ -301,12 +321,18 @@ export class GameApi {
     return d.time + I.ticks / d.tickRate();
   }
 
-  act(I, ok) {
+  // The ticks of a successful action: 'move' | 'harvest' | 'plant' | 'till' have their own
+  // (settings.json → costs.actionTicks), every other action costs actionSuccess.
+  actionTicks(kind) {
     const c = this.settings.costs || {};
+    return (c.actionTicks && c.actionTicks[kind]) ?? c.actionSuccess ?? 200;
+  }
+
+  act(I, ok, kind) {
     if (ok) {
-      I.action(c.actionSuccess ?? 200, true);
+      I.action(this.actionTicks(kind), true);
       this.game.afterAction(I.drone);
-    } else I.action(c.actionFail ?? 1, false);
+    } else I.action((this.settings.costs || {}).actionFail ?? 1, false);
   }
 
   // The runner of the drone's program (a ranch area has its own).
@@ -375,7 +401,7 @@ export class GameApi {
         if (!world().mushroomFound(side)) {
           world().clearTile(tile, t);
           game.warn('mushroomHid', {}, node, I.drone);
-          api.act(I, true);
+          api.act(I, true, 'harvest');
           return false;
         }
       }
@@ -384,9 +410,10 @@ export class GameApi {
         api.act(I, false);
         return false;
       }
-      api.act(I, true);
+      api.act(I, true, 'harvest');
       game.onHarvest(r, I.drone, node);
       if (r.unripe) game.warn('harvestUnripe', { entity: r.type }, node, I.drone);
+      for (const rule of ['green', 'odd', 'tired']) if (r[rule]) game.warn(`harvest_${rule}`, { entity: r.type }, node, I.drone);
       return r.ok;
     });
 
@@ -401,19 +428,25 @@ export class GameApi {
       game.events.emit('flip', { drone: d.id });
     });
 
-    // --- research: Music. A note takes game time like a flip (the drone hops); Rest is a silent wait.
+    // --- research: Music. A note or chord takes one duration; Rest is a silent wait.
     this.def('playNote', (I, args, node) => {
       api.needArgs(args, 1, 'playNote', node);
-      const note = api.needEnum(args[0], 'Notes', 'playNote', 1, node);
+      const notes = Array.isArray(args[0]) ? args[0] : [args[0]];
+      if (!notes.length || notes.length > 8) throw new GameError('noteChord', {}, node);
+      const frequencies = [...new Set(Array.from(notes, (note) => noteFrequency(note, node)).filter((freq) => freq > 0))];
       const beats = args.length > 1 ? args[1] : 1;
-      if (typeof beats !== 'number' || !(beats >= 0.25 && beats <= 4)) throw new GameError('noteLength', { gotText: formatValue(beats, true) }, node);
+      if (typeof beats !== 'number' || !(beats >= 0.125 && beats <= 8)) throw new GameError('noteLength', { gotText: formatValue(beats, true) }, node);
+      const bpm = args[2];
+      if (bpm !== undefined && (typeof bpm !== 'number' || !Number.isFinite(bpm) || bpm < 30 || bpm > 300)) {
+        throw new GameError('noteTempo', { gotText: formatValue(bpm, true) }, node);
+      }
       const d = I.drone;
-      const seconds = beats * ((this.settings.time && this.settings.time.noteBeatSeconds) ?? 0.5);
-      if (NOTES[note]) {
+      const seconds = beats * (bpm === undefined ? ((this.settings.time && this.settings.time.noteBeatSeconds) ?? 0.5) : 60 / bpm);
+      if (frequencies.length) {
         d.startAnim('sing', d.x, d.y, d.x, d.y, 0, 0, seconds);
         d.anim.start = api.now(I);
         d.anim.end = d.anim.start + seconds;
-        game.events.emit('music', { drone: d.id, freq: NOTES[note], seconds });
+        game.events.emit('music', { drone: d.id, freq: frequencies[0], frequencies, seconds, at: d.anim.start });
       }
       I.action(Math.max(1, Math.round(seconds * d.tickRate())), true);
     });
@@ -431,8 +464,8 @@ export class GameApi {
       if (r.cost) {
         I.action(r.cost, true);
         game.afterAction(d);
-      } else api.act(I, true);
-      const duration = (r.cost || ((this.settings.costs && this.settings.costs.actionSuccess) ?? 200)) / d.tickRate();
+      } else api.act(I, true, 'move');
+      const duration = (r.cost || api.actionTicks('move')) / d.tickRate();
       const start = api.now(I) - duration;
       d.startAnim('move', r.fromX, r.fromY, d.x, d.y, r.dx, r.dy, duration);
       d.anim.start = start;
@@ -463,7 +496,7 @@ export class GameApi {
         game.warn(r.reason.startsWith('maze') ? r.reason : `plant_${r.reason}`, { entity: type, cost: r.cost, need: r.need }, node, I.drone);
         return false;
       }
-      api.act(I, true);
+      api.act(I, true, 'plant');
       game.events.emit('plant', { type, x: tile.x, y: tile.y, drone: I.drone.id });
       return true;
     });
@@ -486,7 +519,7 @@ export class GameApi {
     this.def('till', (I) => {
       const tile = api.droneTile(I);
       world().till(tile, api.now(I));
-      api.act(I, true);
+      api.act(I, true, 'till');
       game.events.emit('till', { x: tile.x, y: tile.y, ground: tile.ground, drone: I.drone.id });
     });
 
@@ -517,6 +550,20 @@ export class GameApi {
       const text = args.map((a) => formatValue(a)).join(' ');
       game.events.emit('print', { text, drone: I.drone.id, time: api.now(I) });
     });
+
+    // alert(): the text also goes to the console; the screen stops the program until the student closes
+    // the window (GameScreen listens to 'alert'). Where nobody listens (tests, the challenge page) it only prints.
+    this.def(
+      'alert',
+      function* alert(I, args) {
+        I.ticks += 1;
+        const text = args.map((a) => formatValue(a)).join(' ');
+        game.events.emit('print', { text, drone: I.drone.id, time: api.now(I) });
+        game.events.emit('alert', { text, drone: I.drone.id });
+        yield 2; // Y.ACTION: the program can stop right here
+      },
+      { gen: true },
+    );
 
     // --- research: Hats
     this.def('changeHat', (I, args, node) => {
@@ -550,7 +597,16 @@ export class GameApi {
       return Math.round(tile.water * 1000) / 1000;
     });
 
-    // --- research: Sunflowers / Cactus (measure), Cactus (swap)
+    // --- research: Sunflowers (xmel: a juice makes the drone faster for its next actions)
+    this.def('drinkJuice', (I, args, node) => {
+      const ok = game.inventory.get('Power') >= 1;
+      if (!ok) game.warn('notEnoughItem', { item: 'Power', need: 1 }, node, I.drone);
+      api.act(I, ok);
+      if (ok) game.drinkJuice(I.drone); // (after the drinking itself: the next actions are the fast ones)
+      return ok;
+    });
+
+    // --- research: Trees, Pumpkins, Sunflowers, Cactus (measure), Cactus (swap: grapes in a row, left and right)
     this.def('measure', (I, args, node) => {
       api.getter(I);
       let tile = api.droneTile(I);
@@ -562,7 +618,9 @@ export class GameApi {
     this.def('swap', (I, args, node) => {
       api.needArgs(args, 1, 'swap', node);
       const dir = api.needDirection(args[0], 'swap', node);
-      const ok = world().swap(api.droneTile(I), api.dirTile(I, dir), api.now(I));
+      const sideways = dir === 'East' || dir === 'West';
+      if (!sideways) game.warn('swapSideways', {}, node, I.drone);
+      const ok = sideways && world().swap(api.droneTile(I), api.dirTile(I, dir), api.now(I));
       api.act(I, ok);
       if (ok) game.events.emit('swap', { drone: I.drone.id, dir });
       return ok;
@@ -720,12 +778,6 @@ export class GameApi {
       I.drone.y = 0;
       I.drone.anim = null;
       api.act(I, true);
-    });
-
-    // --- research: Polyculture (phase 3)
-    this.def('getCompanion', (I) => {
-      api.getter(I);
-      return game.getCompanion(api.droneTile(I), api.now(I));
     });
 
     // --- research: Megafarm (phase 3)

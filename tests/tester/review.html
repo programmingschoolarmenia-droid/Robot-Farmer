@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test Reports</title>
+<style>
+  :root {
+    --bg: #f6f1e7; --card: #fffdf8; --ink: #2d2a24; --muted: #7a7266; --line: #e4dccb;
+    --green: #3f8f4e; --green-bg: #e3f2e4; --red: #b8483b; --red-bg: #f8e3df; --blue: #3a6ea5;
+    --crit: #8f1d1d; --high: #c0492f; --med: #c98a1c; --low: #7a8a99; --sugg: #3a6ea5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1d1b18; --card: #282521; --ink: #ece6da; --muted: #a59d90; --line: #3a362f;
+      --green-bg: #22382a; --red-bg: #43261f; --green: #6fc27f; --red: #e07a6c; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { position: sticky; top: 0; z-index: 2; background: var(--bg); border-bottom: 1px solid var(--line); padding: 14px 16px 10px; }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  h1 { margin: 0 0 8px; font-size: 20px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  select, .chip, button, textarea { font: inherit; color: inherit; }
+  select { padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); max-width: 100%; }
+  .chip { padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); cursor: pointer; }
+  .chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .counts { color: var(--muted); font-size: 13px; margin-left: auto; }
+  .counts a { color: var(--blue); }
+  main { padding: 16px; }
+  .verdict { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; }
+  .verdict b { display: block; }
+  .item { background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+  .item.approved { border-left-color: var(--green); }
+  .item.rejected { border-left-color: var(--red); opacity: .6; }
+  .item.done { opacity: .5; }
+  .head { display: flex; gap: 10px; align-items: flex-start; }
+  .tag { flex: none; font-size: 11px; font-weight: 700; letter-spacing: .04em; color: #fff; padding: 2px 8px; border-radius: 6px; margin-top: 2px; }
+  .CRITICAL { background: var(--crit); } .HIGH { background: var(--high); } .MEDIUM { background: var(--med); } .LOW { background: var(--low); } .SUGGESTION { background: var(--sugg); } .IDEA { background: #7a4fa3; }
+  .title { font-weight: 600; flex: 1; }
+  .id { color: var(--muted); font-size: 12px; }
+  details { margin: 8px 0 0; }
+  summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  dl { margin: 6px 0 0; display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 4px 10px; font-size: 14px; }
+  dt { color: var(--muted); } dd { margin: 0; overflow-wrap: anywhere; }
+  .shots { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .shots img { height: 90px; border: 1px solid var(--line); border-radius: 6px; cursor: zoom-in; }
+  .actions { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  .actions button { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); cursor: pointer; }
+  .actions .yes.on { background: var(--green-bg); border-color: var(--green); color: var(--green); font-weight: 600; }
+  .actions .no.on { background: var(--red-bg); border-color: var(--red); color: var(--red); font-weight: 600; }
+  .actions .status { color: var(--green); font-weight: 600; font-size: 13px; }
+  textarea { width: 100%; margin-top: 8px; min-height: 36px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); resize: vertical; }
+  .empty { color: var(--muted); text-align: center; padding: 40px 0; }
+  #zoom { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: none; align-items: center; justify-content: center; z-index: 9; cursor: zoom-out; }
+  #zoom img { max-width: 95vw; max-height: 95vh; }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Test reports</h1>
+  <div class="row">
+    <select id="report"></select>
+    <span class="chip on" data-f="all">All</span>
+    <span class="chip" data-f="undecided">Undecided</span>
+    <span class="chip" data-f="bug">Bugs</span>
+    <span class="chip" data-f="suggestion">Suggestions</span>
+    <span class="chip" data-f="idea">New ideas</span>
+    <span class="counts" id="counts"></span>
+  </div>
+</div></header>
+<main class="wrap" id="list"></main>
+<div id="zoom"><img alt=""></div>
+<script>
+let data, filter = 'all';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const md = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+
+async function load() {
+  data = await (await fetch('/api/reports')).json();
+  const sel = $('#report'), keep = sel.value;
+  sel.innerHTML = data.reports.map(r => `<option value="${esc(r.file)}">${esc(r.date)} · ${esc(r.title)}</option>`).join('');
+  if (keep) sel.value = keep;
+  render();
+}
+
+function render() {
+  const r = data.reports.find(x => x.file === $('#report').value);
+  if (!r) { $('#list').innerHTML = '<p class="empty">No reports yet. Ask the tester to test something.</p>'; return; }
+  const dec = i => data.decisions[`${r.file}#${i.id}`] || {};
+  const n = s => r.items.filter(i => (dec(i).status || 'undecided') === s).length;
+  $('#counts').innerHTML = `${n('approved')} approved · ${n('rejected')} rejected · ${n('undecided')} undecided · <a href="/TO-FIX.md" target="_blank">TO-FIX.md</a> · <a href="/${esc(r.file.replace(/\.json$/, '.md'))}" target="_blank">full report</a>`;
+  const items = r.items.filter(i => filter === 'all' || i.kind === filter || (filter === 'undecided' && !dec(i).status));
+  $('#list').innerHTML = (r.verdict ? `<div class="verdict"><b>Verdict</b>${md(r.verdict)}</div>` : '') + (items.map(i => {
+    const d = dec(i), st = d.status || '';
+    const rows = [['Problem', i.problem], ['Idea', i.idea], ['Result', i.result], ['Effort', i.effort], ['Where', i.where], ['Steps', i.steps], ['Actual', i.actual], ['Fix', i.fix]].filter(x => x[1]);
+    return `<article class="item ${st}" data-id="${esc(i.id)}">
+      <div class="head"><span class="tag ${i.kind === 'bug' ? esc(i.severity) : i.kind === 'idea' ? 'IDEA' : 'SUGGESTION'}">${i.kind === 'bug' ? esc(i.severity) : i.kind === 'idea' ? 'NEW IDEA' : 'SUGGESTION'}</span>
+        <span class="title">${md(i.title)}</span><span class="id">${esc(i.id)}</span></div>
+      ${rows.length ? `<details ${i.kind === 'bug' ? '' : 'open'}><summary>Details</summary><dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${md(v)}</dd>`).join('')}</dl></details>` : ''}
+      ${i.shots?.length ? `<div class="shots">${i.shots.map(s => `<img loading="lazy" src="/${esc(s)}" alt="">`).join('')}</div>` : ''}
+      <div class="actions">
+        ${st === 'done' ? '<span class="status">✓ Fixed</span>' : `
+        <button class="yes ${st === 'approved' ? 'on' : ''}" data-s="approved">✓ Approve</button>
+        <button class="no ${st === 'rejected' ? 'on' : ''}" data-s="rejected">✕ Reject</button>`}
+      </div>
+      ${st === 'done' ? '' : `<textarea placeholder="Note for the developer (optional)">${esc(d.note)}</textarea>`}
+    </article>`;
+  }).join('') || '<p class="empty">Nothing here.</p>');
+}
+
+async function decide(id, status, note) {
+  const key = `${$('#report').value}#${id}`;
+  if (status || note) data.decisions[key] = { status, note }; else delete data.decisions[key];
+  render();
+  await fetch('/api/decide', { method: 'POST', body: JSON.stringify({ key, status, note }) });
+}
+
+$('#report').onchange = render;
+document.querySelectorAll('.chip').forEach(c => c.onclick = () => {
+  document.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === c));
+  filter = c.dataset.f; render();
+});
+$('#list').addEventListener('click', e => {
+  const b = e.target.closest('button[data-s]'), img = e.target.closest('.shots img');
+  if (img) { $('#zoom img').src = img.src; $('#zoom').style.display = 'flex'; }
+  if (!b) return;
+  const card = b.closest('.item'), id = card.dataset.id, cur = data.decisions[`${$('#report').value}#${id}`];
+  decide(id, cur?.status === b.dataset.s ? '' : b.dataset.s, card.querySelector('textarea').value);
+});
+$('#list').addEventListener('change', e => {
+  if (e.target.tagName !== 'TEXTAREA') return;
+  const id = e.target.closest('.item').dataset.id, cur = data.decisions[`${$('#report').value}#${id}`];
+  decide(id, cur?.status || '', e.target.value);
+});
+$('#zoom').onclick = () => $('#zoom').style.display = 'none';
+load();
+</script>
+</body>
+</html>

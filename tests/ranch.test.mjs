@@ -41,7 +41,7 @@ const buy = (r, ...ids) => {
 };
 
 test('the ranch and the market only cost resources: no research before them', () => {
-  const game = makeGame({ items: { Hay: 250000, Wood: 250000, Carrot: 100000, Pumpkin: 50000 } });
+  const game = makeGame({ items: makeGame().research.node('Ranch').tiers[0] }); // exactly its price
   assert.equal(game.research.totalLevels(), 0);
   assert.deepEqual([game.research.state('Ranch'), game.research.state('Market')], ['affordable', 'affordable']);
   assert.deepEqual([makeGame().research.state('Ranch'), makeGame().research.state('Market')], ['expensive', 'expensive'], 'without the resources they wait');

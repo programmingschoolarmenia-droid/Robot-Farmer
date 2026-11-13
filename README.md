@@ -3,8 +3,10 @@
 A browser game for learning JavaScript: students write code that drives a drone on a
 farm, buy research to unlock new plants, functions and JavaScript features, and Bridgy
 the robot teaches them with lessons, quizzes, quests and hints (never ready-made answers).
-The interface and the game commands are in Armenian (`havaqel()`, `tnkel(Buyser.Badrjan)`,
-`gnal(Aj)`); JavaScript itself (`while`, `if`, `let`, `function`…) stays as it is.
+The game speaks Armenian, English and Russian: the interface and the game commands follow the
+player's language (`havaqel()` / `gather()` / `sobrat()`, `gnal(Aj)` / `go(Right)` /
+`idti(Vpravo)`), and every language's names always work. JavaScript itself (`while`, `if`, `let`,
+`function`…) stays as it is.
 
 ## Run it
 
@@ -27,6 +29,8 @@ step is needed.
 
 * **Change the game** (prices, speeds, plants, texts, Bridgy's lessons and quests): see
   [`config/README.md`](config/README.md).
+* **Translations** (English, Russian): `config/en/`, `config/ru/`; after changing an Armenian
+  text run `npm run i18n` (see [`docs/TRANSLATION.md`](docs/TRANSLATION.md)).
 * **Prepare a lesson quickly:** set `"unlockAll": true` in `config/settings.json → dev`.
 * **The village** («Գյուղ», after the «Plant» research): students rebuild a ruined village
   building by building with the items they gather, villagers post 3 requests a day that pay
@@ -104,5 +108,6 @@ assets/               Bridgy, drone and crop pictures (see assets/CREDITS.md)
 vendor/               Acorn + CodeMirror 5 (bundled so the game works offline)
 tests/                automated tests:  npm test   (Node 18+)
                       browser play-through:  npm run play   (Node 22+, Chrome; also runs on GitHub on every push)
+docs/ARCHITECTURE.md  how the code works inside (for developers)
 tools/sprites.html    preview of every sprite (open via the web server)
 ```

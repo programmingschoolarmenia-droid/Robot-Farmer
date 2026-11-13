@@ -1,0 +1,23 @@
+{
+  "game.title": "Bridgy's Farm",
+  "calendar.luck.0.text": "Eggplant day: eggplants give a double harvest.",
+  "calendar.luck.1.text": "Watermelons don't rot today.",
+  "calendar.luck.2.text": "Goldfish day: goldfish bite 3 times more often.",
+  "calendar.luck.3.text": "Fast growth day: all plants grow 1.5 times faster.",
+  "calendar.luck.4.text": "Sunny day: pomegranates give double pomegranate juice.",
+  "calendar.luck.5.text": "Grape day: grapevines give a double harvest.",
+  "calendar.luck.6.text": "Woodcutter's day: rosehips and apricot trees give double wood.",
+  "calendar.luck.7.text": "Wheat day: wheat gives a triple harvest.",
+  "calendar.luck.8.text": "Fish day: every fish counts twice.",
+  "calendar.luck.9.text": "Lucky lake: ishkhan and goldfish bite twice as often.",
+  "calendar.luck.10.text": "Treasure day: maze gold is doubled.",
+  "calendar.luck.11.text": "Snake day: snake skin is doubled.",
+  "leaderboard.tiers.0.name": "Seed",
+  "leaderboard.tiers.1.name": "Sprout",
+  "leaderboard.tiers.2.name": "Wheat ear",
+  "leaderboard.tiers.3.name": "Tree",
+  "leaderboard.tiers.4.name": "Farmer",
+  "leaderboard.tiers.5.name": "Master",
+  "leaderboard.tiers.6.name": "Diamond",
+  "leaderboard.tiers.7.name": "Legend"
+}

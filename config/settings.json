@@ -24,6 +24,7 @@
 
   "costs": {
     "actionSuccess": 200,
+    "actionTicks": { "move": 150, "harvest": 200, "plant": 200, "till": 300 },
     "actionFail": 1,
     "getter": 1,
     "language": {
@@ -43,15 +44,15 @@
     "sizeResearch": "Expand",
     "sizes": [
       [1, 1],
-      [3, 1],
+      [2, 2],
       [3, 3],
       [4, 4],
+      [5, 5],
       [6, 6],
       [8, 8],
+      [10, 10],
       [12, 12],
-      [16, 16],
-      [22, 22],
-      [32, 32]
+      [16, 16]
     ]
   },
 
@@ -62,7 +63,8 @@
       "growTime": [0.5, 0.5],
       "yield": { "Hay": 1 },
       "yieldResearch": "Grass",
-      "yieldBaseLevel": 0
+      "yieldBaseLevel": 0,
+      "seedChance": 0.05
     },
     "Bush": {
       "seasons": ["Spring", "Autumn"],
@@ -79,7 +81,17 @@
       "yield": { "Wood": 5 },
       "yieldResearch": "Trees",
       "yieldBaseLevel": 1,
-      "neighborSlowdown": 2
+      "fruits": 3,
+      "regrow": 0.5
+    },
+    "Mulberry": {
+      "seasons": ["Spring", "Summer"],
+      "grounds": ["Grassland", "Soil"],
+      "growTime": [4, 6],
+      "yield": { "Wood": 6 },
+      "yieldResearch": "Trees",
+      "yieldBaseLevel": 1,
+      "beeMultiplier": 2
     },
     "Carrot": {
       "seasons": ["Spring", "Autumn"],
@@ -88,8 +100,8 @@
       "yield": { "Carrot": 1 },
       "yieldResearch": "Carrots",
       "yieldBaseLevel": 1,
-      "plantCost": { "Hay": 1, "Wood": 1 },
-      "plantCostScales": true
+      "plantCost": { "Seeds": 1 },
+      "seeds": [1, 3]
     },
     "Pumpkin": {
       "seasons": ["Autumn"],
@@ -100,7 +112,30 @@
       "yieldBaseLevel": 1,
       "plantCost": { "Carrot": 1 },
       "plantCostScales": true,
-      "deathChance": 0.2,
+      "ripeFrom": 80,
+      "ripeWindow": 6,
+      "rotSeconds": 12
+    },
+    "YellowMelon": {
+      "seasons": ["Summer"],
+      "grounds": ["Soil"],
+      "growTime": [3, 5],
+      "yield": { "YellowMelon": 1 },
+      "yieldResearch": "Pumpkins",
+      "yieldBaseLevel": 1,
+      "plantCost": { "Carrot": 1 },
+      "plantCostScales": true,
+      "spreadSeconds": 4
+    },
+    "SquareMelon": {
+      "seasons": ["Autumn"],
+      "grounds": ["Soil"],
+      "growTime": [0.2, 3.8],
+      "yield": { "SquareMelon": 1 },
+      "yieldResearch": "Pumpkins",
+      "yieldBaseLevel": 1,
+      "plantCost": { "Carrot": 1 },
+      "plantCostScales": true,
       "giant": { "cubeUntil": 5, "bigMultiplier": 6 }
     },
     "Sunflower": {
@@ -109,9 +144,7 @@
       "growTime": [5.6, 8.4],
       "yield": { "Power": 1 },
       "plantCost": { "Carrot": 1 },
-      "petals": [7, 15],
-      "minForBonus": 10,
-      "bonusMultiplier": 8
+      "petals": [1, 30]
     },
     "Cactus": {
       "seasons": ["Summer"],
@@ -145,8 +178,11 @@
     "order": [
       "Hay",
       "Wood",
+      "Seeds",
       "Carrot",
       "Pumpkin",
+      "YellowMelon",
+      "SquareMelon",
       "Power",
       "Water",
       "Fertilizer",
@@ -186,12 +222,13 @@
     "research": "Fertilizer",
     "secondsPerItem": 10,
     "secondsSaved": 2,
-    "infectedWeird": 1
+    "tiredStep": 0.1,
+    "tiredMin": 0.5
   },
 
   "power": {
     "speedMultiplier": 2,
-    "actionsPerPower": 30
+    "actions": 50
   },
 
   "megafarm": {
@@ -206,16 +243,9 @@
 
   "dinosaur": {
     "research": "Dinosaurs",
-    "appleCost": { "Cactus": 2 },
+    "mouseEvery": 2,
     "moveTicks": 400,
     "speedupPerApple": 0.03
-  },
-
-  "polyculture": {
-    "research": "Polyculture",
-    "entities": ["Grass", "Bush", "Tree", "Carrot"],
-    "distance": 3,
-    "baseMultiplier": 5
   },
 
   "fishing": {
@@ -324,7 +354,7 @@
   "leaderboard": {
     "_readme": "Լավագույնների ցուցակ։ points՝ քանի միավոր է տալիս յուրաքանչյուր հավաքած իրը (հազվագյուտ իրերն արժեն ավելի շատ, ջուրն ու հումուսը 0 են, քանի որ գալիս են ինքնիրեն, իսկ ռանչոյի ձուն ու կաթը արժեն շատ, քանի որ ռանչոյի մեկ ապրանքը ֆերմայի մոտ 10 000 իրի չափ է)։ tiers՝ աստիճաններն ըստ բոլոր ժամանակների միավորների (աճման կարգով)։ timeZone՝ օրը սկսվում է այս գոտու կեսգիշերին։",
     "timeZone": "Asia/Yerevan",
-    "points": { "Hay": 1, "Wood": 1, "Carrot": 2, "Pumpkin": 4, "Power": 3, "Water": 0, "Fertilizer": 0, "Weird_Substance": 3, "Cactus": 5, "Bone": 20, "Gold": 20, "Fish": 3, "Flour": 25, "Jam": 25, "Lavash": 60, "Gata": 150, "Ghapama": 200, "Grilled_Fish": 120, "Star": 100, "Medal": 1000, "Egg": 10000, "Milk": 40000, "Dram": 0, "Grain": 0, "Bale": 0, "GoatMilk": 50000, "Matsun": 60000, "Cheese": 150000, "Butter": 200000, "Omelet": 300000, "Manure": 0, "Medicine": 0, "Plank": 0, "Nazook": 400000, "Honey": 200000, "Candle": 300000, "Honey_Gata": 500000, "WoolWhite": 40000, "WoolBrown": 45000, "WoolBlack": 45000, "WoolGold": 200000, "Down": 60000, "Comb": 60000, "Wax": 100000, "BuffaloMilk": 90000, "LoriCheese": 450000, "HoneyCake": 1000000, "Carpet": 2000000 },
+    "points": { "Hay": 1, "Wood": 1, "Seeds": 0, "Carrot": 2, "Pumpkin": 4, "YellowMelon": 4, "SquareMelon": 4, "Power": 3, "Water": 0, "Fertilizer": 0, "Weird_Substance": 3, "Cactus": 5, "Bone": 20, "Gold": 20, "Fish": 3, "Flour": 25, "Jam": 25, "Lavash": 60, "Gata": 150, "Ghapama": 200, "Grilled_Fish": 120, "Star": 100, "Medal": 1000, "Egg": 10000, "Milk": 40000, "Dram": 0, "Grain": 0, "Bale": 0, "GoatMilk": 50000, "Matsun": 60000, "Cheese": 150000, "Butter": 200000, "Omelet": 300000, "Manure": 0, "Medicine": 0, "Plank": 0, "Nazook": 400000, "Honey": 200000, "Candle": 300000, "Honey_Gata": 500000, "WoolWhite": 40000, "WoolBrown": 45000, "WoolBlack": 45000, "WoolGold": 200000, "Down": 60000, "Comb": 60000, "Wax": 100000, "BuffaloMilk": 90000, "LoriCheese": 450000, "HoneyCake": 1000000, "Carpet": 2000000 },
     "tiers": [
       { "name": "Սերմ", "icon": "sprout", "points": 0 },
       { "name": "Ծիլ", "icon": "herb", "points": 200 },

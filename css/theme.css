@@ -31,7 +31,7 @@
   --radius: 16px;
   --radius-sm: 10px;
   --border: 3px solid var(--navy);
-  --font-ui: 'Noto Sans Armenian', 'Mshtakan', 'Sylfaen', 'Arial Unicode MS', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-ui: 'Noto Sans Armenian', 'Noto Sans', 'Mshtakan', 'Sylfaen', 'Arial Unicode MS', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-code: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, 'Noto Sans Armenian', monospace;
   --base-font: 15px;
   --code-font: 15px;

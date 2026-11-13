@@ -131,7 +131,7 @@ export function checkBrackets(source) {
 function tokenAt(source, line, column) {
   const text = source.split('\n')[line - 1] || '';
   const rest = text.slice(column);
-  const m = rest.match(/^\s*([A-Za-z_$Ա-֏][\w$Ա-֏]*|\d+(\.\d+)?|\S)/);
+  const m = rest.match(/^\s*([A-Za-z_$Ա-֏А-яЁё][\w$Ա-֏А-яЁё]*|\d+(\.\d+)?|\S)/);
   return m ? m[1] : '';
 }
 

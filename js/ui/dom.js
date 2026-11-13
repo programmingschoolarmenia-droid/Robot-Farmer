@@ -184,7 +184,7 @@ const KEYWORDS = new Set([
 // codeKind(word) -> 'fn' | 'enum' | null (GameApi.codeKind), so Armenian names are coloured too.
 export function highlightCode(code, codeKind = () => null) {
   const frag = document.createDocumentFragment();
-  const re = /(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`[^`]*`)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$Ա-֏][\w$Ա-֏]*)|([\s\S])/g;
+  const re = /(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`[^`]*`)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$Ա-֏А-яЁё][\w$Ա-֏А-яЁё]*)|([\s\S])/g;
   let m;
   let plain = '';
   const flush = () => {

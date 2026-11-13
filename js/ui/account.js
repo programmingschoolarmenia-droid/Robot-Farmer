@@ -4,6 +4,7 @@ import { openModal, confirmModal, askText } from './modal.js';
 import { formatClock, formatCount, formatTenths, dayKey, prevDayKey, prevMonthKey, dayNumber, keyOfDay, weekKey } from '../core/util.js';
 import { boardField, playerRow, ascending, CARPET_RE, NAME_RE } from '../storage/account.js';
 import { festivalOn } from '../engine/festivals.js';
+import { langSwitch, openPrivacy } from './settingsModal.js';
 
 const AVATAR_COLORS = ['#2d6be0', '#36a852', '#e2483d', '#f08a24', '#7c3aed', '#0e7490', '#c026d3', '#b45309'];
 const MEDALS = ['medal1', 'medal2', 'medal3'];
@@ -43,6 +44,26 @@ const todayKey = (app) => dayKey(Date.now(), (app.config.settings.leaderboard ||
 // Days in a row, while the streak is alive (played today or yesterday).
 const streakOf = (r, today) => (r.streakDay === today || r.streakDay === prevDayKey(today) ? r.streak || 0 : 0);
 
+// Players and carpets a player reported stay hidden for them (Google Play's «block»): app.prefs.hidden
+// holds player ids and «week~id» carpets, and is saved with the farm, so every computer hides them.
+export const isHidden = (app, ...keys) => keys.some((k) => ((app.prefs && app.prefs.hidden) || []).includes(k));
+
+// Reports a player or a contest carpet (what: see Accounts.report) after one question; true when sent.
+export async function reportContent(app, what) {
+  const t = app.i18n.t;
+  const text = t(what.kind === 'carpet' ? 'ui.reportCarpetAsk' : 'ui.reportPlayerAsk', { name: what.name });
+  if (!(await confirmModal(app.i18n, { title: t('ui.report'), text, okLabel: t('ui.report') }))) return false;
+  try {
+    const key = await app.account.report(what);
+    app.prefs.hidden = [...(app.prefs.hidden || []), key];
+  } catch (e) {
+    app.toast(accountErrorText(app.i18n, e), 'warn');
+    return false;
+  }
+  app.toast(t('ui.reportDone'));
+  return true;
+}
+
 export class LoginScreen {
   constructor(app, onLogin, notice = '') {
     this.app = app;
@@ -59,6 +80,7 @@ export class LoginScreen {
       },
     }, icon(app.sprites, 'eye'));
     this.rule = h('div', { class: 'form-hint' });
+    this.terms = h('div', { class: 'form-hint' }, t('ui.termsAgree'), ' ', h('button', { type: 'button', class: 'link-inline', onclick: () => openPrivacy(app, 'rules') }, t('ui.termsLink')));
     this.error = h('div', { class: 'form-error' });
     this.submit = h('button', { class: 'btn btn-run login-submit', type: 'submit' });
     this.form = h(
@@ -73,6 +95,7 @@ export class LoginScreen {
       h('label', { class: 'field' }, h('span', {}, t('ui.username')), this.name),
       h('label', { class: 'field' }, h('span', {}, t('ui.password')), h('div', { class: 'password-row' }, this.pass, eye)),
       this.rule,
+      this.terms,
       this.error,
       this.submit,
       h('div', { class: 'login-or' }, h('span', {}, t('ui.or'))),
@@ -82,9 +105,6 @@ export class LoginScreen {
     this.tabs = ['login', 'register', 'leaders'].map((tab) =>
       h('button', { type: 'button', class: 'login-tab', dataset: { tab }, onclick: () => this.setTab(tab) }, t(`ui.${tab}Tab`)),
     );
-    const meadow = h('div', { class: 'login-meadow' });
-    meadow.style.backgroundImage = `url(${app.sprites.url('meadow0', 3)}), url(${app.sprites.url('meadow2', 3)})`;
-    meadow.style.backgroundPosition = '0 0, 24px 48px';
     const adapter = app.account.adapter;
     // Shared school computers: the last player is not let in by itself, the next student logs in below.
     const last = app.account.user;
@@ -106,6 +126,7 @@ export class LoginScreen {
         h(
           'div',
           { class: 'login-main' },
+          langSwitch(app, (l) => app.switchLang(l)),
           h('h1', { class: 'game-title' }, t('ui.title')),
           h('p', { class: 'game-subtitle' }, t('ui.subtitle')),
           resume,
@@ -113,9 +134,9 @@ export class LoginScreen {
           this.form,
           this.board,
           adapter.available === false ? h('p', { class: 'form-error' }, t('ui.storageBlocked')) : null,
+          h('button', { type: 'button', class: 'link-quiet', onclick: () => openPrivacy(app) }, t('ui.privacy')),
         ),
       ),
-      meadow,
     );
     app.root.append(this.el);
     this.setTab('login');
@@ -139,6 +160,7 @@ export class LoginScreen {
     const reg = tab === 'register';
     this.error.textContent = '';
     this.rule.textContent = reg ? `${t('ui.nameRule')} ${t('ui.passwordRule')}` : '';
+    this.terms.hidden = !reg;
     this.pass.autocomplete = reg ? 'new-password' : 'current-password';
     this.submit.textContent = t(reg ? 'ui.registerButton' : 'ui.loginButton');
     if (matchMedia('(pointer: fine)').matches) setTimeout(() => this.name.focus(), 30);
@@ -263,16 +285,17 @@ function boardContent(app, ctx) {
   const t = app.i18n.t;
   const { rows, place, rival, me, champs, field, tab } = ctx;
   const out = [];
-  const crowns = ['day', 'month', 'week'].map((k) => champs && champs[k] && t(`ui.champion_${k}`, { name: champs[k].name })).filter(Boolean);
+  const crowns = ['day', 'month', 'week'].map((k) => champs && champs[k] && !isHidden(app, champs[k].id) && t(`ui.champion_${k}`, { name: champs[k].name })).filter(Boolean);
   if (crowns.length) out.push(h('div', { class: 'board-champs' }, crowns.map((c) => h('span', {}, c))));
-  if (rows.length) out.push(h('ol', { class: 'board' }, rows.map((r, i) => boardRow(app, r, i + 1, ctx))));
+  if (rows.length) out.push(h('ol', { class: 'board' }, rows.map((r, i) => !isHidden(app, r.id) && boardRow(app, r, i + 1, ctx)).filter(Boolean))); // (a hidden player keeps their place)
   else out.push(h('div', { class: 'board-note' }, t({ day: 'ui.leadersEmptyDay', code: 'ui.leadersEmptyCode', challenge: 'ui.leadersEmptyChallenge' }[tab] || (tab === 'ranchChallenge' ? 'ui.leadersEmptyChallenge' : tab.startsWith('carpets') ? 'ui.leadersEmptyCarpets' : tab.startsWith('ranch') ? 'ui.leadersEmptyRanch' : 'ui.leadersEmpty'))));
   const myValue = me ? me[field] || 0 : 0;
   if (myValue > 0 && !rows.some((r) => r.id === me.id)) out.push(h('ol', { class: 'board board-mine' }, boardRow(app, me, place, ctx)));
   const what = ['day', 'month', 'all'].includes(tab) ? 'points' : tab === 'ranchChallenge' ? tab : tab.startsWith('carpets') ? 'carpets' : tab.startsWith('ranch') ? 'ranch' : tab;
   const gap = Math.abs(myValue - (rival ? rival[field] : 0));
-  if (rival) out.push(h('div', { class: 'board-place' }, t(`ui.rival.${what}`, { name: rival.name, n: what === 'challenge' || what === 'ranchChallenge' ? (gap / 10).toFixed(1) : formatCount(gap) })));
-  else if (myValue > 0 && (place === 1 || !ascending(field))) out.push(h('div', { class: 'board-place' }, t('ui.rivalFirst')));
+  if (rival) {
+    if (!isHidden(app, rival.id)) out.push(h('div', { class: 'board-place' }, t(`ui.rival.${what}`, { name: rival.name, n: what === 'challenge' || what === 'ranchChallenge' ? (gap / 10).toFixed(1) : formatCount(gap) })));
+  } else if (myValue > 0 && (place === 1 || !ascending(field))) out.push(h('div', { class: 'board-place' }, t('ui.rivalFirst')));
   return out;
 }
 
@@ -355,6 +378,13 @@ function openCard(app, r, ctx) {
     }
   };
   const teacher = account.isAdmin && r.id !== account.user.id;
+  // A player reports another one (only inside the game: on the start screen nobody plays yet).
+  const report = async (close) => {
+    if (!(await reportContent(app, { kind: 'player', target: r.id, name: r.name, cells: r.carpet }))) return;
+    close();
+    ctx.reload();
+  };
+  const reportable = ctx.me && r.id !== ctx.me.id && !account.isAdmin;
   openModal({
     title: t('ui.cardTitle'),
     width: 'min(420px, calc(100vw - 32px))',
@@ -379,6 +409,7 @@ function openCard(app, r, ctx) {
       ),
     ),
     buttons: [
+      reportable ? { label: t('ui.report'), onClick: report } : null,
       teacher ? { label: t('ui.moveFarm'), onClick: move } : null,
       teacher ? { label: t('ui.deletePlayer'), class: 'btn-danger', onClick: remove } : null,
       { label: t('ui.close'), class: 'btn-primary' },
@@ -504,7 +535,7 @@ const openRename = (app, onRename, closeProfile) =>
 
 // A guest keeps the farm: a new name and password (the registration rules).
 export const openKeepFarm = (app, onKeep, onDone = () => {}) =>
-  nameForm(app, { title: 'ui.guestKeep', hints: ['ui.guestKeepHint', 'ui.nameRule', 'ui.passwordRule'], label: 'ui.username', save: 'ui.guestKeep', done: 'ui.guestKept', fresh: true }, onKeep, onDone);
+  nameForm(app, { title: 'ui.guestKeep', hints: ['ui.guestKeepHint', 'ui.nameRule', 'ui.passwordRule', 'ui.termsAgree'], label: 'ui.username', save: 'ui.guestKeep', done: 'ui.guestKept', fresh: true }, onKeep, onDone);
 
 // A name + password form. keys: ui text keys; fresh: a new password (for the browser's password keeper).
 function nameForm(app, keys, onSubmit, onDone) {
@@ -544,9 +575,94 @@ function nameForm(app, keys, onSubmit, onDone) {
   name.focus();
 }
 
+// The player deletes their own account: what goes, the password again, then one red button.
+// onDelete(password) resolves once the account is gone (the game then shows the start screen).
+function openDeleteMe(app, onDelete, closeProfile) {
+  const t = app.i18n.t;
+  const pass = h('input', { class: 'input', type: 'password', autocomplete: 'current-password' });
+  const error = h('div', { class: 'form-error' });
+  const submit = h('button', { class: 'btn btn-danger', type: 'submit' }, t('ui.deleteMeButton'));
+  const { close } = openModal({
+    title: t('ui.deleteMeTitle'),
+    body: h(
+      'form',
+      {
+        class: 'login-form',
+        onsubmit: async (e) => {
+          e.preventDefault();
+          submit.disabled = true;
+          error.textContent = '';
+          try {
+            await onDelete(pass.value);
+            close();
+            closeProfile();
+          } catch (err) {
+            error.textContent = accountErrorText(app.i18n, err);
+            submit.disabled = false;
+          }
+        },
+      },
+      h('p', { class: 'form-hint' }, t('ui.deleteMeText')),
+      h('label', { class: 'field' }, h('span', {}, t('ui.password')), pass),
+      error,
+      submit,
+    ),
+  });
+  pass.focus();
+}
+
+// Teachers: the players' reports, the newest first. Each opens the player's card (Delete is there),
+// a reported carpet can leave the contest, and a handled report is closed.
+function openReports(app, onChange) {
+  const t = app.i18n.t;
+  const account = app.account;
+  const list = h('div', { class: 'report-list' });
+  const act = (fn) => async () => {
+    try {
+      await fn();
+    } catch (e) {
+      app.toast(accountErrorText(app.i18n, e), 'warn');
+    }
+    load();
+  };
+  const openPlayer = async (id) => {
+    const row = await account.player(id).catch((e) => (app.toast(accountErrorText(app.i18n, e), 'warn'), undefined));
+    if (row === null) app.toast(t('ui.reportGone'), 'warn');
+    if (row) openCard(app, row, { champs: null, today: todayKey(app), reload: load });
+  };
+  const item = (r) => {
+    const day = dayKey(r.at, (app.config.settings.leaderboard || {}).timeZone);
+    return h(
+      'div',
+      { class: 'report-item' },
+      r.cells ? carpetCanvas(app.config.ranch.carpets.palette, r.cells, 4) : avatar(app, r.name, null, 'small'),
+      h('div', { class: 'report-text' }, h('b', {}, r.name), ` · ${t(`ui.reportKind.${r.kind}`)}`, h('div', { class: 'muted' }, t('ui.reportBy', { name: r.by, date: `${day.slice(6)}.${day.slice(4, 6)}.${day.slice(0, 4)}` }))),
+      h(
+        'div',
+        { class: 'report-actions' },
+        h('button', { class: 'btn btn-sm', onclick: () => openPlayer(r.target) }, t('ui.reportOpen')),
+        r.kind === 'carpet' ? h('button', { class: 'btn btn-sm btn-danger', onclick: act(() => account.removeEntry(r.week, r.target).then(() => account.closeReport(r.id))) }, t('ui.contestRemove')) : null,
+        h('button', { class: 'btn btn-sm', onclick: act(() => account.closeReport(r.id)) }, t('ui.reportClose')),
+      ),
+    );
+  };
+  const load = async () => {
+    try {
+      const rows = await account.reports();
+      list.replaceChildren(...(rows.length ? rows.map(item) : [h('div', { class: 'board-note' }, t('ui.reportsEmpty'))]));
+      onChange(rows.length);
+    } catch (e) {
+      list.replaceChildren(h('div', { class: 'board-note form-error' }, accountErrorText(app.i18n, e)));
+    }
+  };
+  list.replaceChildren(h('div', { class: 'board-note' }, t('ui.loading')));
+  load();
+  openModal({ title: t('ui.reportsTitle'), width: 'min(560px, calc(100vw - 32px))', body: list, buttons: [{ label: t('ui.close'), class: 'btn-primary' }] });
+}
+
 // stats = { ...Game.leaderStats(), breakdown, parts (Perfection), stickers (earned ids) };
 // sync = promise of the fresh online save.
-export function openProfile(app, { stats, sync, onLogout, onRename, onKeep, ranch }) {
+export function openProfile(app, { stats, sync, onLogout, onRename, onKeep, onDeleteMe, ranch }) {
   const t = app.i18n.t;
   const user = app.account.user;
   const guest = app.account.isGuest;
@@ -559,6 +675,13 @@ export function openProfile(app, { stats, sync, onLogout, onRename, onKeep, ranc
   const carpets = ranch && ranch.gallery.length ? h('div', { class: 'profile-carpets' }, h('h4', {}, t('ui.profileCarpets')), carpetGallery(app, ranch)) : null;
   if (carpets) carpets.hidden = true;
   breakdown.hidden = perfect.hidden = album.hidden = true;
+  // Teachers: the reports, with their number once it is known.
+  let reports = null;
+  if (app.account.isAdmin) {
+    const count = (n) => (reports.textContent = n ? `${t('ui.reportsTitle')} (${n})` : t('ui.reportsTitle'));
+    reports = h('button', { class: 'link-quiet', onclick: () => openReports(app, count) }, t('ui.reportsTitle'));
+    app.account.reports().then((rows) => count(rows.length), (e) => console.warn('Reports not loaded:', e));
+  }
   const profile = openModal({
     title: [icon(app.sprites, 'player'), ` ${t('ui.profileTitle')}`],
     body: [
@@ -594,6 +717,8 @@ export function openProfile(app, { stats, sync, onLogout, onRename, onKeep, ranc
       leaderboardView(app, guest ? null : { id: user.id, ...stats }, sync),
       app.account.online ? null : h('p', { class: 'form-hint' }, t('ui.localMode')),
       guest ? null : h('button', { class: 'link-quiet', onclick: () => openRename(app, onRename, profile.close) }, t('ui.renameTitle')),
+      reports,
+      guest || app.account.isAdmin ? null : h('button', { class: 'link-quiet', onclick: () => openDeleteMe(app, onDeleteMe, profile.close) }, t('ui.deleteMeTitle')),
     ],
     buttons: [
       {

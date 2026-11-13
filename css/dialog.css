@@ -52,6 +52,9 @@
   flex-direction: column;
   gap: 10px;
 }
+.bridgy-box > * {
+  flex-shrink: 0; /* a long text scrolls the box (phones) instead of hiding under the code */
+}
 .bridgy-name {
   position: absolute;
   top: -18px;

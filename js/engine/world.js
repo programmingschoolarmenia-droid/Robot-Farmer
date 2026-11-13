@@ -21,6 +21,9 @@ export class World {
     this.height = height;
     this.tiles = [];
     this.maze = null;
+    this.juiceCombo = { last: 0, n: 0 }; // pomegranates: the seeds of the last even one harvested, and the combo so far
+    const step = this.entityConfig('YellowMelon').spreadSeconds;
+    this.nextSpread = step ? (Math.floor(t / step) + 1) * step : Infinity; // game time of the yellow melons' next vines
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) this.tiles.push(this.newTile(x, y, t));
     }
@@ -148,19 +151,8 @@ export class World {
 
   // ------------------------------------------------------------------ growth
 
-  // Multiplier on grow time (trees next to trees grow slower).
-  growthSlowdown(tile, e) {
-    const cfg = this.entityConfig(e.type);
-    if (!cfg.neighborSlowdown) return 1;
-    let n = 0;
-    for (const [dx, dy] of Object.values(DIRECTIONS)) {
-      const nb = this.neighbor(tile, dx, dy);
-      if (nb && nb.entity && nb.entity.type === e.type) n++;
-    }
-    return Math.pow(cfg.neighborSlowdown, n);
-  }
-
   sync(tile, t) {
+    if (t >= this.nextSpread) this.spread(t); // the yellow melons' vines come first
     const dt = t - tile.lastSync;
     if (!(dt > 0)) return;
     tile.lastSync = t;
@@ -168,53 +160,125 @@ export class World {
     const glass = !!tile.glass;
     const raining = cal.raining && !glass;
     if (raining) tile.water = 1;
-    let effective = dt;
+    let grown = null; // on wet soil: real seconds of this interval -> the seconds a plant grew in them
     const w0 = tile.water;
     if (w0 > 0 && tile.ground !== 'Pond') {
       const water = this.settings.water || {};
       const k = raining ? 0 : (water.evaporationPerSecond ?? 0.01) * (glass ? 1 : cal.evaporation);
       const boost = cal.frozen && !glass ? 0 : (water.maxGrowthMultiplier ?? 5) - 1;
-      const decay = Math.exp(-k * dt);
-      tile.water = w0 * decay;
+      tile.water = w0 * Math.exp(-k * dt);
       if (tile.water < 0.0005) tile.water = 0;
-      effective = k > 0 ? dt + (boost * w0 * (1 - decay)) / k : dt * (1 + boost * w0);
+      grown = (x) => (k > 0 ? x + (boost * w0 * (1 - Math.exp(-k * x))) / k : x * (1 + boost * w0));
     }
     const e = tile.entity;
-    if (e && e.progress < 1) {
+    if (!e) return;
+    let after = dt; // the seconds of this interval after the plant was grown
+    if (e.progress < 1) {
       if (this.machineConfig(e.type)) {
         if (e.data.making) e.progress = Math.min(1, e.progress + dt / e.growTime); // fixed time, nothing speeds it up
         return;
       }
-      const gt = e.growTime * this.growthSlowdown(tile, e);
-      e.progress = Math.min(1, e.progress + (effective * cal.growth(e.type, glass) * this.game.boost('growth')) / gt);
-      if (e.progress >= 1) this.onRipe(tile, e, t);
+      const speed = (cal.growth(e.type, glass) * this.game.boost('growth')) / e.growTime;
+      const need = (1 - e.progress) / speed; // growing seconds still to go
+      const got = grown ? grown(dt) : dt;
+      if (got < need) {
+        e.progress += got * speed;
+        return;
+      }
+      e.progress = 1;
+      after = dt - need;
+      if (grown && e.type === 'Pumpkin') {
+        // the exact moment it was grown (the same however the time is cut into frames)
+        let lo = 0;
+        let hi = dt;
+        for (let i = 0; i < 40; i++) {
+          const mid = (lo + hi) / 2;
+          if (grown(mid) < need) lo = mid;
+          else hi = mid;
+        }
+        after = dt - hi;
+      }
+      this.onRipe(tile, e, t);
     }
+    if (e.type === 'Pumpkin') this.sweeten(tile, e, after);
   }
 
   syncAll(t) {
     for (const tile of this.tiles) this.sync(tile, t);
   }
 
-  onRipe(tile, e, t) {
-    if (e.type === 'Pumpkin') {
-      const cfg = this.entityConfig('Pumpkin');
-      if (this.rng.chance(this.game.calendar.pumpkinDeath(cfg.deathChance ?? 0.2))) {
-        e.type = 'Dead_Pumpkin';
-        this.game.events.emit('pumpkinDied', { x: tile.x, y: tile.y });
-        return;
+  onRipe(tile, e) {
+    if (e.type === 'SquareMelon') this.tryMergePumpkins(tile);
+  }
+
+  // ------------------------------------------------------------------ watermelons
+
+  // A grown watermelon gets sweeter for ripeWindow seconds (0 -> 100), stays good for rotSeconds and
+  // then rots. `over`: its seconds since it was grown. (A luck of the day can stop the rotting.)
+  sweeten(tile, e, seconds) {
+    const cfg = this.entityConfig('Pumpkin');
+    e.data.over = (e.data.over || 0) + seconds;
+    if (e.data.over < (cfg.ripeWindow ?? 6) + (cfg.rotSeconds ?? 12) || this.game.calendar.pumpkinDeath(1) === 0) return;
+    e.type = 'Dead_Pumpkin';
+    this.game.events.emit('pumpkinDied', { x: tile.x, y: tile.y });
+  }
+
+  // How sweet a watermelon is: 0 while it grows, then 0 -> 100.
+  ripeness(e) {
+    if (e.progress < 1) return 0;
+    return Math.min(100, Math.floor(((e.data.over || 0) / (this.entityConfig('Pumpkin').ripeWindow ?? 6)) * 100));
+  }
+
+  // Yellow melons: every spreadSeconds of game time each ripe one sends a vine into the empty soil next
+  // to it. The steps happen at exact game times, before anything else at that time, so the farm is the
+  // same at any frame rate.
+  spread(t) {
+    const step = this.entityConfig('YellowMelon').spreadSeconds;
+    while (this.nextSpread <= t) {
+      const at = this.nextSpread;
+      this.nextSpread = at + step; // (first: the syncs below must not come back here)
+      const born = new Set();
+      for (const tile of this.tiles) {
+        if (!tile.entity || tile.entity.type !== 'YellowMelon') continue;
+        this.sync(tile, at);
+        if (tile.entity.progress < 1) continue;
+        for (const [dx, dy] of Object.values(DIRECTIONS)) {
+          const nb = this.neighbor(tile, dx, dy);
+          if (nb && nb.ground === 'Soil' && !nb.entity && !nb.glass) born.add(nb);
+        }
       }
-      this.tryMergePumpkins(tile);
+      for (const nb of born) {
+        this.sync(nb, at);
+        nb.entity = this.makeEntity('YellowMelon');
+      }
     }
   }
 
-  // ------------------------------------------------------------------ pumpkins
+  // The ripe yellow melons joined to this one side by side: one harvest takes them all.
+  patch(start, t) {
+    const out = [start];
+    const seen = new Set(out);
+    for (const tl of out) {
+      for (const [dx, dy] of Object.values(DIRECTIONS)) {
+        const nb = this.neighbor(tl, dx, dy);
+        if (!nb || seen.has(nb)) continue;
+        this.sync(nb, t);
+        if (!nb.entity || nb.entity.type !== 'YellowMelon' || nb.entity.progress < 1) continue;
+        seen.add(nb);
+        out.push(nb);
+      }
+    }
+    return out;
+  }
+
+  // ------------------------------------------------------------------ square melons (giants)
 
   // Uses each tile's last synced state (no syncing here, so ripening pumpkins don't
   // trigger nested merges; the last pumpkin of a square to ripen performs the merge).
   isLivePumpkin(tile) {
     if (!tile) return false;
     const e = tile.entity;
-    return !!e && e.type === 'Pumpkin' && e.progress >= 1;
+    return !!e && e.type === 'SquareMelon' && e.progress >= 1;
   }
 
   // When a pumpkin ripens, merge the biggest square of ripe pumpkins that contains it.
@@ -281,7 +345,7 @@ export class World {
   }
 
   pumpkinYield(size) {
-    const cfg = this.entityConfig('Pumpkin').giant || {};
+    const cfg = this.entityConfig('SquareMelon').giant || {};
     const cubeUntil = cfg.cubeUntil ?? 5;
     const big = cfg.bigMultiplier ?? 6;
     return size <= cubeUntil ? size * size * size : size * size * big;
@@ -336,6 +400,7 @@ export class World {
     if (g) this.breakGiant(g);
     if (tile.ground === 'Pond') tile.water = 0; // a pond is filled in with earth
     tile.ground = tile.ground === 'Grassland' ? 'Soil' : 'Grassland';
+    this.freshSoil(tile);
     tile.entity = null;
     this.spawnGrass(tile, t);
     return { ok: true, ground: tile.ground };
@@ -351,9 +416,16 @@ export class World {
     const g = tile.entity && tile.entity.data.giant;
     if (g) this.breakGiant(g);
     tile.ground = 'Pond';
+    this.freshSoil(tile);
     tile.entity = null;
     tile.water = 0;
     return true;
+  }
+
+  // Ground that was dug over is not tired and remembers no crop.
+  freshSoil(tile) {
+    delete tile.s;
+    delete tile.lc;
   }
 
   // The tricky mushroom hides away from where it expects the student to look, and it expects what
@@ -370,7 +442,8 @@ export class World {
     return tile.ground === 'Pond' && tile.water >= 0.999;
   }
 
-  // Harvests the tile. Returns { ok, removed, items, tiles, kind }
+  // Harvests the tile. Returns { ok, removed, items, tiles, type } and what the crop's own rule did:
+  // giantSize, patch, chain, green, combo, odd, bees, tired.
   harvest(tile, t) {
     this.sync(tile, t);
     const e = tile.entity;
@@ -382,136 +455,124 @@ export class World {
     const add = (item, n) => {
       if (n > 0) items[item] = (items[item] || 0) + n * this.game.calendar.yieldOf(item); // × today's luck
     };
-    let tiles = [tile];
 
     if (e.type === 'Grass' && e.progress < 1) return { ok: false, removed: false }; // (a beginner's first loop runs here: it just waits)
     if (e.type === 'Dead_Pumpkin' || e.progress < 1) {
       this.clearTile(tile, t);
-      return { ok: false, removed: true, items, tiles, type: e.type, unripe: e.type !== 'Dead_Pumpkin' };
+      return { ok: false, removed: true, items, tiles: [tile], type: e.type, unripe: e.type !== 'Dead_Pumpkin' };
     }
 
     const cfg = this.entityConfig(e.type);
     const mult = this.yieldMultiplier(e.type) * (e.data.charged ? this.game.calendar.lightningMultiplier : 1); // ⚡ storms
-    let extra = {};
-
-    if (e.type === 'Pumpkin') {
+    let tiles = [tile];
+    let share = 1; // × the plant's yield
+    const extra = {};
+    if (e.type === 'SquareMelon' && e.data.giant) {
       const g = e.data.giant;
-      if (g) {
-        tiles = [];
-        let infected = 0;
-        for (let y = g.y; y < g.y + g.size; y++) {
-          for (let x = g.x; x < g.x + g.size; x++) {
-            const tl = this.tiles[y * this.width + x];
-            if (tl.entity && tl.entity.data.infected) infected++;
-            tiles.push(tl);
-          }
-        }
-        const amount = this.pumpkinYield(g.size) * mult;
-        add('Pumpkin', amount);
-        if (infected) add('Weird_Substance', infected * this.infectedWeird());
-        for (const tl of tiles) {
-          tl.entity = null;
-          this.spawnGrass(tl, t);
-        }
-        return { ok: true, removed: true, items, tiles, type: 'Pumpkin', giantSize: g.size };
-      }
+      tiles = this.tiles.filter((tl) => tl.entity && tl.entity.data.giant === g);
+      share = this.pumpkinYield(g.size);
+      extra.giantSize = g.size;
+    } else if (e.type === 'YellowMelon') {
+      tiles = this.patch(tile, t);
+      share = tiles.length * tiles.length;
+      extra.patch = tiles.length;
+    } else if (e.type === 'Cactus') {
+      tiles = this.grapeRow(tile, t);
+      share = tiles.length * tiles.length;
+      extra.chain = tiles.length;
+    } else if (e.type === 'Pumpkin' && this.ripeness(e) < (cfg.ripeFrom ?? 80)) {
+      share = 0; // grown but not sweet yet: wasted
+      extra.green = true;
+    } else if (e.type === 'Sunflower') {
+      Object.assign(extra, this.squeeze(e));
+      share = extra.combo || 0;
+    } else if (e.type === 'Mulberry' && this.hasBees(tile, t)) {
+      share = cfg.beeMultiplier ?? 2;
+      extra.bees = true;
     }
+    const soil = this.soilShare(tiles, e.type);
+    if (soil < 1) extra.tired = true;
+    // (tired soil gives a part of the harvest: the odd fraction becomes a whole item by chance)
+    const whole = (x) => (soil < 1 ? Math.floor(x) + (this.rng.chance(x % 1) ? 1 : 0) : x);
+    for (const [item, n] of Object.entries(cfg.yield || {})) add(item, whole(n * mult * share * soil));
+    if (cfg.seeds) add('Seeds', this.rng.int(cfg.seeds[0], cfg.seeds[1])); // eggplants give their seeds back
+    if (cfg.seedChance && this.game.research.hasEntity('Carrot') && this.rng.chance(cfg.seedChance)) add('Seeds', 1); // wheat sometimes drops one
 
-    if (e.type === 'Cactus') {
-      const chain = this.cactusChain(tile, t);
-      const n = chain.length;
-      add('Cactus', n * n * mult);
-      let infected = 0;
-      for (const tl of chain) {
-        if (tl.entity.data.infected) infected++;
+    const fruits = e.data.fruits ?? cfg.fruits ?? 1;
+    if (fruits > 1) {
+      // an apricot tree stays for its next fruit
+      e.data.fruits = fruits - 1;
+      e.progress = cfg.regrow ?? 0;
+      delete e.data.charged;
+    } else {
+      for (const tl of tiles) {
         tl.entity = null;
         this.spawnGrass(tl, t);
       }
-      if (infected) add('Weird_Substance', infected * this.infectedWeird());
-      return { ok: true, removed: true, items, tiles: chain, type: 'Cactus', chain: n };
     }
-
-    if (e.type === 'Sunflower') {
-      const bonus = this.sunflowerBonus(tile, t);
-      extra = { sunflowerBonus: bonus > 1 };
-      add('Power', (cfg.yield && cfg.yield.Power ? cfg.yield.Power : 1) * bonus * mult);
-    } else {
-      for (const [item, n] of Object.entries(cfg.yield || {})) add(item, n * mult * this.polycultureBonus(tile, e));
-    }
-
-    if (e.data.infected) add('Weird_Substance', this.infectedWeird());
-    tile.entity = null;
-    this.spawnGrass(tile, t);
     return { ok: true, removed: true, items, tiles, type: e.type, ...extra };
   }
 
-  // Weird substance from each infected plant, however big its harvest: a share of the harvest grew with the
-  // crops' levels into thousands a minute, and the mushrooms (whose job it is) were not worth growing.
-  infectedWeird() {
-    return (this.settings.fertilizer || {}).infectedWeird ?? 1;
-  }
-
-  // ------------------------------------------------------------------ sunflowers
-
-  sunflowerBonus(tile, t) {
-    const cfg = this.entityConfig('Sunflower');
-    let count = 0;
-    let maxPetals = -1;
-    for (const tl of this.tiles) {
-      this.sync(tl, t);
-      if (tl.entity && tl.entity.type === 'Sunflower') {
-        count++;
-        if (tl.entity.data.petals > maxPetals) maxPetals = tl.entity.data.petals;
-      }
+  // Tired soil (after the Humus card): the same crop twice in a row on a soil square makes it one step
+  // weaker, down to tiredMin; another crop lets it rest one step back, and humus makes it strong at
+  // once. Returns the share of the harvest the squares give (their mean) and remembers the crop.
+  soilShare(tiles, type) {
+    const f = this.settings.fertilizer || {};
+    if (this.game.research.level(f.research || 'Fertilizer') <= 0) return 1;
+    const step = f.tiredStep ?? 0.1;
+    let sum = 0;
+    for (const tl of tiles) {
+      const s = tl.ground === 'Soil' ? (tl.s ?? 1) : 1;
+      sum += s;
+      if (tl.ground !== 'Soil') continue;
+      const next = Math.round((tl.lc === type ? Math.max(f.tiredMin ?? 0.5, s - step) : Math.min(1, s + step)) * 100) / 100;
+      if (next < 1) tl.s = next;
+      else delete tl.s;
+      tl.lc = type;
     }
-    if (count >= (cfg.minForBonus ?? 10) && tile.entity.data.petals >= maxPetals) return cfg.bonusMultiplier ?? 8;
-    return 1;
+    return sum / tiles.length;
   }
 
-  // ------------------------------------------------------------------ cactus
+  // ------------------------------------------------------------------ pomegranates, mulberries, grapes
 
-  // A cactus is sorted when N/E neighbours are >= it and S/W neighbours are <= it
-  // (neighbours outside the farm don't matter; neighbours that are not grown cacti break it).
-  isSortedCactus(tile, t) {
-    const e = tile.entity;
-    if (!e || e.type !== 'Cactus' || e.progress < 1) return false;
-    const s = e.data.size;
-    const check = (dx, dy, cmp) => {
+  // Pomegranates are squeezed for juice. An even one with more seeds than the last even one makes the
+  // combo one longer and pays it; any other even one starts again at 1. An odd one pays nothing and
+  // spills one juice from the storage (the combo stays).
+  squeeze(e) {
+    const seeds = e.data.petals;
+    if (seeds % 2) {
+      if (this.game.inventory.get('Power') >= 1) this.game.inventory.add('Power', -1, 'spill');
+      return { odd: true };
+    }
+    const c = this.juiceCombo;
+    c.n = c.n > 0 && seeds > c.last ? c.n + 1 : 1;
+    c.last = seeds;
+    return { combo: c.n };
+  }
+
+  // Bees: a ripe rosehip right next to the mulberry.
+  hasBees(tile, t) {
+    return Object.values(DIRECTIONS).some(([dx, dy]) => {
       const nb = this.neighbor(tile, dx, dy);
-      if (!nb) return true;
-      this.sync(nb, t);
-      const ne = nb.entity;
-      if (!ne || ne.type !== 'Cactus' || ne.progress < 1) return false;
-      return cmp(ne.data.size, s);
+      if (nb) this.sync(nb, t);
+      return !!nb && !!nb.entity && nb.entity.type === 'Bush' && nb.entity.progress >= 1;
+    });
+  }
+
+  // Grapes: the run of ripe grapes side by side in this row. When none is smaller than the one on its
+  // left, one harvest takes the whole run; else only this grape.
+  grapeRow(tile, t) {
+    const ripe = (tl) => {
+      if (tl) this.sync(tl, t);
+      return !!tl && !!tl.entity && tl.entity.type === 'Cactus' && tl.entity.progress >= 1;
     };
-    return (
-      check(0, 1, (n, c) => n >= c) &&
-      check(1, 0, (n, c) => n >= c) &&
-      check(0, -1, (n, c) => n <= c) &&
-      check(-1, 0, (n, c) => n <= c)
-    );
+    const row = [tile];
+    for (let nb = this.neighbor(tile, -1, 0); ripe(nb); nb = this.neighbor(nb, -1, 0)) row.unshift(nb);
+    for (let nb = this.neighbor(tile, 1, 0); ripe(nb); nb = this.neighbor(nb, 1, 0)) row.push(nb);
+    return row.every((tl, i) => !i || row[i - 1].entity.data.size <= tl.entity.data.size) ? row : [tile];
   }
 
-  cactusChain(start, t) {
-    if (!this.isSortedCactus(start, t)) return [start];
-    const out = [];
-    const seen = new Set([start]);
-    const queue = [start];
-    while (queue.length) {
-      const tl = queue.shift();
-      out.push(tl);
-      for (const [dx, dy] of Object.values(DIRECTIONS)) {
-        const nb = this.neighbor(tl, dx, dy);
-        if (nb && !seen.has(nb) && this.isSortedCactus(nb, t)) {
-          seen.add(nb);
-          queue.push(nb);
-        }
-      }
-    }
-    return out;
-  }
-
-  // Swaps the plants of two tiles (cactus sorting).
+  // Swaps the plants of two tiles (grape sorting).
   swap(a, b, t) {
     if (this.maze && (this.maze.contains(a.x, a.y) || this.maze.contains(b.x, b.y))) return false;
     if ((a.entity && (a.entity.type === 'Dinosaur' || a.entity.type === 'Apple')) || (b.entity && (b.entity.type === 'Dinosaur' || b.entity.type === 'Apple'))) return false;
@@ -611,47 +672,6 @@ export class World {
     return gold;
   }
 
-  // ------------------------------------------------------------------ polyculture
-
-  polycultureLevel() {
-    const cfg = this.settings.polyculture || {};
-    return this.game.research.level(cfg.research || 'Polyculture');
-  }
-
-  // The plant this plant would like next to it: { type, x, y } (assigned once, randomly).
-  companionOf(tile) {
-    const e = tile.entity;
-    const cfg = this.settings.polyculture || {};
-    const kinds = cfg.entities || ['Grass', 'Bush', 'Tree', 'Carrot'];
-    if (!e || !kinds.includes(e.type) || e.progress === undefined) return null;
-    if (e.data.companion) return e.data.companion;
-    const others = kinds.filter((k) => k !== e.type);
-    const dist = cfg.distance ?? 3;
-    const spots = [];
-    for (let dy = -dist; dy <= dist; dy++) {
-      for (let dx = -dist; dx <= dist; dx++) {
-        if ((dx === 0 && dy === 0) || Math.abs(dx) + Math.abs(dy) > dist) continue;
-        const x = tile.x + dx;
-        const y = tile.y + dy;
-        if (x >= 0 && y >= 0 && x < this.width && y < this.height) spots.push([x, y]);
-      }
-    }
-    if (!spots.length) return null;
-    const [x, y] = spots[Math.floor(this.rng.next() * spots.length)];
-    e.data.companion = { type: others[Math.floor(this.rng.next() * others.length)], x, y };
-    return e.data.companion;
-  }
-
-  polycultureBonus(tile, e) {
-    const lvl = this.polycultureLevel();
-    if (lvl <= 0 || !e.data.companion) return 1;
-    const c = e.data.companion;
-    const other = this.tileNoWrap(c.x, c.y);
-    if (!other || !other.entity || other.entity.type !== c.type) return 1;
-    const cfg = this.settings.polyculture || {};
-    return (cfg.baseMultiplier ?? 5) * Math.pow(2, lvl - 1);
-  }
-
   // ------------------------------------------------------------------ kitchen machines (village.json → machines)
 
   machineConfig(type) {
@@ -713,15 +733,14 @@ export class World {
     tile.water = clamp(tile.water + amount, 0, 1);
   }
 
+  // Humus: a growing plant gains secondsSaved, and tired soil is strong again. Returns whether it did anything.
   fertilize(tile, t) {
     this.sync(tile, t);
     const e = tile.entity;
-    if (!e || e.progress >= 1 || this.machineConfig(e.type)) return false;
-    const f = this.settings.fertilizer || {};
-    const seconds = f.secondsSaved ?? 2;
-    const gt = e.growTime * this.growthSlowdown(tile, e);
-    e.progress = Math.min(1, e.progress + seconds / gt);
-    e.data.infected = true;
+    const tired = (tile.s ?? 1) < 1;
+    delete tile.s;
+    if (!e || e.progress >= 1 || this.machineConfig(e.type)) return tired;
+    e.progress = Math.min(1, e.progress + ((this.settings.fertilizer || {}).secondsSaved ?? 2) / e.growTime);
     if (e.progress >= 1) this.onRipe(tile, e, t);
     return true;
   }
@@ -734,6 +753,8 @@ export class World {
       const row = { g: GROUNDS.indexOf(tl.ground) };
       if (tl.water > 0.001) row.w = Math.round(tl.water * 1000) / 1000;
       if (tl.glass) row.gl = 1;
+      if (tl.s < 1) row.s = tl.s;
+      if (tl.lc) row.lc = tl.lc;
       if (e) {
         row.e = e.type;
         row.p = Math.round(e.progress * 10000) / 10000;
@@ -756,7 +777,7 @@ export class World {
         giants.push({ x: g.x, y: g.y, size: g.size });
       }
     }
-    return { w: this.width, h: this.height, tiles, giants, maze: this.maze ? this.maze.toSave() : null };
+    return { w: this.width, h: this.height, tiles, giants, maze: this.maze ? this.maze.toSave() : null, combo: this.juiceCombo };
   }
 
   static fromSave(game, data, t) {
@@ -768,28 +789,23 @@ export class World {
         tile.water = row.w || 0;
         tile.glass = !!row.gl;
         tile.lastSync = t;
+        if (row.s < 1) tile.s = row.s;
+        if (row.lc) tile.lc = row.lc;
         if (row.e) {
-          tile.entity = {
-            type: row.e,
-            progress: row.p ?? 0,
-            growTime: row.gt ?? 1,
-            data: { ...(row.d || {}) },
-          };
+          // (saves from before: plants were infected by humus and had favourite neighbours)
+          const { infected, companion, ...d } = row.d || {};
+          tile.entity = { type: row.e, progress: row.p ?? 0, growTime: row.gt ?? 1, data: d };
         } else tile.entity = null;
       });
     }
+    if (data.combo) world.juiceCombo = { last: data.combo.last || 0, n: data.combo.n || 0 };
     for (const g of data.giants || []) {
-      let ok = true;
-      for (let y = g.y; y < g.y + g.size && ok; y++) {
-        for (let x = g.x; x < g.x + g.size; x++) {
-          const tl = world.tileNoWrap(x, y);
-          if (!tl || !tl.entity || tl.entity.type !== 'Pumpkin') {
-            ok = false;
-            break;
-          }
-        }
-      }
-      if (ok) world.makeGiantSilently(g.x, g.y, g.size);
+      const tiles = [];
+      for (let y = g.y; y < g.y + g.size; y++) for (let x = g.x; x < g.x + g.size; x++) tiles.push(world.tileNoWrap(x, y));
+      // (giants of saves from before were watermelons: they are square melons now)
+      if (!tiles.every((tl) => tl && tl.entity && (tl.entity.type === 'SquareMelon' || tl.entity.type === 'Pumpkin'))) continue;
+      for (const tl of tiles) tl.entity.type = 'SquareMelon';
+      world.makeGiantSilently(g.x, g.y, g.size);
     }
     if (data.maze && data.maze.size) {
       const m = Maze.fromSave(data.maze);

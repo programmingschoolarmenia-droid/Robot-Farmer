@@ -31,6 +31,7 @@ export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-proj
     if (docs.has(`deleted/${me}`)) return false;
     if (path.includes('carpets/')) return !!fields && fields.owner.stringValue === me && id === `${fields.week.stringValue}~${me}`;
     if (path.includes('likes/')) return !!fields && fields.voter.stringValue === me && fields.owner.stringValue !== me && id === `${fields.week.stringValue}~${fields.owner.stringValue}~${me}`;
+    if (path.includes('reports/')) return !!fields && fields.reporter.stringValue === me && fields.target.stringValue !== me && id === `${me}~${fields.key.stringValue}`;
     return email && !path.includes('deleted/') && me === id;
   };
   // Like the market part of the rules: the old copy of a save, and who may touch an order.
@@ -41,6 +42,10 @@ export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-proj
     const old = docs.get(path);
     if (path.startsWith('saves/') && old && old.rev && !isAdmin(email)) {
       if (fields && Number((fields.rev || {}).integerValue || 0) < Number(old.rev.integerValue)) return false;
+    }
+    // A player deletes their own carpets, the likes they gave or got and the reports they wrote.
+    if (!fields && /^(carpets|likes|reports)\//.test(path) && old && !isAdmin(email)) {
+      return !docs.has(`deleted/${me}`) && [str(old, 'owner'), str(old, 'voter'), str(old, 'reporter')].includes(me);
     }
     if (!path.startsWith('orders/')) return ownsDoc(email, path, fields);
     if (isAdmin(email)) return true;
@@ -136,9 +141,22 @@ export function createFakeFirebase({ apiKey = 'test-key', projectId = 'test-proj
       // must be on the first sort field.
       const q = body.structuredQuery;
       if (q.from[0].collectionId !== 'players') {
-        const { field, op, value } = q.where.fieldFilter;
-        const match = (fields) => (op === 'GREATER_THAN' ? num(fields, field.fieldPath) > Number(value.integerValue) : fields[field.fieldPath].stringValue === value.stringValue);
-        const found = [...docs].filter(([k, fields]) => k.startsWith(`${q.from[0].collectionId}/`) && match(fields));
+        const collection = q.from[0].collectionId;
+        const { field, op, value } = (q.where && q.where.fieldFilter) || {};
+        // Reports: only the teachers read them all, a player only their own.
+        if (collection === 'reports') {
+          const email = owner(req);
+          const mine = field && field.fieldPath === 'reporter' && email && value.stringValue === email.split('@')[0];
+          if (!isAdmin(email) && !mine) return fail(403, 'Missing or insufficient permissions.', { status: 'PERMISSION_DENIED' });
+        }
+        const match = (fields) => !field || (op === 'GREATER_THAN' ? num(fields, field.fieldPath) > Number(value.integerValue) : str(fields, field.fieldPath) === value.stringValue);
+        let found = [...docs].filter(([k, fields]) => k.startsWith(`${collection}/`) && match(fields));
+        if (q.orderBy) {
+          const f = q.orderBy[0].field.fieldPath;
+          const dir = q.orderBy[0].direction === 'ASCENDING' ? 1 : -1;
+          found = found.filter(([, fields]) => num(fields, f) !== undefined).sort((a, b) => dir * (num(a[1], f) - num(b[1], f)));
+        }
+        if (q.limit) found = found.slice(0, q.limit);
         return json(200, found.length ? found.map(([k, fields]) => ({ document: { name: `${prefix}/${k}`, fields, updateTime: times.get(k) }, readTime: 'now' })) : [{ readTime: 'now' }]);
       }
       const f = q.orderBy[0].field.fieldPath;

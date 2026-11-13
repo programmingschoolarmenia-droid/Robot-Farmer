@@ -1,6 +1,6 @@
 // Bridgy's Farm — entry point: load config, then show the login screen or the player's farm.
 import { loadConfig } from './core/config.js';
-import { createI18n } from './core/i18n.js';
+import { createI18n, pickLang, LANGS } from './core/i18n.js';
 import { SpriteBook } from './ui/sprites.js';
 import { LocalStorageAdapter } from './storage/localStorageAdapter.js';
 import { Accounts } from './storage/account.js';
@@ -9,6 +9,7 @@ import { GameScreen } from './ui/gameScreen.js';
 import { GameAudio } from './audio.js';
 import { Confetti } from './ui/confetti.js';
 import { h, closeOnTap } from './ui/dom.js';
+import { WORDS } from './core/util.js';
 
 // Phones: size the app to the visible area (on iPhone the keyboard only shrinks the visual viewport), and
 // know whether the keyboard is really open: it can be closed while the editor keeps the focus.
@@ -31,13 +32,46 @@ function fitVisualViewport() {
   fit();
 }
 
+// The language: ?lang= (this visit only), this tab's (an account's own language, see showGame), the browser's choice.
+const LANG_KEY = 'bridgysFarm.lang';
+const ENTER_KEY = 'bridgysFarm.enter'; // after a switch inside the game, go straight back to the farm
+const stored = (storage, value, key = LANG_KEY) => {
+  try {
+    if (value === undefined) return storage.getItem(key);
+    if (value === null) storage.removeItem(key);
+    else storage.setItem(key, value);
+  } catch {
+    return null; // storage blocked: the language just isn't remembered
+  }
+  return null;
+};
+const urlLang = new URLSearchParams(location.search).get('lang');
+const lang = pickLang({
+  chosen: urlLang || stored(sessionStorage) || stored(localStorage),
+  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  languages: navigator.languages || [navigator.language],
+});
+// A new language reloads the game (every text is read once at start). enter: open the farm again after it.
+function switchLang(to, { thisTab = false, enter = false } = {}) {
+  if (!LANGS.includes(to)) return;
+  if (enter) stored(sessionStorage, '1', ENTER_KEY);
+  if (thisTab) stored(sessionStorage, to);
+  else {
+    stored(localStorage, to);
+    stored(sessionStorage, null);
+  }
+  if (urlLang) location.replace(location.pathname);
+  else location.reload();
+}
+
 async function boot() {
   fitVisualViewport();
+  document.documentElement.lang = lang;
   const root = document.getElementById('app');
   const loading = document.getElementById('screen-loading');
   let result;
   try {
-    result = await loadConfig('config/');
+    result = await loadConfig('config/', lang);
   } catch (e) {
     result = { config: {}, errors: [{ file: 'config', path: '', message: String(e.message || e), fatal: true }] };
   }
@@ -48,8 +82,9 @@ async function boot() {
     return;
   }
 
-  const i18n = createI18n(config.texts, [...config.research.nodes, ...config.village.buildings], config.guide); // names of research cards and village buildings
+  const i18n = createI18n(config.texts, [...config.research.nodes, ...config.village.buildings], config.guide, lang); // names of research cards and village buildings
   document.title = i18n.t('ui.title');
+  Object.assign(WORDS, i18n.get('ui.engineWords'));
   const sprites = await new SpriteBook().load(config.settings);
   const account = new Accounts(new LocalStorageAdapter(), config.settings.online);
   const toastStack = h('div', { class: 'toast-stack' });
@@ -57,6 +92,8 @@ async function boot() {
   const app = {
     config,
     i18n,
+    lang,
+    switchLang,
     sprites,
     account,
     root,
@@ -89,17 +126,24 @@ async function boot() {
       showLogin(accountErrorText(i18n, e));
       return;
     }
+    // The player chose a language on another computer: this tab follows it.
+    const own = save && save.ui && save.ui.prefs && save.ui.prefs.lang;
+    if (LANGS.includes(own) && own !== lang && !urlLang) return switchLang(own, { thisTab: true, enter: true });
     loading.hidden = true;
     show(
       new GameScreen(app, save, (notice) => {
         app.screen = null;
+        stored(sessionStorage, null);
         account.logout();
         showLogin(notice);
       }),
     );
   }
   loading.hidden = true;
-  showLogin(); // (a player still logged in gets «Continue as …» there)
+  const enter = stored(sessionStorage, undefined, ENTER_KEY);
+  stored(sessionStorage, null, ENTER_KEY);
+  if (enter && account.user) showGame();
+  else showLogin(); // (a player still logged in gets «Continue as …» there)
 }
 
 function showConfigErrors(root, errors, texts) {

@@ -4,9 +4,9 @@ import { makeGame, runCode, loadConfig } from './helpers.mjs';
 import { validateConfig } from '../js/core/config.js';
 
 const ALL = {
-  Loops: 1, Speed: 1, Expand: 4, Plant: 1, Carrots: 1, Debug: 1, Operators: 1, Senses: 1, Variables: 1, Functions: 1,
+  Loops: 1, Speed: 1, Expand: 5, Plant: 1, Carrots: 1, Debug: 1, Operators: 1, Senses: 1, Variables: 1, Functions: 1,
   Lists: 1, Objects: 1, Trees: 1, Pumpkins: 1, Cactus: 1, Hats: 1, Watering: 1, Fertilizer: 1, Mazes: 1, Dinosaurs: 1,
-  Polyculture: 1, Megafarm: 2, Utilities: 1,
+  Megafarm: 2, Utilities: 1,
 };
 
 function bushReady(game) {
@@ -63,41 +63,27 @@ test('maze outer walls block wrapping and moving in from outside', () => {
   assert.equal(game.canMove(d, 'South'), false);
 });
 
-test('dinosaur eats apples, grows, and pays bones when the hat comes off', () => {
-  const game = makeGame({ levels: ALL, available: true, items: { Cactus: 1000 } });
+test('the snake hunts the running mouse, grows, and pays skins when the hat comes off', () => {
+  const game = makeGame({ levels: ALL, available: true });
   const r = runCode(game, 'changeHat(Hats.Dinosaur_Hat);');
   assert.equal(r.error, null);
   assert.ok(game.dino && game.dino.apple);
-  // chase 3 apples with a simple greedy program
+  // a simple hunt: one step towards the mouse, again and again
   const chase = `
-for (let n = 0; n < 3; n++) {
+for (let step = 0; step < 150; step++) {
   let [ax, ay] = measure();
-  while (getPosX() < ax && move(East)) {}
-  while (getPosX() > ax && move(West)) {}
-  while (getPosY() < ay && move(North)) {}
-  while (getPosY() > ay && move(South)) {}
+  if (getPosX() < ax && move(East)) { continue; }
+  if (getPosX() > ax && move(West)) { continue; }
+  if (getPosY() < ay && move(North)) { continue; }
+  if (getPosY() > ay && move(South)) { continue; }
 }
+print(numItems(Items.Cactus));
 changeHat(Hats.Straw_Hat);
 `;
   const r2 = runCode(game, chase, { maxSeconds: 2000 });
   assert.equal(r2.error, null);
-  assert.ok(game.inventory.get('Bone') >= 4, `bones ${game.inventory.get('Bone')}`);
-  assert.equal(game.dino, null);
-});
-
-test('polyculture companion multiplies the yield', () => {
-  const game = makeGame({ levels: ALL, available: true });
-  const w = game.world;
-  const a = w.tile(1, 1);
-  a.entity = w.makeEntity('Bush');
-  a.entity.progress = 1;
-  const c = w.companionOf(a);
-  assert.ok(c);
-  const comp = w.tileNoWrap(c.x, c.y);
-  comp.ground = 'Soil';
-  comp.entity = w.makeEntity(c.type);
-  const r = w.harvest(a, game.time);
-  assert.equal(r.items.Wood, 5 * 2); // Trees level 1 doubles bush wood; polyculture x5
+  assert.ok(game.inventory.get('Bone') >= 6, `skins ${game.inventory.get('Bone')}`);
+  assert.deepEqual([r2.out, game.dino], [['0'], null], 'mice cost nothing');
 });
 
 test('spawnDrone runs code on extra drones and waitFor returns the result', () => {

@@ -143,10 +143,15 @@ test('Armenian aliases work for functions, directions and enums', () => {
 
 test('Armenian names are shown everywhere, English names still work hidden', () => {
   assert.deepEqual(outOf('print(Entities.Carrot, East, harvest, Math.floor(2.5));\nharvest();'), ['Buyser.Badrjan Aj havaqel() 2']);
-  assert.match(outOf('tpel(arzheq(Hetazotutyunner.Aragutyun, 0), arzheq(Buyser.Gazar));')[0], /^\{ Coren: 20 \} \{ Coren: \d+, Payt: \d+ \}$/);
+  assert.match(outOf('tpel(arzheq(Hetazotutyunner.Aragutyun, 0), arzheq(Buyser.Gazar));')[0], /^\{ Coren: 20 \} \{ Sermer: 1 \}$/);
   assert.deepEqual(outOf('tpel(texapoxel == poxatexel, Buyser.Ganc == Buyser.Gandz);'), ['true true']);
   // old spellings keep working in saved code
-  assert.deepEqual(outOf('tpel(Bujser.Gazar == Buyser.Gazar, ynker == enker, Dzkner.Kogak == Dzkner.Koxak);'), ['true true true']);
+  assert.deepEqual(outOf('tpel(Bujser.Gazar == Buyser.Gazar, Buyser.Xndzor == Buyser.Muk, Dzkner.Kogak == Dzkner.Koxak);'), ['true true true']);
+  // a command that was taken out of the game says so instead of «not defined»
+  for (const name of ['enker', 'ynker', 'getCompanion']) {
+    const gone = runCode(makeGame({ unlockAll: true }), `${name}();`).error;
+    assert.deepEqual([gone.code, gone.params.removed], ['notDefined', true], name);
+  }
   const game = makeGame({ unlockAll: true });
   const names = game.api.knownNames();
   for (const n of ['havaqel', 'tnkel', 'Buyser', 'Verev', 'Math']) assert.ok(names.includes(n), n);
@@ -166,9 +171,11 @@ test('Armenian names are shown everywhere, English names still work hidden', () 
     ['true true true true true'],
   );
   assert.deepEqual(
-    outOf('tpel(Buyser.Dinozavr == Buyser.Odz, Glxarkner.Dinozavr == Glxarkner.Odz, Irer.Voskor == Irer.OdziMashk, Irer.Parartanyut == Irer.Humus, Hetazotutyunner.Carer == Hetazotutyunner.Ciraneni, Hetazotutyunner.Megaferma == Hetazotutyunner.DronneriTim, Hetazotutyunner.Enkerutyun == Hetazotutyunner.BariHarevanner, Hetazotutyunner.Labirintosner == Hetazotutyunner.AyguLabirintos);'),
-    ['true true true true true true true true'],
+    outOf('tpel(Buyser.Dinozavr == Buyser.Odz, Glxarkner.Dinozavr == Glxarkner.Odz, Irer.Voskor == Irer.OdziMashk, Irer.Parartanyut == Irer.Humus, Hetazotutyunner.Carer == Hetazotutyunner.Ciraneni, Hetazotutyunner.Megaferma == Hetazotutyunner.DronneriTim, Hetazotutyunner.Labirintosner == Hetazotutyunner.AyguLabirintos);'),
+    ['true true true true true true true'],
   );
+  // our own crops: the code names the teacher approved
+  assert.deepEqual(outOf('tpel(Buyser.Tteni, Buyser.DexinDzmeruk, Buyser.QarakusiDzmeruk, Buyser.Muk, Irer.Sermer, xmel, Hetazotutyunner.Tteni);'), ['Buyser.Tteni Buyser.DexinDzmeruk Buyser.QarakusiDzmeruk Buyser.Muk Irer.Sermer xmel() Hetazotutyunner.Tteni']);
 });
 
 test('error messages name game functions in Armenian', () => {

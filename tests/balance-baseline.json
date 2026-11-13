@@ -1,0 +1,657 @@
+{
+ "label": "baseline",
+ "carrots": 22.454358947476262,
+ "total": 1772.1598300962141,
+ "rows": [
+  {
+   "id": "Loops",
+   "level": 1,
+   "minutes": 2.8
+  },
+  {
+   "id": "Speed",
+   "level": 1,
+   "minutes": 3.7
+  },
+  {
+   "id": "Expand",
+   "level": 1,
+   "minutes": 6.6
+  },
+  {
+   "id": "Hats",
+   "level": 1,
+   "minutes": 10.2
+  },
+  {
+   "id": "Plant",
+   "level": 1,
+   "minutes": 14.7
+  },
+  {
+   "id": "Speed",
+   "level": 2,
+   "minutes": 16.1
+  },
+  {
+   "id": "Expand",
+   "level": 2,
+   "minutes": 17.4
+  },
+  {
+   "id": "Carrots",
+   "level": 1,
+   "minutes": 22.5
+  },
+  {
+   "id": "Watering",
+   "level": 1,
+   "minutes": 26.5
+  },
+  {
+   "id": "Grass",
+   "level": 1,
+   "minutes": 28.8
+  },
+  {
+   "id": "Operators",
+   "level": 1,
+   "minutes": 33
+  },
+  {
+   "id": "Senses",
+   "level": 1,
+   "minutes": 36.4
+  },
+  {
+   "id": "Debug",
+   "level": 1,
+   "minutes": 40.8
+  },
+  {
+   "id": "Speed",
+   "level": 3,
+   "minutes": 43.7
+  },
+  {
+   "id": "Expand",
+   "level": 3,
+   "minutes": 46.1
+  },
+  {
+   "id": "Variables",
+   "level": 1,
+   "minutes": 50.2
+  },
+  {
+   "id": "Functions",
+   "level": 1,
+   "minutes": 54.6
+  },
+  {
+   "id": "Grass",
+   "level": 2,
+   "minutes": 57.1
+  },
+  {
+   "id": "Speed",
+   "level": 4,
+   "minutes": 60.8
+  },
+  {
+   "id": "Import",
+   "level": 1,
+   "minutes": 66.3
+  },
+  {
+   "id": "Watering",
+   "level": 2,
+   "minutes": 70.1
+  },
+  {
+   "id": "Trees",
+   "level": 1,
+   "minutes": 77
+  },
+  {
+   "id": "Trees",
+   "level": 2,
+   "minutes": 78.3
+  },
+  {
+   "id": "Carrots",
+   "level": 2,
+   "minutes": 79.4
+  },
+  {
+   "id": "Expand",
+   "level": 4,
+   "minutes": 80.9
+  },
+  {
+   "id": "Calendar",
+   "level": 1,
+   "minutes": 84.1
+  },
+  {
+   "id": "Grass",
+   "level": 3,
+   "minutes": 85.6
+  },
+  {
+   "id": "Fertilizer",
+   "level": 1,
+   "minutes": 87.1
+  },
+  {
+   "id": "SetSpeed",
+   "level": 1,
+   "minutes": 90.7
+  },
+  {
+   "id": "Trees",
+   "level": 3,
+   "minutes": 92.6
+  },
+  {
+   "id": "Watering",
+   "level": 3,
+   "minutes": 93.9
+  },
+  {
+   "id": "Carrots",
+   "level": 3,
+   "minutes": 95.6
+  },
+  {
+   "id": "Fishing",
+   "level": 1,
+   "minutes": 99.6
+  },
+  {
+   "id": "Fertilizer",
+   "level": 2,
+   "minutes": 101.6
+  },
+  {
+   "id": "Pumpkins",
+   "level": 1,
+   "minutes": 106.7
+  },
+  {
+   "id": "Speed",
+   "level": 5,
+   "minutes": 108.9
+  },
+  {
+   "id": "Fishing",
+   "level": 2,
+   "minutes": 110.8
+  },
+  {
+   "id": "Timing",
+   "level": 1,
+   "minutes": 114.7
+  },
+  {
+   "id": "Grass",
+   "level": 4,
+   "minutes": 117.3
+  },
+  {
+   "id": "Sunflowers",
+   "level": 1,
+   "minutes": 122.9
+  },
+  {
+   "id": "Lists",
+   "level": 1,
+   "minutes": 127.6
+  },
+  {
+   "id": "Trees",
+   "level": 4,
+   "minutes": 130.2
+  },
+  {
+   "id": "Watering",
+   "level": 4,
+   "minutes": 132
+  },
+  {
+   "id": "Debugger",
+   "level": 1,
+   "minutes": 135
+  },
+  {
+   "id": "Carrots",
+   "level": 4,
+   "minutes": 138.1
+  },
+  {
+   "id": "Music",
+   "level": 1,
+   "minutes": 142.5
+  },
+  {
+   "id": "Speed",
+   "level": 6,
+   "minutes": 145.2
+  },
+  {
+   "id": "Pumpkins",
+   "level": 2,
+   "minutes": 147.5
+  },
+  {
+   "id": "Expand",
+   "level": 5,
+   "minutes": 150.1
+  },
+  {
+   "id": "Fertilizer",
+   "level": 3,
+   "minutes": 153.1
+  },
+  {
+   "id": "Utilities",
+   "level": 1,
+   "minutes": 158.5
+  },
+  {
+   "id": "Mushrooms",
+   "level": 1,
+   "minutes": 165.2
+  },
+  {
+   "id": "Speed",
+   "level": 7,
+   "minutes": 169.1
+  },
+  {
+   "id": "Fishing",
+   "level": 3,
+   "minutes": 172.2
+  },
+  {
+   "id": "Mushrooms",
+   "level": 2,
+   "minutes": 175.4
+  },
+  {
+   "id": "Mazes",
+   "level": 1,
+   "minutes": 180.8
+  },
+  {
+   "id": "Grass",
+   "level": 5,
+   "minutes": 184.2
+  },
+  {
+   "id": "Trees",
+   "level": 5,
+   "minutes": 187
+  },
+  {
+   "id": "Watering",
+   "level": 5,
+   "minutes": 189
+  },
+  {
+   "id": "Carrots",
+   "level": 5,
+   "minutes": 193.2
+  },
+  {
+   "id": "Pumpkins",
+   "level": 3,
+   "minutes": 196.3
+  },
+  {
+   "id": "Objects",
+   "level": 1,
+   "minutes": 201.1
+  },
+  {
+   "id": "Costs",
+   "level": 1,
+   "minutes": 206
+  },
+  {
+   "id": "Polyculture",
+   "level": 1,
+   "minutes": 211.3
+  },
+  {
+   "id": "Megafarm",
+   "level": 1,
+   "minutes": 218.1
+  },
+  {
+   "id": "Watering",
+   "level": 6,
+   "minutes": 222.6
+  },
+  {
+   "id": "Fertilizer",
+   "level": 4,
+   "minutes": 227.3
+  },
+  {
+   "id": "Cactus",
+   "level": 1,
+   "minutes": 235.2
+  },
+  {
+   "id": "Dinosaurs",
+   "level": 1,
+   "minutes": 237
+  },
+  {
+   "id": "AutoUnlock",
+   "level": 1,
+   "minutes": 243.8
+  },
+  {
+   "id": "Trees",
+   "level": 6,
+   "minutes": 249
+  },
+  {
+   "id": "Grass",
+   "level": 6,
+   "minutes": 252
+  },
+  {
+   "id": "Pumpkins",
+   "level": 4,
+   "minutes": 257.4
+  },
+  {
+   "id": "Expand",
+   "level": 6,
+   "minutes": 261.6
+  },
+  {
+   "id": "Carrots",
+   "level": 6,
+   "minutes": 266.7
+  },
+  {
+   "id": "Watering",
+   "level": 7,
+   "minutes": 273.3
+  },
+  {
+   "id": "Mazes",
+   "level": 2,
+   "minutes": 278.7
+  },
+  {
+   "id": "Dinosaurs",
+   "level": 2,
+   "minutes": 284.1
+  },
+  {
+   "id": "GoldenHat",
+   "level": 1,
+   "minutes": 290.3
+  },
+  {
+   "id": "Fishing",
+   "level": 4,
+   "minutes": 297.1
+  },
+  {
+   "id": "Mushrooms",
+   "level": 3,
+   "minutes": 302.7
+  },
+  {
+   "id": "Polyculture",
+   "level": 2,
+   "minutes": 309.6
+  },
+  {
+   "id": "Cactus",
+   "level": 2,
+   "minutes": 316.7
+  },
+  {
+   "id": "Megafarm",
+   "level": 2,
+   "minutes": 325.3
+  },
+  {
+   "id": "Trees",
+   "level": 7,
+   "minutes": 330.4
+  },
+  {
+   "id": "Grass",
+   "level": 7,
+   "minutes": 334.2
+  },
+  {
+   "id": "Pumpkins",
+   "level": 5,
+   "minutes": 339.5
+  },
+  {
+   "id": "Carrots",
+   "level": 7,
+   "minutes": 348.2
+  },
+  {
+   "id": "Watering",
+   "level": 8,
+   "minutes": 357.4
+  },
+  {
+   "id": "Trees",
+   "level": 8,
+   "minutes": 367.1
+  },
+  {
+   "id": "Grass",
+   "level": 8,
+   "minutes": 375.8
+  },
+  {
+   "id": "Pumpkins",
+   "level": 6,
+   "minutes": 385.8
+  },
+  {
+   "id": "Expand",
+   "level": 7,
+   "minutes": 391.6
+  },
+  {
+   "id": "Cactus",
+   "level": 3,
+   "minutes": 401.9
+  },
+  {
+   "id": "Mazes",
+   "level": 3,
+   "minutes": 407.8
+  },
+  {
+   "id": "Dinosaurs",
+   "level": 3,
+   "minutes": 413.7
+  },
+  {
+   "id": "Watering",
+   "level": 9,
+   "minutes": 428.2
+  },
+  {
+   "id": "Megafarm",
+   "level": 3,
+   "minutes": 445
+  },
+  {
+   "id": "Trees",
+   "level": 9,
+   "minutes": 454.6
+  },
+  {
+   "id": "Carrots",
+   "level": 8,
+   "minutes": 461.5
+  },
+  {
+   "id": "Grass",
+   "level": 9,
+   "minutes": 474.9
+  },
+  {
+   "id": "Pumpkins",
+   "level": 7,
+   "minutes": 487.2
+  },
+  {
+   "id": "Trees",
+   "level": 10,
+   "minutes": 506
+  },
+  {
+   "id": "Carrots",
+   "level": 9,
+   "minutes": 522.5
+  },
+  {
+   "id": "Expand",
+   "level": 8,
+   "minutes": 538.1
+  },
+  {
+   "id": "Fishing",
+   "level": 5,
+   "minutes": 555.2
+  },
+  {
+   "id": "Mushrooms",
+   "level": 4,
+   "minutes": 566.4
+  },
+  {
+   "id": "Mazes",
+   "level": 4,
+   "minutes": 589.6
+  },
+  {
+   "id": "Megafarm",
+   "level": 4,
+   "minutes": 610.1
+  },
+  {
+   "id": "Cactus",
+   "level": 4,
+   "minutes": 626.7
+  },
+  {
+   "id": "Dinosaurs",
+   "level": 4,
+   "minutes": 638.6
+  },
+  {
+   "id": "Polyculture",
+   "level": 3,
+   "minutes": 656.8
+  },
+  {
+   "id": "Pumpkins",
+   "level": 8,
+   "minutes": 687.7
+  },
+  {
+   "id": "Secret",
+   "level": 1,
+   "minutes": 723.6
+  },
+  {
+   "id": "Grass",
+   "level": 10,
+   "minutes": 764.4
+  },
+  {
+   "id": "Mushrooms",
+   "level": 5,
+   "minutes": 807.5
+  },
+  {
+   "id": "Expand",
+   "level": 9,
+   "minutes": 871.6
+  },
+  {
+   "id": "Cactus",
+   "level": 5,
+   "minutes": 899.2
+  },
+  {
+   "id": "Mazes",
+   "level": 5,
+   "minutes": 922.8
+  },
+  {
+   "id": "Dinosaurs",
+   "level": 5,
+   "minutes": 946.5
+  },
+  {
+   "id": "Polyculture",
+   "level": 4,
+   "minutes": 972.1
+  },
+  {
+   "id": "Carrots",
+   "level": 10,
+   "minutes": 1001.6
+  },
+  {
+   "id": "Pumpkins",
+   "level": 9,
+   "minutes": 1026.4
+  },
+  {
+   "id": "Cactus",
+   "level": 6,
+   "minutes": 1116.5
+  },
+  {
+   "id": "Mazes",
+   "level": 6,
+   "minutes": 1186.7
+  },
+  {
+   "id": "Megafarm",
+   "level": 5,
+   "minutes": 1251
+  },
+  {
+   "id": "Dinosaurs",
+   "level": 6,
+   "minutes": 1321.3
+  },
+  {
+   "id": "Polyculture",
+   "level": 5,
+   "minutes": 1384.7
+  },
+  {
+   "id": "Pumpkins",
+   "level": 10,
+   "minutes": 1546.7
+  },
+  {
+   "id": "Final",
+   "level": 1,
+   "minutes": 1772.2
+  }
+ ]
+}

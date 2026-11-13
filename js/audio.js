@@ -1,20 +1,30 @@
-// Sound effects and gentle background music, synthesised with WebAudio (no sound files needed).
+// WebAudio effects and a streamed, original background score (loaded only when music is enabled).
 export class GameAudio {
   constructor() {
     this.ctx = null;
     this.sfxVolume = 0.5;
     this.musicVolume = 0;
     this.blips = true;
-    this.musicTimer = null;
-    this.musicStep = 0;
+    this.musicPlayer = null;
+    this.musicSource = null;
+    this.musicStarting = false;
     this.lastPlay = new Map();
-    this.voices = 0; // nvagel() notes sounding now
+    this.noteVoices = new Set();
+    this.noteClock = null;
     const unlock = () => {
       this.ensure();
       if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      if (this.musicVolume > 0) this.startMusic();
     };
     window.addEventListener('pointerdown', unlock, { capture: true });
     window.addEventListener('keydown', unlock, { capture: true });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.stopMusic();
+        this.stopNotes();
+      }
+      else if (this.musicVolume > 0) this.startMusic();
+    });
   }
 
   ensure() {
@@ -27,7 +37,7 @@ export class GameAudio {
       this.master.gain.value = 1;
       this.master.connect(this.ctx.destination);
       this.musicGain = this.ctx.createGain();
-      this.musicGain.gain.value = this.musicVolume * 0.25;
+      this.musicGain.gain.value = this.musicVolume * 0.65;
       this.musicGain.connect(this.master);
     } catch {
       this.ctx = null;
@@ -37,10 +47,11 @@ export class GameAudio {
 
   setVolumes({ sfx, music, blips }) {
     if (sfx !== undefined) this.sfxVolume = sfx;
+    if (this.notesGain) this.notesGain.gain.value = this.sfxVolume;
     if (blips !== undefined) this.blips = blips;
     if (music !== undefined) {
       this.musicVolume = music;
-      if (this.musicGain) this.musicGain.gain.value = music * 0.25;
+      if (this.musicGain) this.musicGain.gain.value = music * 0.65;
       if (music > 0) this.startMusic();
       else this.stopMusic();
     }
@@ -63,27 +74,106 @@ export class GameAudio {
     osc.stop(t0 + dur + 0.02);
   }
 
-  // nvagel(): one soft note (like a music box) on the sound effects' volume. At most 4 sound at once
-  // (many drones must not become a choir), and none while the tab is hidden.
-  note(freq, seconds) {
+  // Load a small, locally bundled piano bank once the Music card is available.
+  // A soft synthesised piano is ready immediately, including when a download fails.
+  prepareNotes() {
     const ctx = this.ensure();
-    if (!ctx || this.sfxVolume <= 0 || ctx.state !== 'running' || document.hidden || this.voices >= 4) return;
-    const t0 = ctx.currentTime;
-    const dur = Math.min(8, Math.max(0.06, seconds));
-    const vol = 0.22 * this.sfxVolume;
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(freq, t0);
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.015);
-    g.gain.setValueAtTime(vol, t0 + dur * 0.7);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    osc.connect(g).connect(this.master);
-    osc.start(t0);
-    osc.stop(t0 + dur + 0.02);
-    this.voices++;
-    osc.onended = () => this.voices--;
+    if (!ctx || this.noteSamples || this.noteSamplesFailed) return Promise.resolve();
+    if (!this.noteSamplesLoading) {
+      this.noteSamplesLoading = (async () => {
+        const response = await fetch(new URL('../assets/audio/nvagel-piano.mp3', import.meta.url));
+        if (!response.ok) throw new Error('Piano samples unavailable');
+        this.noteSamples = await ctx.decodeAudioData(await response.arrayBuffer());
+      })().catch(() => { this.noteSamplesFailed = true; });
+    }
+    return this.noteSamplesLoading;
+  }
+
+  // nvagel(): piano notes and chords share an audio clock, so rendering frames
+  // cannot move individual notes off the beat. Other sound effects keep their own path.
+  note(pitches, seconds, timing = null) {
+    const ctx = this.ensure();
+    if (!ctx || this.sfxVolume <= 0 || ctx.state !== 'running' || document.hidden || !Number.isFinite(seconds) || seconds <= 0) return;
+    const frequencies = [...new Set((Array.isArray(pitches) ? pitches : [pitches]).filter((freq) => Number.isFinite(freq) && freq > 0 && freq < 20000))].slice(0, 8);
+    if (!frequencies.length) return;
+    this.prepareNotes();
+    if (!this.notesGain) {
+      this.notesGain = ctx.createGain();
+      this.notesGain.gain.value = this.sfxVolume;
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.value = -10;
+      compressor.knee.value = 8;
+      compressor.ratio.value = 12;
+      compressor.attack.value = 0.003;
+      compressor.release.value = 0.15;
+      const output = ctx.createGain();
+      output.gain.value = 0.6; // Headroom for simultaneous drones and the compressor's makeup gain.
+      this.notesGain.connect(compressor).connect(output).connect(this.master);
+    }
+    let t0 = ctx.currentTime;
+    if (timing && Number.isFinite(timing.at) && Number.isFinite(timing.now) && timing.speed > 0) {
+      let clock = this.noteClock;
+      if (!clock || clock.speed !== timing.speed || Math.abs(ctx.currentTime - clock.audio - (timing.now - clock.game) / timing.speed) > 0.12) {
+        clock = this.noteClock = { audio: ctx.currentTime + 0.035, game: timing.now, speed: timing.speed };
+      }
+      t0 = Math.max(ctx.currentTime, clock.audio + (timing.at - clock.game) / clock.speed);
+    }
+    const dur = Math.min(64, Math.max(0.025, seconds));
+    const vol = 0.32 / Math.sqrt(frequencies.length);
+    for (const freq of frequencies) {
+      if (this.noteVoices.size >= 24) this.releaseNote(this.noteVoices.values().next().value);
+      const gain = ctx.createGain();
+      let source;
+      let offset = 0;
+      if (this.noteSamples) {
+        source = ctx.createBufferSource();
+        source.buffer = this.noteSamples;
+        const midi = 69 + 12 * Math.log2(freq / 440);
+        const slot = Math.max(0, Math.min(7, Math.round((midi - 24) / 12)));
+        const baseFreq = 440 * Math.pow(2, (24 + slot * 12 - 69) / 12);
+        source.playbackRate.setValueAtTime(freq / baseFreq, t0);
+        offset = slot * 6;
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.004);
+        gain.gain.setValueAtTime(vol, t0 + Math.max(0.005, dur - 0.015));
+      } else {
+        if (!this.pianoWave) {
+          this.pianoWave = ctx.createPeriodicWave(new Float32Array(7), new Float32Array([0, 1, 0.3, 0.13, 0.06, 0.025, 0.01]));
+        }
+        source = ctx.createOscillator();
+        source.setPeriodicWave(this.pianoWave);
+        source.frequency.setValueAtTime(freq, t0);
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(vol * 0.55, t0 + 0.006);
+        gain.gain.exponentialRampToValueAtTime(vol * 0.2, t0 + Math.min(0.22, dur * 0.6));
+        gain.gain.exponentialRampToValueAtTime(vol * 0.06, t0 + dur);
+      }
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.16);
+      source.connect(gain).connect(this.notesGain);
+      const voice = { source, gain };
+      this.noteVoices.add(voice);
+      source.onended = () => {
+        this.noteVoices.delete(voice);
+        source.disconnect();
+        gain.disconnect();
+      };
+      if (this.noteSamples) source.start(t0, offset, 6);
+      else source.start(t0);
+      source.stop(t0 + dur + 0.18);
+    }
+  }
+
+  releaseNote(voice) {
+    const now = this.ctx.currentTime;
+    voice.gain.gain.cancelScheduledValues(now);
+    voice.gain.gain.setTargetAtTime(0, now, 0.005);
+    voice.source.stop(now + 0.03);
+    this.noteVoices.delete(voice);
+  }
+
+  stopNotes() {
+    this.noteClock = null;
+    for (const voice of this.noteVoices) this.releaseNote(voice);
   }
 
   // Avoid machine-gun sounds when many things happen at once.
@@ -162,39 +252,34 @@ export class GameAudio {
     this.tone(f, 0.045, { type: 'square', vol: 0.07 });
   }
 
-  // Simple looping pentatonic tune.
+  // Apricot Afternoon: a 64-bar piano/guitar score. A media element streams it without
+  // decoding the entire three-minute recording into a large WebAudio buffer.
   startMusic() {
-    if (this.musicTimer || this.musicVolume <= 0) return;
-    const scale = [262, 294, 330, 392, 440, 523, 587, 659];
-    const pattern = [0, 2, 4, 2, 5, 4, 2, 1, 0, 2, 4, 5, 7, 5, 4, 2];
-    const bass = [131, 131, 98, 110];
-    this.musicTimer = setInterval(() => {
-      const ctx = this.ensure();
-      if (!ctx || ctx.state !== 'running') return;
-      const i = this.musicStep++;
-      const note = scale[pattern[i % pattern.length]];
-      this.musicNote(note, 0.22, 'triangle', 0.5);
-      if (i % 4 === 0) this.musicNote(bass[(i / 4) % bass.length], 0.5, 'sine', 0.7);
-    }, 300);
-  }
-
-  musicNote(freq, dur, type, vol) {
-    const ctx = this.ctx;
-    const t0 = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    osc.type = type;
-    osc.frequency.value = freq;
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    osc.connect(g).connect(this.musicGain);
-    osc.start(t0);
-    osc.stop(t0 + dur + 0.05);
+    if (this.musicVolume <= 0 || document.hidden || this.musicStarting) return;
+    const ctx = this.ensure();
+    if (!ctx) return;
+    if (!this.musicPlayer) {
+      const player = new Audio();
+      player.preload = 'none';
+      player.loop = true;
+      const ext = player.canPlayType('audio/ogg; codecs="vorbis"') ? 'ogg' : 'mp3';
+      player.src = new URL(`../assets/audio/apricot-afternoon.${ext}`, import.meta.url).href;
+      player.addEventListener('error', () => console.warn('Background music could not load:', player.error));
+      this.musicSource = ctx.createMediaElementSource(player);
+      this.musicSource.connect(this.musicGain);
+      this.musicPlayer = player;
+    }
+    if (!this.musicPlayer.paused) return;
+    this.musicStarting = true;
+    this.musicPlayer.play().then(() => {
+      if (this.musicVolume <= 0 || document.hidden) this.musicPlayer.pause();
+    }).catch((e) => {
+      // Autoplay waits for the next tap; a deliberate pause can abort a pending play.
+      if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') console.warn('Background music could not play:', e);
+    }).finally(() => { this.musicStarting = false; });
   }
 
   stopMusic() {
-    if (this.musicTimer) clearInterval(this.musicTimer);
-    this.musicTimer = null;
+    if (this.musicPlayer) this.musicPlayer.pause();
   }
 }

@@ -80,8 +80,8 @@ export class Stickers {
         return !!ctx.harvest && ctx.harvest.giantSize >= v;
       case 'chain':
         return !!ctx.harvest && ctx.harvest.chain >= v;
-      case 'sunflowerBonus':
-        return !!ctx.harvest && !!ctx.harvest.sunflowerBonus;
+      case 'sunflowerBonus': // (the name of the old bonus; now a pomegranate combo this long)
+        return !!ctx.harvest && ctx.harvest.combo >= v;
       case 'dino':
         return !!ctx.dino && ctx.dino.length >= v;
       case 'fishAll':
